@@ -40,26 +40,6 @@
         }
       }
     </script>
-<<<<<<< HEAD
-
-    <style>
-        body { background-color: #131313; font-family: 'Public Sans', sans-serif; }
-        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        body { min-height: max(884px, 100dvh); }
-
-        #map { height: 100%; width: 100%; }
-        .leaflet-tile { filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%); }
-        .leaflet-top, .leaflet-bottom { z-index: 40 !important; }
-        
-        .leaflet-locate-btn {
-            background: #1B1B1B; border: 2px solid #564334; color: #FFB77D;
-            padding: 5px; cursor: pointer; border-radius: 4px;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .leaflet-locate-btn:hover { background: #353535; }
-    </style>
-=======
 <style>
     body { background-color: #131313; font-family: 'Public Sans', sans-serif; }
     .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
@@ -98,7 +78,6 @@
     }
 
 </style>
->>>>>>> bb78cbd044436863d3397fd4dfc69de7ff13a74c
 </head>
 
 <body class="text-on-surface min-h-screen">
@@ -213,47 +192,9 @@
                 Submit Report
             </button>
 
-<<<<<<< HEAD
             <output id="imagePreview" class="grid grid-cols-2 gap-4 mt-4"></output>           
         </form>
     </main>
-=======
-<!-- <script src="js/MapComponent.js" defer></script> -->
-<script type="module">
-    import { initWardSelector } from './wardSelector.js';
- 
-    // Initialize the cascading dropdowns once the DOM is fully loaded
-    document.addEventListener('DOMContentLoaded', () => {
-    initWardSelector();
-
-    // Initialise map element
-    // Center of South Africa: [-30.5595, 22.9375]
-    const map = L.map('map').setView([-30.5595, 22.9375], 5);
-
-    // Add the base layer (OpenStreetMap)
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-    }).addTo(map);
-
-    // Set default position to device location
-    map.locate({setView: true, maxZoom: 16});
-
-    // Handle successful location finding
-    map.on('locationfound', (e) => {
-        // Add a marker at the user's location
-        L.marker(e.latlng).addTo(map).bindPopup("You are here").openPopup();
-    });
-
-    // Handle location error (e.g., user denied permission)
-    map.on('locationerror', (e) => {
-        console.warn("Location access denied. Defaulting to national view.");
-        map.setView([-30.5595, 22.9375], 5);
-    });
-
-  });
-</script>
->>>>>>> bb78cbd044436863d3397fd4dfc69de7ff13a74c
 
     <footer class="h-12"></footer>
 
