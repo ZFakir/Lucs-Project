@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Ward 07 Details | Groundwork</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-highest": "#353535",
+                        "outline-variant": "#564334",
+                        "on-surface": "#e2e2e2",
+                        "on-background": "#e2e2e2",
+                        "secondary": "#fdb881",
+                        "surface-bright": "#393939",
+                        "primary-fixed": "#ffdcc3",
+                        "error": "#ffb4ab",
+                        "on-secondary-container": "#e9a771",
+                        "tertiary-container": "#00b5fc",
+                        "surface-tint": "#ffb77d",
+                        "on-error-container": "#ffdad6",
+                        "on-secondary-fixed-variant": "#6a3b0f",
+                        "inverse-on-surface": "#303030",
+                        "secondary-fixed": "#ffdcc3",
+                        "on-secondary": "#4d2600",
+                        "on-primary-container": "#623200",
+                        "primary": "#ffb77d",
+                        "error-container": "#93000a",
+                        "surface": "#131313",
+                        "on-surface-variant": "#ddc1ae",
+                        "on-primary-fixed": "#2f1500",
+                        "secondary-fixed-dim": "#fdb881",
+                        "on-tertiary-fixed-variant": "#004c6c",
+                        "inverse-surface": "#e2e2e2",
+                        "on-primary-fixed-variant": "#6e3900",
+                        "surface-dim": "#131313",
+                        "primary-fixed-dim": "#ffb77d",
+                        "on-tertiary-fixed": "#001e2e",
+                        "surface-container-high": "#2a2a2a",
+                        "inverse-primary": "#904d00",
+                        "background": "#131313",
+                        "on-error": "#690005",
+                        "on-secondary-fixed": "#2f1500",
+                        "tertiary": "#85cfff",
+                        "primary-container": "#ff8c00",
+                        "on-primary": "#4d2600",
+                        "surface-variant": "#353535",
+                        "tertiary-fixed": "#c7e7ff",
+                        "surface-container-low": "#1b1b1b",
+                        "tertiary-fixed-dim": "#85cfff",
+                        "outline": "#a48c7a",
+                        "surface-container": "#1f1f1f",
+                        "on-tertiary": "#00344c",
+                        "secondary-container": "#6a3b0f",
+                        "surface-container-lowest": "#0e0e0e",
+                        "on-tertiary-container": "#004360"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Public Sans"],
+                        "body": ["Public Sans"],
+                        "label": ["Public Sans"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            background-color: #000000;
+            color: #e2e2e2;
+            font-family: 'Public Sans', sans-serif;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-black text-on-surface antialiased">
+<header class="fixed top-0 w-full z-50 flex items-center justify-between px-8 h-20 bg-[#131313]/60 backdrop-blur-xl shadow-xl border-b border-white/5">
+<nav class="flex items-center">
+<span class="text-2xl font-black text-white uppercase tracking-widest">Groundwork</span>
+</nav>
+<section class="flex items-center gap-4">
+<button aria-label="Notifications" class="material-symbols-outlined text-white cursor-pointer hover:bg-white/10 p-2 rounded-full">notifications</button>
+<button aria-label="Account" class="material-symbols-outlined text-white cursor-pointer hover:bg-white/10 p-2 rounded-full">account_circle</button>
+</section>
+</header>
+<main class="pt-32 px-8 pb-20 max-w-7xl mx-auto">
+<nav class="mb-12">
+<button id="back-btn" class="group flex items-center gap-2 text-primary hover:text-primary-container transition-colors font-bold uppercase tracking-widest text-sm">
+<span class="material-symbols-outlined">arrow_back</span>
+                Back to main dashboard
+            </button>
+</nav>
+<header class="mb-16">
+<h1 id="ward-title" class="text-6xl font-black tracking-tighter text-white mb-4 uppercase italic">Ward 07</h1>
+<p id="councillor-label" class="text-2xl font-light text-primary tracking-widest uppercase">Highland District Ledger</p>
+</header>
+<section class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16">
+<article class="bg-surface-container-low p-8 rounded-lg flex flex-col justify-between h-48 border border-white/5">
+<header class="flex justify-between items-start">
+<h3  class="text-on-surface-variant font-bold uppercase tracking-widest text-xs">Total Active</h3>
+<span class="material-symbols-outlined text-[#FF8C00]">warning</span>
+</header>
+<p id="active-count" class="text-5xl font-black text-white">24</p>
+</article>
+<article class="bg-surface-container-low p-8 rounded-lg flex flex-col justify-between h-48 border border-white/5">
+<header class="flex justify-between items-start">
+<h3 class="text-on-surface-variant font-bold uppercase tracking-widest text-xs">Resolved (30d)</h3>
+<span class="material-symbols-outlined text-[#FF8C00]">check_circle</span>
+</header>
+<p id="resolved-count" class="text-5xl font-black text-white">142</p>
+</article>
+</section>
+<section class="bg-surface-container-lowest overflow-hidden border border-white/5">
+<header class="px-8 py-6 border-b-2 border-[#FF8C00]/20 flex justify-between items-center bg-surface-container-low">
+<h2 class="text-xl font-bold uppercase tracking-widest text-white italic">Reported Civic Issues</h2>
+<button class="bg-[#FF8C00] hover:bg-[#FF8C00]/90 text-white px-8 py-3 rounded-full font-black uppercase tracking-tighter italic transition-all active:scale-95 shadow-lg shadow-[#FF8C00]/20">
+                    Report Issue
+                </button>
+</header>
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low text-on-surface-variant">
+<th class="px-8 py-4 text-[0.7rem] font-black uppercase tracking-widest" scope="col">Type</th>
+<th class="px-8 py-4 text-[0.7rem] font-black uppercase tracking-widest" scope="col">Description</th>
+<th class="px-8 py-4 text-[0.7rem] font-black uppercase tracking-widest text-center" scope="col">Status</th>
+<th class="px-8 py-4 text-[0.7rem] font-black uppercase tracking-widest text-right" scope="col">Date Reported</th>
+</tr>
+</thead>
+<tbody id="reports-table-body" class="divide-y divide-surface-container-highest">
+
+</tbody>
+</table>
+<footer class="px-8 py-6 bg-surface-container-low flex justify-between items-center border-t border-white/5">
+<p class="text-xs font-bold text-on-surface-variant uppercase tracking-widest"></p>
+<nav class="flex gap-4">
+<button aria-label="Previous page" class="p-2 border border-outline-variant hover:bg-[#FF8C00] hover:text-white transition-all rounded">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<button aria-label="Next page" class="p-2 border border-outline-variant hover:bg-[#FF8C00] hover:text-white transition-all rounded">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</nav>
+</footer>
+</section>
+</main>
+<footer class="mt-auto py-10 border-t border-white/5 text-center bg-black">
+<p class="text-[0.65rem] text-on-surface-variant font-bold tracking-widest uppercase mb-4">Groundwork Civic Ledger © 2023</p>
+<nav class="flex justify-center gap-6">
+<a class="text-[0.65rem] text-on-surface-variant hover:text-primary transition-colors font-bold uppercase tracking-widest" href="#">Terms of Service</a>
+<a class="text-[0.65rem] text-on-surface-variant hover:text-primary transition-colors font-bold uppercase tracking-widest" href="#">Privacy Policy</a>
+<a class="text-[0.65rem] text-on-surface-variant hover:text-primary transition-colors font-bold uppercase tracking-widest" href="#">Contact Registry</a>
+</nav>
+</footer>
+
+<dialog id="issue-modal" class="bg-surface border border-white/5 shadow-2xl rounded-xl overflow-hidden w-[95%] max-w-4xl p-0 backdrop:bg-background/80 backdrop:backdrop-blur-sm focus:outline-none m-auto">
+    
+    <header class="w-full px-8 py-5 flex items-center justify-between bg-[#1B1B1B] border-b border-white/5">
+        <hgroup class="flex items-center gap-4 m-0">
+            <i id="modal-icon" aria-hidden="true" class="material-symbols-outlined text-[#FF8C00] text-3xl" style="font-variation-settings: 'FILL' 1;">report</i>
+            <h2 id="modal-title" class="text-white font-black tracking-tight uppercase leading-none text-2xl m-0">Issue Details</h2>
+        </hgroup>
+        <button id="close-issue-modal" type="button" class="text-[#E2E2E2] hover:bg-[#353535] transition-colors active:scale-95 duration-150 p-2 rounded-full">
+            <i aria-hidden="true" class="material-symbols-outlined">close</i>
+            <span class="sr-only">Close modal</span>
+        </button>
+    </header>
+
+    <article class="grid grid-cols-1 lg:grid-cols-2 gap-0 bg-surface-container-lowest m-0">
+        
+        <section class="border-r border-white/5 border-b lg:border-b-0 flex flex-col">
+            
+            <figure class="relative h-64 lg:h-80 bg-black overflow-hidden group m-0">
+                <ul id="modal-carousel" class="flex overflow-x-auto snap-x snap-mandatory h-full w-full scrollbar-hide scroll-smooth p-0 m-0 list-none">
+                    </ul>
+                
+                <button id="carousel-prev" class="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-[#FF8C00] text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all backdrop-blur-sm hidden md:block">
+                    <i aria-hidden="true" class="material-symbols-outlined text-sm font-bold">arrow_back_ios_new</i>
+                    <span class="sr-only">Previous image</span>
+                </button>
+                <button id="carousel-next" class="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-[#FF8C00] text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all backdrop-blur-sm hidden md:block">
+                    <i aria-hidden="true" class="material-symbols-outlined text-sm font-bold">arrow_forward_ios</i>
+                    <span class="sr-only">Next image</span>
+                </button>
+
+                <nav aria-label="Image pagination" class="absolute bottom-2 left-0 right-0 flex justify-center gap-1 pointer-events-none">
+                    <span class="block w-2 h-2 rounded-full bg-white/50"></span>
+                    <span class="block w-2 h-2 rounded-full bg-white/20"></span>
+                    <span class="block w-2 h-2 rounded-full bg-white/20"></span>
+                </nav>
+            </figure>
+
+            <aside id="modal-map" class="h-48 lg:flex-grow bg-[#131313] relative flex items-center justify-center">
+                <span class="text-on-surface-variant font-bold text-sm tracking-widest uppercase flex items-center gap-2">
+                    <i aria-hidden="true" class="material-symbols-outlined text-primary">map</i>
+                    Map Loading...
+                </span>
+            </aside>
+        </section>
+
+        <section class="p-8 flex flex-col justify-between">
+            <main class="flex-grow">
+                
+                <header class="flex justify-between items-start mb-6">
+                    <dl class="m-0">
+                        <dt class="text-[10px] uppercase tracking-widest text-on-surface-variant mb-1">Status</dt>
+                        <dd id="modal-status" class="m-0"></dd>
+                    </dl>
+                    <dl class="m-0 text-right">
+                        <dt class="text-[10px] uppercase tracking-widest text-on-surface-variant mb-1">Date Reported</dt>
+                        <dd id="modal-date" class="font-mono text-white text-sm m-0"></dd>
+                    </dl>
+                </header>
+
+
+                <p id="modal-desc" class="text-on-surface-variant font-medium leading-relaxed mb-8 text-sm"></p>
+                
+                <aside class="bg-surface-container-low border border-white/5 p-4 rounded-lg flex items-center justify-between mb-8">
+                    <span class="text-xs uppercase tracking-widest text-on-surface-variant font-bold">Community Priority</span>
+                    <p class="flex items-center gap-2 text-primary m-0">
+                        <i aria-hidden="true" class="material-symbols-outlined text-xl">trending_up</i>
+                        <span id="modal-frequency" class="text-2xl font-black"></span>
+                        <span class="text-xs font-bold uppercase">Bumps</span>
+                    </p>
+                </aside>
+            </main>
+
+            <footer class="pt-4 border-t border-white/5 mt-auto">
+                <button id="bump-btn" class="w-full py-4 bg-[#FF8C00]/10 text-[#FF8C00] hover:bg-[#FF8C00] hover:text-white border border-[#FF8C00]/30 transition-all font-black text-sm uppercase tracking-widest rounded-lg flex items-center justify-center gap-3 active:scale-[0.98]">
+                    <i aria-hidden="true" class="material-symbols-outlined">exposure_plus_1</i>
+                    Bump this Issue
+                </button>
+            </footer>
+        </section>
+    </article>
+</dialog>
+
+<style>
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+</style>
+
+<script src="WardPage.js"></script>
+</body>
+</html>

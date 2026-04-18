@@ -7,7 +7,7 @@ loginForm.addEventListener('submit', async function(event) {
     // No refresh
     event.preventDefault();
 
-    // 4. Get the values from the inputs
+    // Get the values from the inputs
     const username = IDInput.value.trim();//trim removes spaces from end
     const password = passwordInput.value;
     if((!username||!password)){
@@ -15,7 +15,7 @@ loginForm.addEventListener('submit', async function(event) {
         errorMessage.classList.remove('hidden');
         return;
     }
-    // 5. Do something with the data
+    //  Do something with the data
     try {
         // This is where you send the ID and Password to your server
         // which then talks to Google's API
@@ -40,6 +40,7 @@ loginForm.addEventListener('submit', async function(event) {
     }   
 });
 
+//google auth
 async function handleWorkerGoogleResponse(response) {
     try {
         const backendRes = await fetch('/api/auth/worker/google', {
@@ -75,7 +76,7 @@ async function handleWorkerGoogleResponse(response) {
 }
 
 window.onload = function () {
-    // 1. Link your Client ID and your callback function
+    //  Link your Client ID and your callback function
     google.accounts.id.initialize({
         client_id: "807391346984-tnskuijp45bnadk8ki9b87j7q4hd3dq4.apps.googleusercontent.com",
         callback: handleWorkerGoogleResponse,
@@ -83,7 +84,7 @@ window.onload = function () {
         ux_mode: "popup" 
     });
 
-    // 2. Render the button 
+    // Render the button 
     google.accounts.id.renderButton(
         document.getElementById("google-worker-btn"), 
         { 

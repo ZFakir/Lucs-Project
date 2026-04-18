@@ -21,7 +21,7 @@ router.post('/', async (req, res) => {
     res.status(400).json({ error: err.message });
   }
 });
-
+//returns subscriptions for a particular resident
 router.get('/:id/subscriptions', async (req, res) => {
     try {
         const residentId = req.params.id;

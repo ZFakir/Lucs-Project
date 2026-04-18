@@ -2,13 +2,13 @@
  * wardSelector.js
  *
  * Three-level cascading dropdown: Province → Municipality → Ward
- * Reads directly from the MDB_Wards_2020.csv file hosted on GitHub.
+ * Reads directly from the wards.csv file hosted on GitHub.
  *
  * Usage: call initWardSelector() once the DOM is ready.
  */
 
 // ---------------------------------------------------------------------------
-// Config — update this URL to your actual GitHub repo path
+// Config — URL to actual GitHub repo path
 // ---------------------------------------------------------------------------
 
 const CSV_URL =

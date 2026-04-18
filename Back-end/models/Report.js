@@ -5,14 +5,14 @@ const Report = sequelize.define('Report', {
     ReportID: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
     WardID: { type: DataTypes.INTEGER },
     ResidentID: { type: DataTypes.INTEGER },
-    Lattitude: { type: DataTypes.FLOAT },
+    Latitude: { type: DataTypes.FLOAT }, // Fixed spelling
     Longitude: { type: DataTypes.FLOAT },
-    Status: { type: DataTypes.STRING },
-    Date: { type: DataTypes.DATE },
-    DateFulfilled: { type: DataTypes.DATE, allowNull: true },
-    Type: { type: DataTypes.STRING },
     Progress: { type: DataTypes.STRING },
-    Frequency: { type: DataTypes.STRING }
+    Type: { type: DataTypes.STRING },
+    Frequency: { type: DataTypes.INTEGER }, // Changed to INTEGER
+    CreatedAt: { type: DataTypes.DATE }, // Changed from 'Date'
+    DateFulfilled: { type: DataTypes.DATE, allowNull: true },
+    Priority: { type: DataTypes.INTEGER } // Added this column
 }, { tableName: 'Reports', timestamps: false });
 
 const ReportImage = sequelize.define('ReportImage', {

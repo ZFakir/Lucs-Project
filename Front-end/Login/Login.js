@@ -7,7 +7,7 @@ loginForm.addEventListener('submit', async function(event) {
     // No refresh
     event.preventDefault();
 
-    // 4. Get the values from the inputs
+    // Get the values from the inputs
     const username = usernameInput.value.trim();//trim removes spaces from end
     const password = passwordInput.value;
     if((!username||!password)){
@@ -15,7 +15,7 @@ loginForm.addEventListener('submit', async function(event) {
         errorMessage.classList.remove('hidden');
         return;
     }
-    // 5. Do something with the data
+    // Do something with the data
     try {
         // This is where you send the ID and Password to your server
         // which then talks to Google's API
@@ -41,6 +41,7 @@ loginForm.addEventListener('submit', async function(event) {
     }   
 });
 
+//google auth
 window.onload = function () {
   google.accounts.id.initialize({
     client_id: "807391346984-tnskuijp45bnadk8ki9b87j7q4hd3dq4.apps.googleusercontent.com",
@@ -65,7 +66,7 @@ async function handleCredentialResponse(response) {
     const token = response.credential;
 
     try {
-        const backendRes = await fetch('/api/auth/google', {
+        const backendRes = await fetch('/api/auth/google', { //send to backend
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ idToken: token })
@@ -79,7 +80,7 @@ async function handleCredentialResponse(response) {
             if (result.role === 'admin') {
                 window.location.href = "../Homes/Admin.html";
             } else { //if not admin, normal resident
-                localStorage.setItem('residentId', result.residentId);
+                localStorage.setItem('residentId', result.residentId); //saves ID to localstorage
                 window.location.href = "../Homes/Resident.html"; 
             }
         } else {

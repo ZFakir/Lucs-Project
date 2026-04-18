@@ -10,8 +10,10 @@ env:
   DEPLOY_PATH: '/home/ubuntu/Lucs-Project'
 
 jobs:
+
   build-test-deploy:
     runs-on: ubuntu-latest
+
     steps:
     - uses: actions/checkout@v4
 
@@ -20,24 +22,39 @@ jobs:
       with:
         node-version: ${{ env.NODE_VERSION }}
 
-    - name: Install Dependencies
-      run: |
-        cd Back-end
-        npm install
 
-    # --- NEW: JEST TESTING STEP ---
-    - name: Run Jest Tests
+
+    # --- FRONTEND TESTING ---
+    - name: Test Frontend
+      run: |
+        cd Front-end
+        npm install
+        chmod +x ./node_modules/.bin/jest
+        npm test
+
+        
+
+    # --- CodeCov ---
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v5
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+
+    # --- BACKEND TESTING ---
+    - name: Test Backend
       env:
-        # You may need to provide mock env vars so Sequelize doesn't crash
         NODE_ENV: test
+        # Dummy variables just in case your config requires them to not be undefined
         DB_HOST: localhost 
         GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
       run: |
         cd Back-end
+        npm install
         npm test 
 
+    # --- DEPLOYMENT ---
+    # This step ONLY runs if BOTH testing steps above pass successfully.
     - name: Copy Files to Lightsail (SCP)
-      # This step ONLY runs if "Run Jest Tests" passes
       uses: appleboy/scp-action@v0.1.7
       with:
         host: ${{ secrets.LIGHTSAIL_HOST }}
@@ -45,6 +62,8 @@ jobs:
         key: ${{ secrets.LIGHTSAIL_KEY }}
         source: "."
         target: ${{ env.DEPLOY_PATH }}
+
+      
 
     - name: Restart Server via SSH
       uses: appleboy/ssh-action@v1.0.3
@@ -57,3 +76,5 @@ jobs:
           npm install --production
           pm2 restart municipal-api || pm2 start server.js --name "municipal-api"
           pm2 save
+
+      

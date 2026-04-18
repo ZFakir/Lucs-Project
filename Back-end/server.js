@@ -24,11 +24,11 @@ app.post('/api/auth/google', async (req, res) => {
     try {
         const ticket = await client.verifyIdToken({
             idToken: idToken,
-            audience: process.env.GOOGLE_CLIENT_ID, 
+            audience: process.env.GOOGLE_CLIENT_ID, //checks if token is valid for our server
         });
         
         const payload = ticket.getPayload();
-        const { email, name } = payload;
+        const { email, name } = payload; //ticket with user information.
 
         // --- SPECIAL ADMIN CASE ---
         if (email === "2820314@students.wits.ac.za") {
@@ -67,47 +67,42 @@ app.post('/api/auth/google', async (req, res) => {
 // --- WORKER GOOGLE AUTH ROUTE ---
 app.post('/api/auth/worker/google', async (req, res) => {
     const { idToken } = req.body;
-
     try {
         const ticket = await client.verifyIdToken({
             idToken: idToken,
             audience: process.env.GOOGLE_CLIENT_ID,
         });
-        
         const payload = ticket.getPayload();
-        const { email } = payload;
+        const { email, family_name, given_name } = payload;
 
-        // 1. Check if the worker exists by email 
-        const worker = await MunicipalWorker.findOne({ where: { email: email } });
+        // FIXED: Using PascalCase to match your MunicipalWorker model
+        const [worker, created] = await MunicipalWorker.findOrCreate({
+            where: { Email: email },
+            defaults: {
+                EmployeeID: Math.floor(Date.now() / 1000), // Manual ID bypass for Azure
+                FirstName: given_name,
+                LastName: family_name,
+                Email: email,
+                Validated: false, 
+                Blacklisted: false
+            }
+        });
 
-        if (!worker) {
-            return res.status(403).json({ 
-                success: false, 
-                message: "Access Denied. Your email is not registered in the municipal system." 
-            });
-        }
-
-        // 2. Check the 'Validated' column from the model
         if (!worker.Validated) {
             return res.status(403).json({ 
                 success: false, 
-                message: "Account pending. An administrator must validate your profile before you can log in." 
+                message: "Your registration is received. Please wait for an administrator to grant permission before you can access the ledger." 
             });
         }
 
-        // 3. Check 'Blacklisted' 
         if (worker.Blacklisted) {
-            return res.status(403).json({ 
-                success: false, 
-                message: "This account has been blacklisted. Access revoked." 
-            });
+            return res.status(403).json({ success: false, message: "This account has been blacklisted." });
         }
 
-        // 4. If all checks pass
         res.status(200).json({ 
             success: true, 
             workerId: worker.EmployeeID,
-            name: worker.firstName 
+            name: worker.FirstName 
         });
 
     } catch (error) {
@@ -115,6 +110,34 @@ app.post('/api/auth/worker/google', async (req, res) => {
         res.status(401).json({ success: false, message: "Invalid Security Token" });
     }
 });
+
+// --- ADMIN: DELETE REPORT ---
+app.delete('/api/admin/delete-report/:id', async (req, res) => {
+    const reportId = req.params.id;
+    const { adminEmail } = req.body; // Sent from the frontend to verify identity
+
+    // 1. Hardcoded Admin Check (Using your Wits email)
+    if (adminEmail !== "2820314@students.wits.ac.za") {
+        return res.status(403).json({ success: false, message: "Unauthorized: Admin access only." });
+    }
+
+    try {
+        // 2. Perform the deletion
+        const deleted = await Report.destroy({
+            where: { ReportID: reportId }
+        });
+
+        if (deleted) {
+            res.status(200).json({ success: true, message: `Report ${reportId} deleted successfully.` });
+        } else {
+            res.status(404).json({ success: false, message: "Report not found." });
+        }
+    } catch (error) {
+        console.error("Deletion Error:", error);
+        res.status(500).json({ success: false, message: "Server error during deletion." });
+    }
+});
+
 
 // --- 3. API ROUTES ---
 const residentRoutes = require('./routes/residents');

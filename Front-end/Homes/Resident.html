@@ -84,56 +84,9 @@
                     <p class="text-on-surface-variant max-w-xl font-body leading-relaxed">Active monitoring of municipal performance and infrastructure resolution across your high-priority zones.</p>
                 </header>
 
-                <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <article class="group bg-surface-container-low p-8 relative overflow-hidden transition-all duration-300 hover:bg-surface-container-high cursor-pointer">
-                        <button class="absolute top-6 right-6 text-on-surface-variant hover:text-primary">
-                            <span class="material-symbols-outlined">more_vert</span>
-                        </button>
-                        <span class="label-md block text-orange-500 font-black tracking-[0.2em] mb-4">DISTRICT ALPHA</span>
-                        <h3 class="text-4xl font-black mb-8">WARD 07</h3>
-                        <section class="flex items-end justify-between">
-                            <header>
-                                <p class="text-[10px] uppercase tracking-widest text-on-surface-variant mb-1">Active Issues</p>
-                                <p class="text-3xl font-black text-primary">12</p>
-                            </header>
-                            <span class="material-symbols-outlined text-orange-600/20 text-6xl translate-y-4 group-hover:text-orange-600 transition-colors">location_city</span>
-                        </section>
-                        <footer class="absolute bottom-0 left-0 h-1 w-0 bg-primary-container transition-all duration-500 group-hover:w-full"></footer>
-                    </article>
+                <section id="wards-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-                    <article class="group bg-surface-container-low p-8 relative overflow-hidden transition-all duration-300 hover:bg-surface-container-high cursor-pointer">
-                        <button class="absolute top-6 right-6 text-on-surface-variant hover:text-primary">
-                            <span class="material-symbols-outlined">more_vert</span>
-                        </button>
-                        <span class="label-md block text-orange-500 font-black tracking-[0.2em] mb-4">MUNICIPAL HUB</span>
-                        <h3 class="text-4xl font-black mb-8">WARD 14</h3>
-                        <section class="flex items-end justify-between">
-                            <header>
-                                <p class="text-[10px] uppercase tracking-widest text-on-surface-variant mb-1">Active Issues</p>
-                                <p class="text-3xl font-black text-primary">04</p>
-                            </header>
-                            <span class="material-symbols-outlined text-orange-600/20 text-6xl translate-y-4 group-hover:text-orange-600 transition-colors">domain</span>
-                        </section>
-                        <footer class="absolute bottom-0 left-0 h-1 w-0 bg-primary-container transition-all duration-500 group-hover:w-full"></footer>
-                    </article>
-
-                    <article class="group bg-surface-container-low p-8 relative overflow-hidden transition-all duration-300 hover:bg-surface-container-high cursor-pointer">
-                        <button class="absolute top-6 right-6 text-on-surface-variant hover:text-primary">
-                            <span class="material-symbols-outlined">more_vert</span>
-                        </button>
-                        <span class="label-md block text-orange-500 font-black tracking-[0.2em] mb-4">SOUTHERN CORRIDOR</span>
-                        <h3 class="text-4xl font-black mb-8">WARD 22</h3>
-                        <section class="flex items-end justify-between">
-                            <header>
-                                <p class="text-[10px] uppercase tracking-widest text-on-surface-variant mb-1">Active Issues</p>
-                                <p class="text-3xl font-black text-primary">28</p>
-                            </header>
-                            <span class="material-symbols-outlined text-orange-600/20 text-6xl translate-y-4 group-hover:text-orange-600 transition-colors">holiday_village</span>
-                        </section>
-                        <footer class="absolute bottom-0 left-0 h-1 w-0 bg-primary-container transition-all duration-500 group-hover:w-full"></footer>
-                    </article>
-
-                    <button class="group border-2 border-dashed border-outline-variant p-8 flex flex-col items-center justify-center gap-4 transition-all hover:bg-primary-container/5 hover:border-primary-container min-h-[220px]">
+                    <button id="open-add-ward-btn" class="group border-2 border-dashed border-outline-variant p-8 flex flex-col items-center justify-center gap-4 transition-all hover:bg-primary-container/5 hover:border-primary-container min-h-[220px]">
                         <span class="material-symbols-outlined text-4xl text-on-surface-variant group-hover:text-primary">add_circle</span>
                         <span class="font-black uppercase tracking-widest text-sm text-on-surface-variant group-hover:text-on-surface">Track New Ward</span>
                     </button>
@@ -173,6 +126,60 @@
             </ul>
         </aside>
     </main>
-    <script src="ResidentHome.js"></script>
+    <dialog id="custom-modal" class="bg-surface-container-high border border-outline-variant rounded-xl shadow-2xl backdrop:bg-background/80 backdrop:backdrop-blur-sm p-0 w-[90%] max-w-md m-auto focus:outline-none">
+        <div class="p-6">
+            <h3 id="modal-title" class="text-xl font-black tracking-widest text-on-background mb-2 uppercase">Alert</h3>
+            <p id="modal-message" class="text-on-surface-variant font-bold text-sm mb-8 leading-relaxed"></p>
+            <div id="modal-actions" class="flex justify-end gap-3 m-0">
+                </div>
+        </div>
+    </dialog>
+<dialog id="add-ward-modal" class="bg-surface border border-white/5 shadow-2xl rounded-lg overflow-hidden w-[90%] max-w-lg p-0 backdrop:bg-background/80 backdrop:backdrop-blur-sm focus:outline-none m-auto">
+        
+        <header class="w-full px-6 py-4 flex items-center justify-between bg-[#1B1B1B] shadow-2xl">
+            <h1 class="text-[#FFB77D] font-black tracking-tight uppercase leading-none text-xl">Select Ward</h1>
+            <button id="close-add-ward-icon" type="button" class="text-[#E2E2E2] hover:bg-[#353535] transition-colors active:scale-95 duration-150 p-2 rounded-full">
+                <i aria-hidden="true" class="material-symbols-outlined">close</i>
+                <span class="sr-only">Close menu</span>
+            </button>
+        </header>
+
+        <form id="add-ward-form" class="p-8 space-y-8 bg-surface-container-lowest">
+            
+            <fieldset class="group border-none p-0 m-0">
+                <label class="block font-bold text-xs uppercase tracking-widest text-[#FFB77D] mb-3" for="province">Select Province</label>
+                <select class="w-full bg-[#0E0E0E] text-white border-0 border-b-2 border-outline-variant focus:border-primary-container focus:ring-0 py-4 px-0 text-lg transition-all" id="province" name="province" required>
+                    <option disabled selected value="">Choose a province</option>
+
+                </select>
+            </fieldset>
+
+            <fieldset class="group border-none p-0 m-0">
+                <label class="block font-bold text-xs uppercase tracking-widest text-[#FFB77D] mb-3" for="municipality">Select Municipality</label>
+                <select class="w-full bg-[#0E0E0E] text-white border-0 border-b-2 border-outline-variant focus:border-primary-container focus:ring-0 py-4 px-0 text-lg transition-all" id="municipality" name="municipality" required>
+                    <option disabled selected value="">Choose a municipality</option>
+
+                </select>
+            </fieldset>
+
+            <fieldset class="group border-none p-0 m-0">
+                <label class="block font-bold text-xs uppercase tracking-widest text-[#FFB77D] mb-3" for="ward">Select Ward</label>
+                <select class="w-full bg-[#0E0E0E] text-white border-0 border-b-2 border-outline-variant focus:border-primary-container focus:ring-0 py-4 px-0 text-lg transition-all" id="ward" name="ward" required>
+
+                </select>
+            </fieldset>
+
+            <footer class="pt-6 flex flex-col space-y-4">
+                <button type="submit" class="w-full py-5 text-[#4d2600] font-black text-sm uppercase tracking-widest rounded-lg shadow-lg bg-gradient-to-br from-[#FF8C00] to-[#FFB77D] hover:scale-[1.02] active:scale-[0.98] transition-transform flex items-center justify-center space-x-2">
+                    <span>Track Ward</span>
+                    <i aria-hidden="true" class="material-symbols-outlined">location_on</i>
+                </button>
+                <button id="close-add-ward-btn" type="button" class="w-full py-4 text-on-surface-variant font-bold uppercase tracking-widest hover:text-primary transition-colors active:translate-y-px">
+                    Cancel
+                </button>
+            </footer>
+        </form>
+    </dialog>
+    <script src="Resident.js"></script>
 </body>
 </html>

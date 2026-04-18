@@ -58,6 +58,19 @@ router.get('/municipalities/:id/wards', async(req,res)=>{
     }
 });
 
+// GET: Fetch a specific municipality by ID
+router.get('/municipalities/:id', async (req, res) => {
+    try {
+        const municipality = await Municipality.findByPk(req.params.id);
+        if (!municipality) {
+            return res.status(404).json({ message: 'Municipality not found' });
+        }
+        res.json(municipality);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
+    }
+});
 // ----------------------
 // WARD ROUTES
 
