@@ -74,7 +74,11 @@ const ReportImage = sequelize.define('ReportImage', {
     ImageID: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
     ReportID: { type: DataTypes.INTEGER },
     Type: { type: DataTypes.STRING },
-    Image: { type: DataTypes.BLOB }
+Image: {
+        // 🚨 Specify 'medium' or 'long' here to bypass the 65KB limit
+        type: DataTypes.BLOB('medium'), 
+        allowNull: false
+    }
 }, { tableName: 'ReportImages', timestamps: false });
 
 const Allocation = sequelize.define('Allocation', {
