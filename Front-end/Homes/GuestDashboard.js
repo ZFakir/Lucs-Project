@@ -1,16 +1,75 @@
+// For interactive map  Front-end/ModalUtilities/LocationPicker.js
+import { LocationPicker } from '../ModalUtilities/LocationPicker.js';
+
 // ==========================================
 // 1. INITIALISATION
 // ==========================================
 // 'DOMContentLoaded' ensures the browser has fully read and built the HTML page
 // before we try to attach any JavaScript to it. If we didn't wait, JS might try 
 // to grab a dropdown menu that hasn't been drawn yet, causing a crash.
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     // Unlike Resident.js, there is absolutely no localStorage auth check here.
     // This explicitly allows anyone on the internet to load the page.
     
     // As soon as the page is ready, we fire the function to go get the provinces from the database.
     loadProvinces();
+
+    // Initialise the Location Picker
+    const picker = new LocationPicker('map-container', 'map-status', handleMapLocation);
+    
+    try {
+        await picker.loadData(); // Now this 'await' is valid!
+        picker.render();         // This draws the map
+    } catch (error) {
+        console.error("Map initialization failed:", error);
+    }
 });
+
+// The Callback Function
+async function handleMapLocation(data) {
+    if (!data.success) return;
+
+    const { provId, muniId, wardNo } = data;
+
+    // A. Update Province
+    if (provId) {
+        provinceSelect.value = provId;
+        // We must manually trigger the 'change' event to load municipalities
+        await triggerChangeEvent(provinceSelect);
+    }
+
+    // B. Update Municipality
+    if (muniId) {
+        municipalitySelect.value = muniId;
+        // We must manually trigger the 'change' event to load wards
+        await triggerChangeEvent(municipalitySelect);
+    }
+
+    // C. Update Ward
+    if (wardNo) {
+        // Find the option where the text starts with "Ward [wardNo]"
+        const wardOption = Array.from(wardSelect.options).find(opt => 
+            opt.textContent.startsWith(`Ward ${wardNo}`)
+        );
+
+        if (wardOption) {
+            wardSelect.value = wardOption.value;
+            triggerChangeEvent(wardSelect);
+        }
+    }
+}
+
+// Helper to force the cascading logic to fire
+async function triggerChangeEvent(element) {
+    // Create a new 'change' event
+    const event = new Event('change', { bubbles: true });
+    // Dispatch it so the event listeners in GuestDashboard.js react
+    element.dispatchEvent(event);
+    
+    // Small delay to allow the async fetch calls in Step 2/3 to complete 
+    // before we try to select values in the next dropdown
+    return new Promise(resolve => setTimeout(resolve, 500));
+}
 
 // ==========================================
 // 2. DOM ELEMENT REFERENCES
