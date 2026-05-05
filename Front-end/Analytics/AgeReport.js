@@ -380,7 +380,7 @@ function renderUnassignedTable(reports) {
         tr.innerHTML = `
             <td class="px-8 py-4">
                 <p class="font-bold text-white uppercase tracking-tight text-sm">${typeStr}</p>
-                <p class="text-on-surface-variant text-xs truncate max-w-[250px] mt-1">${report.Description || 'No description provided.'}</p>
+                <p class="text-on-surface-variant text-xs truncate max-w-[250px] mt-1">${report.Brief || 'No description provided.'}</p>
             </td>
             <td class="px-8 py-4 text-sm font-bold text-on-surface-variant uppercase tracking-wide">
                 ${report.WardID ? `Ward ${report.WardID}` : 'N/A'}
@@ -403,7 +403,7 @@ function renderUnassignedTable(reports) {
             issueViewer.open({
                 id: report.ReportID,
                 type: report.Type,
-                description: report.Description,
+                description: report.Brief,
                 date: report.CreatedAt,
                 status: report.Progress,
                 ward: report.WardID || 'N/A',
@@ -469,7 +469,7 @@ function drawPinsOnMap(reports) {
             issueViewer.open({
                 id: report.ReportID,
                 type: report.Type,
-                description: report.Description,
+                description: report.Brief,
                 date: report.CreatedAt,
                 status: statusText, // Pass our newly derived status string to the modal
                 ward: report.WardID || 'N/A',

@@ -851,7 +851,7 @@
 
                     <section aria-labelledby="briefing-title">
                         <h3 id="briefing-title" style="font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:0.15em;color:#737373;margin-bottom:8px;">Situation Briefing</h3>
-                        <p style="color:#d4d4d4;font-size:14px;line-height:1.7;margin:0;">${report.Description || 'No additional briefing provided.'}</p>
+                        <p style="color:#d4d4d4;font-size:14px;line-height:1.7;margin:0;">${report.Brief || 'No additional briefing provided.'}</p>
                     </section>
 
                     <footer style="margin-top:24px;">

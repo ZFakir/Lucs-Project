@@ -92,18 +92,36 @@ class CivicModal {
         }
     }
 
-    getBadgeHTML(statusStr) {
+getBadgeHTML(statusStr) {
         const progressStr = (statusStr || '').toLowerCase(); 
+        
+        // 🚨 Added 'whitespace-nowrap' and 'inline-block' to all spans
         if (progressStr === 'resolved') {
-            return `<span class="px-3 py-1 bg-surface-container-highest text-on-surface-variant text-[10px] font-black uppercase rounded-full">Resolved</span>`;
+            return `<span class="inline-block whitespace-nowrap px-3 py-1 bg-surface-container-highest text-on-surface-variant text-[10px] font-black uppercase rounded-full">Resolved</span>`;
         } else if (progressStr === 'in progress' || progressStr === 'assigned to field staff') {
-            return `<span class="px-3 py-1 bg-[#FF8C00]/20 text-[#FF8C00] border border-[#FF8C00]/40 text-[10px] font-black uppercase rounded-full">In Progress</span>`;
+            return `<span class="inline-block whitespace-nowrap px-3 py-1 bg-[#FF8C00]/20 text-[#FF8C00] border border-[#FF8C00]/40 text-[10px] font-black uppercase rounded-full">In Progress</span>`;
         } else {
-            return `<span class="px-3 py-1 bg-[#FF8C00] text-[#4d2600] text-[10px] font-black uppercase rounded-full">Active</span>`;
+            return `<span class="inline-block whitespace-nowrap px-3 py-1 bg-[#FF8C00] text-[#4d2600] text-[10px] font-black uppercase rounded-full">Active</span>`;
         }
     }
 
-   open(data) {
+    // 🚨 NEW METHOD: The Modal now fetches its own images
+    async fetchImagesForReport(reportId) {
+        try {
+            const response = await fetch(`/api/reports/report/${reportId}`);
+            if (response.ok) {
+                return await response.json();
+            }
+            return [];
+        } catch (error) {
+            console.error("Failed to fetch images for modal:", error);
+            return [];
+        }
+    }
+
+   // 🚨 NEW: Made async so it can wait for the images
+   async open(data) {
+        // Set basic text data immediately
         document.getElementById(`${this.modalId}-title`).textContent = data.type || 'General Issue';
         document.getElementById(`${this.modalId}-desc`).textContent = data.description || 'No description provided.';
         document.getElementById(`${this.modalId}-date`).textContent = data.date ? new Date(data.date).toISOString().split('T')[0] : 'Unknown';
@@ -114,25 +132,37 @@ class CivicModal {
         document.getElementById(`${this.modalId}-muni`).title = data.municipality || 'N/A'; 
 
         const carousel = document.getElementById(`${this.modalId}-carousel`);
-        carousel.innerHTML = ''; 
         
-        // Ensure images array exists. We assume data.images is the array returned from your GET route.
-        const images = data.images || [];
+        // 🚨 Show a beautiful loading state inside the carousel immediately
+        carousel.innerHTML = `
+            <li class="snap-center shrink-0 w-full h-full flex items-center justify-center bg-[#1B1B1B]">
+                <span class="text-[#FF8C00] animate-pulse text-xs font-bold uppercase tracking-widest">Loading evidence...</span>
+            </li>
+        `;
+        
+        // Show the modal right away so it feels snappy
+        this.dialog.showModal();
 
-        if (images.length > 0) {
-            images.forEach((img, i) => {
+        // Now, fetch the images seamlessly in the background
+        const fetchedImages = await this.fetchImagesForReport(data.id);
+        
+        // Clear the loading state
+        carousel.innerHTML = ''; 
+
+        if (fetchedImages.length > 0) {
+            fetchedImages.forEach((img, i) => {
                 let imgSrc = '';
 
-                // Handle Sequelize BLOBs serialized as JSON Buffers
-                if (img.Image && img.Image.type === 'Buffer' && img.Image.data) {
-                    // Convert the byte array to a Uint8Array, then to a browser Blob
+                // Handle the clean base64 format returned by reports.js
+                if (img.base64) {
+                    imgSrc = `data:${img.Type};base64,${img.base64}`;
+                } 
+                // Fallback for raw Sequelize Buffers
+                else if (img.Image && img.Image.type === 'Buffer' && img.Image.data) {
                     const uint8Array = new Uint8Array(img.Image.data);
                     const blob = new Blob([uint8Array], { type: img.Type || 'image/jpeg' });
-                    
-                    // Create a local, temporary URL the browser can use as the src
                     imgSrc = URL.createObjectURL(blob);
                 } else if (typeof img === 'string') {
-                    // Fallback just in case you pass direct URLs or Base64 strings later
                     imgSrc = img;
                 }
 
@@ -140,20 +170,24 @@ class CivicModal {
                     <li class="snap-center shrink-0 w-full h-full relative p-0 m-0 list-none">
                         <img src="${imgSrc}" 
                              alt="Issue Photo ${i+1}" 
-                             class="w-full h-full object-cover"
+                             class="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                             onclick="window.open(this.src, '_blank')"
                              onerror="this.src='https://placehold.co/800x600?text=Image+Unavailable'" />
                     </li>
                 `;
             });
         } else {
-            // Fallback for reports with no photos
             carousel.innerHTML = `
                 <li class="snap-center shrink-0 w-full h-full relative p-0 m-0 list-none flex items-center justify-center bg-[#1B1B1B]">
-                    <span class="text-white/40 text-sm font-bold uppercase tracking-widest">No Photos Provided</span>
+                    <span class="text-white/40 text-sm font-bold uppercase tracking-widest flex flex-col items-center gap-2">
+                        <span class="material-symbols-outlined text-3xl">image_not_supported</span>
+                        No Photos Provided
+                    </span>
                 </li>
             `;
         }
 
+        // Personnel Section Rendering
         const personnelSection = document.getElementById(`${this.modalId}-personnel-section`);
         const workersContainer = document.getElementById(`${this.modalId}-workers`);
         
@@ -179,6 +213,5 @@ class CivicModal {
                 workersContainer.innerHTML = '<p class="text-xs text-on-surface/40 italic m-0">No personnel currently allocated to this task.</p>';
             }
         }
-        this.dialog.showModal();
     }
 }

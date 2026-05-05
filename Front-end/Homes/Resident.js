@@ -470,7 +470,7 @@ function openReportModal(index) {
             <div class="mt-6 pt-4">
                 <span class="text-xs uppercase tracking-widest opacity-50 block mb-2">Latest Progress / Details</span>
                 <div class="bg-black/20 p-4 rounded-lg text-sm font-medium leading-relaxed">
-                    ${report.Progress || report.Description || 'No further details have been provided for this report.'}
+                    ${report.Brief || 'No further details have been provided for this report.'}
                 </div>
             </div>
         </div>

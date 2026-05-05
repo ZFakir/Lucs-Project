@@ -327,7 +327,7 @@ async function showTaskDetails(reportId) {
         // Populate fields
         document.getElementById('detail-id').textContent = `Task Reference: #${report.ReportID}`;
         document.getElementById('detail-type').textContent = report.Type;
-        document.getElementById('detail-description').textContent = report.Description || "No additional briefing provided.";
+        document.getElementById('detail-description').textContent = report.Brief || "No additional briefing provided.";
         document.getElementById('detail-ward').textContent = `Ward ${report.WardID}`;
         document.getElementById('detail-status').textContent = report.Progress;
 

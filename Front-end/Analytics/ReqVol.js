@@ -409,27 +409,41 @@ function renderLedgerTable(reports) {
 const issueViewer = new CivicModal();
 
 // 2. Call it in your row click handler
-function openIssueModal(reportId) {
+// 🚨 Make sure to add 'async' here
+async function openIssueModal(reportId) {
     const report = currentFilteredReports.find(r => r.ReportID === reportId);
     if (!report) return;
+    
     let muniName = Object.keys(MunicipalityMap).find(key => MunicipalityMap[key] === report.MunicipalityID);
     if (muniName) {
         muniName = muniName.replace(/\b\w/g, letter => letter.toUpperCase());
     } else {
         muniName = 'Unknown';
     }
-    // 🚨 This is the critical block! Ensure ward and municipality are included.
+
+    // 🚨 LAZY LOAD THE IMAGES: Ask the backend for photos only when clicked
+    let fetchedImages = [];
+    try {
+        // This hits the route at the bottom of your reports.js file
+        const imgRes = await fetch(`/api/reports/report/${report.ReportID}`);
+        if (imgRes.ok) {
+            fetchedImages = await imgRes.json();
+        }
+    } catch (error) {
+        console.error("Failed to load images for modal:", error);
+    }
+
     issueViewer.open({
         id: report.ReportID,
         type: report.Type,
-        description: report.Description,
+        description: report.Brief,
         date: report.CreatedAt,
         status: report.Progress,
-        ward: report.WardID || report.wardId || 'Unknown', // Catches both possible spellings
-        municipality: muniName
+        ward: report.WardID || report.wardId || 'Unknown',
+        municipality: muniName,
+        images: fetchedImages // 🚨 Pass the downloaded images to the modal
     });
 }
-
 function drawPinsOnMap(reports) {
     if (!dashboardMap || !dashboardMap.map) return;
 

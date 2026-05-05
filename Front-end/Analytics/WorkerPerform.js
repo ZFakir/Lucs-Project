@@ -59,7 +59,7 @@ const historyTable = new CivicTable('worker-ledger-container', async (clickedRep
     issueViewer.open({
         id: clickedReport.ReportID,
         type: clickedReport.Type,
-        description: clickedReport.Description,
+        description: clickedReport.Brief,
         date: clickedReport.CreatedAt,
         status: clickedReport.Progress,
         ward: clickedReport.WardID || 'N/A',
@@ -272,7 +272,7 @@ marker.on('click',async () => {
             issueViewer.open({
                 id: report.ReportID,
                 type: report.Type,
-                description: report.Description,
+                description: report.Brief,
                 date: report.CreatedAt,
                 status: report.Progress,
                 ward: report.WardID || 'N/A',
