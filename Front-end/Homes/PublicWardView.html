@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    <script id="tailwind-config">
+   <script id="tailwind-config">
         tailwind.config = {
             darkMode: "class",
             theme: {
@@ -24,6 +24,10 @@
                         "surface-container-high": "#2a2a2a",
                         "background": "#131313",
                         "primary-container": "#ff8c00",
+                        
+                        // 🚨 FIX: Add this missing color definition!
+                        "on-surface-variant": "#ddc1ae", 
+                        
                         "surface-variant": "#353535",
                         "surface-container-low": "#1b1b1b",
                         "outline": "#a48c7a",
@@ -201,7 +205,7 @@
                 </section>
         </article>
     </dialog>
-
+<script src="../ModalUtilities/CivicModal.js"></script>
     <script src="PublicWardView.js"></script>
 </body>
 </html>
