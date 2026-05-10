@@ -575,32 +575,22 @@ async function openReportModal(index) {
 
     const modal = document.getElementById('report-modal');
     const modalContent = document.getElementById('modal-content');
-
-    const modalHeader = modal.querySelector('h3');
+    const modalHeader = modal.querySelector('h3'); 
 
     const createdAt = notif.CreatedAt || notif.createdAt;
 
+    // 1. Slice and clean the title/type 
     const rawTitle = notif.Title || 'System Alert';
-        const colonIdx = rawTitle.lastIndexOf(':');
-        
-        const issueType = colonIdx !== -1 
-            ? rawTitle.slice(colonIdx + 1).trim() 
-            : (notif.Type || 'Update');
-            
-        // Removes the ": Street Light" part from the main title
-        const cleanTitle = colonIdx !== -1 
-            ? rawTitle.slice(0, colonIdx).trim() 
-            : rawTitle;
+    const colonIdx = rawTitle.lastIndexOf(':');
+    const issueType = colonIdx !== -1 ? rawTitle.slice(colonIdx + 1).trim() : (notif.Type || 'Update');
+    const cleanTitle = colonIdx !== -1 ? rawTitle.slice(0, colonIdx).trim() : rawTitle;
 
-        // 2. Format the top header
-        const wardLabel = notif._wardId ? `Ward ${notif._wardId}` : '';
-        const headerText = wardLabel ? `${wardLabel} - ${issueType}` : issueType;
+    // 2. Format the top header
+    const wardLabel = notif._wardId ? `Ward ${notif._wardId}` : '';
+    const headerText = wardLabel ? `${wardLabel} - ${issueType}` : issueType;
+    if (modalHeader) modalHeader.textContent = headerText;
 
-        if (modalHeader) {
-            modalHeader.textContent = headerText;
-        }
-
-    // Render the text details immediately so the modal opens without delay
+    // 3. Render Loading State
     modalContent.innerHTML = `
         <div class="space-y-3">
             <div class="flex justify-between items-center border-b border-white/10 pb-2">
@@ -618,8 +608,8 @@ async function openReportModal(index) {
 
             <div class="mt-6 pt-4">
                 <span class="text-xs uppercase tracking-widest opacity-50 block mb-2">Details</span>
-                <div class="bg-black/20 p-4 rounded-lg text-sm font-medium leading-relaxed">
-                    ${notif.Progress || notif.Description || 'No further details have been provided for this report.'}
+                <div id="modal-details-container" class="bg-black/20 p-4 rounded-lg text-sm font-medium leading-relaxed">
+                    <span class="text-orange-300 italic text-xs">Loading report details...</span>
                 </div>
             </div>
 
@@ -634,47 +624,52 @@ async function openReportModal(index) {
 
     modal.classList.remove('hidden');
 
-    // Fetch images only when this notification is linked to a report
-    const realReportId = notif.ReportID || notif.reportId || notif.ReportId;
+    const actualReportId = notif.ReportID || notif.ReportId || notif.reportId || notif.reportID;
     const imagesContainer = document.getElementById('modal-images-container');
-    if (!realReportId) {
+    const detailsContainer = document.getElementById('modal-details-container');
+    
+    if (!actualReportId) {
         imagesContainer.innerHTML = `<span class="text-xs opacity-40 italic">No images attached.</span>`;
+        detailsContainer.innerHTML = notif.Message || 'No further details available.';
         return;
     }
 
+    // 4. Fetch BOTH the Report Details and the Images at the same time
     try {
-        const res = await fetch(`/api/reportImages/report/${realReportId}`);
+        const [reportRes, imageRes] = await Promise.all([
+            fetch(`/api/reports/${actualReportId}`).catch(() => null),
+            // 🚨 THE FIX: Changed /reportImages/ to /reports/ to match your working backend route!
+            fetch(`/api/reports/report/${actualReportId}`).catch(() => null)
+        ]);
 
-        // 404 means no images were uploaded for this report — that's fine
-        if (res.status === 404) {
-            imagesContainer.innerHTML = `<span class="text-xs opacity-40 italic">No images attached.</span>`;
-            return;
-        }
-        if (!res.ok) throw new Error('Image fetch failed');
-
-        const images = await res.json();
-
-        if (!images || images.length === 0) {
-            imagesContainer.innerHTML = `<span class="text-xs opacity-40 italic">No images attached.</span>`;
-            return;
+        // A. Inject the Report Details
+        if (reportRes && reportRes.ok) {
+            const reportData = await reportRes.json();
+            detailsContainer.innerHTML = reportData.Brief || reportData.Description || notif.Message || 'No description provided by the user.';
+        } else {
+            detailsContainer.innerHTML = notif.Message || 'Could not load additional details.';
         }
 
-        // Render each image as a clickable thumbnail that opens full-size in a new tab
-        imagesContainer.innerHTML = images.map(img => `
-            <a href="data:${img.Type};base64,${img.base64}" target="_blank" rel="noopener"
-               title="Click to view full size">
-                <img
-                    src="data:${img.Type};base64,${img.base64}"
-                    alt="Report image"
-                    class="w-24 h-24 object-cover rounded-lg border border-white/10
-                           hover:border-orange-500 transition-colors cursor-pointer"
-                />
-            </a>
-        `).join('');
+        // B. Inject the Images
+        if (imageRes && imageRes.ok) {
+            const images = await imageRes.json();
+            if (images && images.length > 0) {
+                imagesContainer.innerHTML = images.map(img => `
+                    <a href="data:${img.Type};base64,${img.base64}" target="_blank" rel="noopener" title="Click to view full size">
+                        <img src="data:${img.Type};base64,${img.base64}" alt="Report image" class="w-24 h-24 object-cover rounded-lg border border-white/10 hover:border-orange-500 transition-colors cursor-pointer shadow-md" />
+                    </a>
+                `).join('');
+            } else {
+                imagesContainer.innerHTML = `<span class="text-xs opacity-40 italic">No images attached.</span>`;
+            }
+        } else {
+            imagesContainer.innerHTML = `<span class="text-xs opacity-40 italic">No images attached.</span>`;
+        }
 
     } catch (err) {
-        console.error('Failed to load report images:', err);
+        console.error('Failed to load modal data:', err);
         imagesContainer.innerHTML = `<span class="text-xs text-red-400 italic">Could not load images.</span>`;
+        detailsContainer.innerHTML = notif.Message || 'Error loading details.';
     }
 }
 
