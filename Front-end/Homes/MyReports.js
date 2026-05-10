@@ -74,7 +74,7 @@ function injectFeedbackAction(report) {
         feedbackBtn.innerHTML = `Feedback (Unlock on Resolution)`;
         
         const infoText = document.createElement('p');
-        infoText.className = 'text-[10px] text-center text-white/40 italic m-0';
+        infoText.className = 'text-[10px] text-center text-black/40 italic m-0';
         infoText.textContent = "You can provide feedback once this issue is marked as Resolved.";
         actionContainer.appendChild(infoText);
     }

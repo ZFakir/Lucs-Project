@@ -5,6 +5,9 @@
 // before we try to attach any JavaScript to it. If we didn't wait, JS might try 
 // to grab a dropdown menu that hasn't been drawn yet, causing a crash.
 document.addEventListener('DOMContentLoaded', () => {
+    // Set role to guest
+    localStorage.setItem('userRole', 'guest');
+
     // Unlike Resident.js, there is absolutely no localStorage auth check here.
     // This explicitly allows anyone on the internet to load the page.
     
