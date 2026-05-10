@@ -90,11 +90,17 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body class="text-on-surface selection:bg-primary-container selection:text-on-primary">
+        <nav id="dynamic-nav" class="flex items-center text-base font-bold uppercase tracking-widest text-on-surface/40 -mb-4">
+    <a id="home-link" href="AnalyticsHome.html" class="flex items-center hover:text-primary transition-colors cursor-pointer group">
+        <span class="material-symbols-outlined mr-2 text-lg group-hover:-translate-x-1 transition-transform">arrow_back</span>
+        <span id="home-link-text">Return to Analytics Dashboard</span>
+    </a>
+</nav>
 <main class="w-full pt-12 px-8 pb-12 min-h-screen">
 <header class="mb-12">
-<h1 class="text-6xl font-black tracking-tight text-on-surface mb-2 font-display">Aging Reports: <span class="text-primary-container">Bottleneck Analytics</span></h1>
+<h1 class="text-6xl font-black tracking-tight text-on-surface mb-2 font-display">Aging Reports: <span class="text-primary-container">Time-Line Analysis</span></h1>
 <p class="text-on-surface-variant text-lg max-w-2xl leading-relaxed">
-            Analyzing the operational lag between citizen reports and municipal response units. Identifying high-friction zones and administrative backlogs.
+    View resolution latencies and assignment delays
         </p>
     
     <button id="export-pdf-btn" class="bg-surface-container-highest border border-surface-variant py-2 px-4 rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-primary-container hover:text-on-primary transition-all flex items-center gap-2 text-on-surface">
@@ -106,7 +112,7 @@
 <article class="col-span-12 lg:col-span-8 bg-surface-container-low rounded-xl overflow-hidden shadow-2xl flex flex-col">
 <header class="p-6 flex justify-between items-center border-b border-surface-variant/30">
 <h2 class="text-label-md uppercase tracking-[0.1em] font-bold text-on-surface-variant flex items-center gap-2">
-<span class="material-symbols-outlined text-primary">location_on</span> Geospatial Friction Heatmap
+<span class="material-symbols-outlined text-primary">location_on</span> Reporting map
                 </h2>
 <nav class="flex bg-surface-container-lowest p-1 rounded-lg">
 <label class="px-4 py-1 text-xs font-bold rounded cursor-pointer transition-colors bg-primary-container text-on-primary">
@@ -133,11 +139,11 @@
 <article class="col-span-12 lg:col-span-4 bg-surface-container-low p-8 rounded-xl flex flex-col gap-8">
 <header>
 <h2 class="text-label-md uppercase tracking-[0.1em] font-bold text-on-surface-variant mb-6 flex items-center gap-2">
-<span class="material-symbols-outlined text-primary">filter_alt</span> Analytical Filters
+<span class="material-symbols-outlined text-primary">filter_alt</span> Date Filters
                 </h2>
 </header>
 <section class="flex flex-col gap-4">
-<label class="text-xs uppercase tracking-widest text-on-surface-variant font-bold">Temporal Range</label>
+<label class="text-xs uppercase tracking-widest text-on-surface-variant font-bold">Time Span</label>
 <nav class="grid grid-cols-3 gap-2">
 <button class="bg-surface-container-highest border border-surface-variant py-3 rounded-lg text-xs font-bold hover:bg-primary-container hover:text-on-primary transition-all">24H</button>
 <button class="bg-primary-container text-on-primary py-3 rounded-lg text-xs font-bold">7 DAYS</button>
@@ -150,7 +156,7 @@
 <article class="col-span-12 lg:col-span-7 bg-surface-container-low p-8 rounded-xl">
 <header class="mb-10 flex justify-between items-end">
 <h2 class="text-label-md uppercase tracking-[0.1em] font-bold text-on-surface-variant flex items-center gap-2">
-<span class="material-symbols-outlined text-primary">bar_chart</span> Assignment Duration Ledger
+<span class="material-symbols-outlined text-primary">bar_chart</span> Average Report Allocation and Resolution Lifecycle
                 </h2>
 <nav class="flex gap-4 text-[0.65rem] font-bold uppercase tracking-widest">
 <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-surface-variant"></span> Unassigned</span>
@@ -196,10 +202,10 @@
 <header>
 <h3 class="text-label-md uppercase tracking-[0.2em] text-on-surface-variant font-bold mb-4">Avg. Unassigned Time</h3>
 </header>
-<p class="text-7xl font-black text-on-surface tracking-tighter">18.4<span class="text-2xl text-on-surface-variant ml-2">HOURS</span></p>
+<p class="text-7xl font-black text-on-surface tracking-tighter">--<span class="text-2xl text-on-surface-variant ml-2">HOURS</span></p>
 <footer class="mt-4">
 <p class="text-error text-xs font-bold uppercase flex items-center gap-1">
-<span class="material-symbols-outlined text-[1rem]">trending_up</span> 12% increase from last week
+<span class="material-symbols-outlined text-[1rem]"></span> 
                     </p>
 </footer>
 </article>
@@ -207,10 +213,10 @@
 <header>
 <h3 class="text-label-md uppercase tracking-[0.2em] text-on-surface-variant font-bold mb-4">Avg. Total Resolution Time</h3>
 </header>
-<p class="text-7xl font-black text-primary-container tracking-tighter">54.2<span class="text-2xl text-on-surface-variant ml-2">HOURS</span></p>
+<p class="text-7xl font-black text-primary-container tracking-tighter">--<span class="text-2xl text-on-surface-variant ml-2">HOURS</span></p>
 <footer class="mt-4">
 <p class="text-primary text-xs font-bold uppercase flex items-center gap-1">
-<span class="material-symbols-outlined text-[1rem]">trending_down</span> 4.5h faster than avg
+<span class="material-symbols-outlined text-[1rem]"></span> 
                     </p>
 </footer>
 </article>

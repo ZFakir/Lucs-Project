@@ -30,6 +30,8 @@ router.get('/:id/subscriptions', async (req, res) => {
             where: { ResidentID: req.params.id },
             include: [{
                 model: Ward,
+                // Use required: false to allow subscriptions without matching wards
+                required: false,
                 // 🚨 This manual 'on' clause tells Sequelize to match BOTH IDs
                 on: {
                     WardID: { [Op.col]: 'Subscription.WardID' },

@@ -1,16 +1,28 @@
 {
   "name": "front-end",
   "version": "1.0.0",
-  "description": "",
   "main": "index.js",
-  "scripts": {
-    "test": "jest --env=jsdom"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "type": "commonjs",
+  "scripts": {
+    "test": "jest --env=jsdom",
+    "test:coverage": "jest --env=jsdom --coverage"
+  },
+  "jest": {
+    "collectCoverage": true,
+    "coverageDirectory": "coverage",
+    "coverageReporters": ["text", "lcov"],
+    "collectCoverageFrom": [
+      "Analytics/**/*.js",
+      "ModalUtilities/**/*.js",
+      "Homes/**/*.js",
+      "!**/Tests/**",
+      "!**/node_modules/**"
+    ]
+  },
   "devDependencies": {
+    "@babel/core": "^7.29.0",
+    "@babel/preset-env": "^7.29.5",
+    "babel-jest": "^30.3.0",
     "jest": "^30.3.0"
   }
 }

@@ -36,7 +36,7 @@ generatePDF() {
                 scale: 2, 
                 useCORS: true, 
                 backgroundColor: '#131313',
-                // 🚨 THE CLEAN FIX: Modify the clone, leave the live UI completely untouched
+                // Modify the clone
                 onclone: (clonedDoc) => {
                     const mapEl = clonedDoc.getElementById('map');
                     const panelEl = clonedDoc.getElementById('pdf-region-panel');
@@ -55,7 +55,7 @@ generatePDF() {
             }
         };
 
-        // No more setTimeouts, no more manual reverting!
+        // Remove set timeout and reverting
         html2pdf().set(opt).from(element).save().then(() => {
             this.exportBtn.innerHTML = originalHtml;
             window.scrollTo(originalScrollX, originalScrollY);
@@ -65,4 +65,9 @@ generatePDF() {
             window.scrollTo(originalScrollX, originalScrollY);
         });
     }
+}
+
+/* istanbul ignore next */
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { DashboardExporter };
 }

@@ -1,6 +1,6 @@
 const express=require('express');
 const router=express.Router();
-const {Report, ReportImage, Allocation,Notification}=require('../models');
+const {Report, ReportImage, Allocation,Notification, Resident, Subscription}=require('../models');
 const { Op } = require('sequelize');
 const { MunicipalWorker } = require('../models');
 
@@ -94,7 +94,6 @@ router.get('/resident/:residentId', async (req,res)=>{
 
 
 // POST: Log a new report/fault and NOTIFIES ADMIN 
-// POST: Log a new report/fault and NOTIFIES ADMIN 
 router.post('/', async (req, res) => {
     try {
         // 1. Create the base report
@@ -152,17 +151,55 @@ router.post('/', async (req, res) => {
                 <p style="color:#737373;font-size:11px;">Log in to the Admin Dashboard to assign this report to a field operative.</p>
             </div>
             `
-        );
+            );
         } else {
             console.log('[Email] Skipped — notifications paused by user');
         }
+        // email residents subscribed to this ward
+        const subscriptions = await Subscription.findAll({ 
+            where: { WardID: newReport.WardID } 
+        });
 
-        res.status(201).json({ message: 'Report logged successfully', report: newReport });
+        for (const sub of subscriptions) {
+            
+            await notify(sub.ResidentID, 'WARD_REPORT',
+                `New Report in Your Area: ${newReport.Type}`,
+                `A new report has been logged in Ward ${newReport.WardID}. Report #${newReport.ReportID} is pending assignment.`,
+                newReport.ReportID
+            );
+
+            // Fetch the specific resident for THIS subscription to get their email
+            const residentToNotify = await Resident.findByPk(sub.ResidentID);
+
+            // Only email if not paused, the resident exists, and they have an email address
+            if (!paused && residentToNotify && residentToNotify.Email) {
+                await sendEmail(
+                    residentToNotify.Email, 
+                    `🔔 New Report: ${newReport.Type}`,
+                    `
+                    <div style="font-family:sans-serif;max-width:600px;margin:auto;background:#1a1a1a;color:#e2e2e2;padding:32px;border-radius:12px;">
+                        <h2 style="color:#ff8c00;margin:0 0 8px;">New Fault Reported</h2>
+                        <p style="color:#a3a3a3;font-size:12px;text-transform:uppercase;letter-spacing:0.1em;">Groundwork Alert</p>
+                        <hr style="border:none;border-top:1px solid #333;margin:20px 0;">
+                        <p><strong>Type:</strong> ${newReport.Type}</p>
+                        <p><strong>Ward:</strong> ${newReport.WardID || 'N/A'}</p>
+                        <p><strong>Report ID:</strong> #${newReport.ReportID}</p>
+                        <p><strong>Status:</strong> Pending Assignment</p>
+                        <hr style="border:none;border-top:1px solid #333;margin:20px 0;">
+                        <p style="color:#737373;font-size:11px;">Log in to your dashboard to track the status of this report.</p>
+                    </div>
+                    `
+                );
+            }
+        }
+
+    res.status(201).json({ message: 'Report logged successfully', report: newReport });
     } catch (err) {
         console.error('Submit failed on backend:', err);
         // Ensure this matches the error message your frontend test is looking for
         res.status(400).json({ error: 'Failed to log report', details: err.message });
     }
+    
 });
 
 //GET: Fetch a single report by its exact ID
@@ -183,14 +220,12 @@ router.get('/:id', async (req,res)=>{
 router.put('/:id/status', async (req, res) => {
     try {
         const reportId = req.params.id;
-        // Status: 'In Progress', 'Resolved', etc.
-        // Progress: '50%', 'Waiting for materials', etc.
         const { Status, Progress, DateFulfilled } = req.body;
- 
+        const paused = req.headers['x-notif-paused'] === 'true';
+
         let progressValue = Progress || Status;
-        
         const updatePayload = {};
-        
+
         if (progressValue == 100 || progressValue === 'Fixed') {
             updatePayload.Status = 'Fixed';
             updatePayload.Progress = 'Fixed';
@@ -198,18 +233,51 @@ router.put('/:id/status', async (req, res) => {
             updatePayload.Progress = progressValue;
         }
 
-        // Set DateFulfilled based on the test's expected null/date pattern
         updatePayload.DateFulfilled = DateFulfilled || (progressValue === 'Resolved' ? new Date() : null);
 
-        const [updatedRows] = await Report.update(updatePayload, { 
-            where: { ReportID: reportId } 
+        const [updatedRows] = await Report.update(updatePayload, {
+            where: { ReportID: reportId }
         });
 
         if (updatedRows === 0) {
             return res.status(404).json({ message: 'Report not found' });
         }
-        res.status(200).json({ message: 'Report status updated successfully' });
 
+        // Notify admin when report is completed 
+        const isCompleted = progressValue === 'Fixed' || progressValue === 'Resolved' || progressValue == 100;
+        if (isCompleted) {
+            const report = await Report.findByPk(reportId);
+
+            await notify(
+                'admin',
+                'REPORT_COMPLETED',
+                `Report #${reportId} Completed`,
+                `Report #${reportId} (${report ? report.Type : 'Unknown'}) in Ward ${report ? report.WardID : 'N/A'} has been marked as resolved.`,
+                reportId
+            );
+
+            if (!paused) {
+                await sendEmail(
+                    ADMIN_EMAIL,
+                    `✅ Report #${reportId} Completed`,
+                    `
+                    <div style="font-family:sans-serif;max-width:600px;margin:auto;background:#1a1a1a;color:#e2e2e2;padding:32px;border-radius:12px;">
+                        <h2 style="color:#4ade80;margin:0 0 8px;">Report Resolved</h2>
+                        <p style="color:#a3a3a3;font-size:12px;text-transform:uppercase;letter-spacing:0.1em;">Civic Ledger Alert</p>
+                        <hr style="border:none;border-top:1px solid #333;margin:20px 0;">
+                        <p><strong>Report ID:</strong> #${reportId}</p>
+                        <p><strong>Type:</strong> ${report ? report.Type : 'N/A'}</p>
+                        <p><strong>Ward:</strong> ${report ? report.WardID : 'N/A'}</p>
+                        <p><strong>Status:</strong> Resolved ✓</p>
+                        <hr style="border:none;border-top:1px solid #333;margin:20px 0;">
+                        <p style="color:#737373;font-size:11px;">The field operative has marked this task as complete.</p>
+                    </div>
+                    `
+                );
+            }
+        }
+
+        res.status(200).json({ message: 'Report status updated successfully' });
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: err.message });

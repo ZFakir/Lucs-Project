@@ -98,12 +98,12 @@
 <!-- MAIN CONTENT CANVAS -->
 <main class="flex-grow flex flex-col p-8 space-y-8 bg-[#131313]">
 <!-- BackButton -->
- <nav class="flex items-center text-[0.65rem] font-bold uppercase tracking-widest text-on-surface/40 -mb-4">
-        <a href="AnalyticsHome.html" class="flex items-center hover:text-primary transition-colors cursor-pointer group">
-            <span class="material-symbols-outlined mr-2 text-lg group-hover:-translate-x-1 transition-transform">arrow_back</span>
-            Return to Main Dashboard
-        </a>
-    </nav>
+<nav class="flex items-center text-sm font-bold uppercase tracking-widest text-on-surface/40 -mb-4">
+    <a href="AnalyticsHome.html" class="flex items-center hover:text-primary transition-colors cursor-pointer group">
+        <span class="material-symbols-outlined mr-2 text-lg group-hover:-translate-x-1 transition-transform">arrow_back</span>
+        Return to Main Analytics Dashboard
+    </a>
+</nav>
 <!-- TOP ROW: REGISTRY & GRID EXPLORER -->
 <section class="grid grid-cols-1 lg:grid-cols-12 gap-8">
 <!-- SEARCH REGISTRY PANEL (TOP LEFT) -->
@@ -143,7 +143,7 @@
     <header class="p-6 border-b border-outline-variant/10 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <section>
             <h1 class="text-2xl font-black tracking-tighter uppercase text-on-surface">Live Deployments</h1>
-            <p class="text-on-surface-variant/60 text-[0.7rem] uppercase tracking-widest font-bold mt-1">Worker GPS & Active Tickets</p>
+            <p class="text-on-surface-variant/60 text-[0.7rem] uppercase tracking-widest font-bold mt-1">Logged Worker Tickets</p>
         </section>
         
         <fieldset class="flex bg-[#1B1B1B] p-1 border border-outline-variant/20 rounded-md">
@@ -182,7 +182,7 @@
 <section class="space-y-6">
     <h3 class="text-[0.7rem] uppercase font-bold tracking-[0.3em] text-primary border-b border-outline-variant/10 pb-2">Current Efficiency Rating</h3>
     <section class="flex items-end space-x-4">
-        <p id="efficiency-rate-text" class="text-6xl font-black tracking-tighter text-on-surface">0.0<span class="text-primary">%</span></p>
+        <p id="efficiency-rate-text" class="text-6xl font-black tracking-tighter text-on-surface">-.-<span class="text-primary">%</span></p>
         <aside class="pb-2">
             <span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">trending_up</span>
             <span class="text-[0.6rem] text-primary font-bold uppercase block">Active</span>
@@ -197,24 +197,10 @@
 </section>
 <!-- Recent Resolution History -->
 <section class="space-y-6">
-<h3 class="text-[0.7rem] uppercase font-bold tracking-[0.3em] text-primary border-b border-outline-variant/10 pb-2">Recent Resolution History</h3>
+<h3 class="text-[0.7rem] uppercase font-bold tracking-[0.3em] text-primary border-b border-outline-variant/10 pb-2">Recent Activity History</h3>
 <table class="w-full text-[0.7rem] uppercase font-bold tracking-wider">
 <tbody id="recent-history-body" class="divide-y divide-outline-variant/5">
-<tr>
-<td class="py-3 text-on-surface/40">Aug 24</td>
-<td class="py-3 text-on-surface">Grid Node 882 Repair</td>
-<td class="py-3 text-right text-primary">Resolved</td>
-</tr>
-<tr>
-<td class="py-3 text-on-surface/40">Aug 22</td>
-<td class="py-3 text-on-surface">Main Conduit Audit</td>
-<td class="py-3 text-right text-primary">Resolved</td>
-</tr>
-<tr>
-<td class="py-3 text-on-surface/40">Aug 21</td>
-<td class="py-3 text-on-surface">Emergency Flux Fix</td>
-<td class="py-3 text-right text-primary">Resolved</td>
-</tr>
+
 </tbody>
 </table>
 <button id="view-history-btn" class="w-full py-2 bg-[#0E0E0E] text-on-surface/40 hover:text-primary transition-colors text-[0.6rem] uppercase tracking-widest border border-outline-variant/10">View Full History</button>
@@ -227,18 +213,17 @@
 <article class="bg-[#1B1B1B] p-8 flex flex-col justify-between">
 <header>
 <h2 class="text-[0.75rem] uppercase font-bold tracking-[0.2em] text-primary mb-4">Task Acceptance Rate</h2>
-<p id="acceptance-rate-text" class="text-6xl font-black tracking-tighter text-on-surface">88.5<span class="text-primary">%</span></p>
+<p id="acceptance-rate-text" class="text-6xl font-black tracking-tighter text-on-surface">--.-<span class="text-primary">%</span></p>
 </header>
 <section class="mt-8 relative flex items-center justify-center">
-<!-- Pie Chart Style -->
-<svg class="w-48 h-48 transform -rotate-90">
-<circle cx="96" cy="96" fill="transparent" r="84" stroke="#353535" stroke-width="24"></circle>
-<circle id="acceptance-rate-circle" cx="96" cy="96" fill="transparent" r="84" stroke="#FF8C00" stroke-dasharray="527.78" stroke-dashoffset="60.69" stroke-linecap="butt" stroke-width="24"></circle>
-</svg>
-<section class="absolute flex flex-col items-center">
-<span class="material-symbols-outlined text-primary text-4xl" style="font-variation-settings: 'FILL' 1;">assignment_turned_in</span>
-<span class="text-[0.65rem] uppercase font-bold tracking-widest text-on-surface/40 mt-1">Acceptance</span>
-</section>
+    <svg class="w-48 h-48 transform -rotate-90">
+        <circle cx="96" cy="96" fill="transparent" r="84" stroke="#353535" stroke-width="24"></circle>
+        <circle id="acceptance-rate-circle" cx="96" cy="96" fill="transparent" r="84" stroke="#FF8C00" stroke-dasharray="527.78" stroke-dashoffset="527.78" stroke-linecap="butt" stroke-width="24"></circle>
+    </svg>
+    <section class="absolute flex flex-col items-center">
+        <span class="material-symbols-outlined text-primary text-4xl opacity-20" style="font-variation-settings: 'FILL' 1;">assignment_turned_in</span>
+        <span class="text-[0.65rem] uppercase font-bold tracking-widest text-on-surface/20 mt-1">Acceptance</span>
+    </section>
 </section>
 <footer class="mt-8 border-t border-outline-variant/10 pt-4 flex justify-between items-center text-[0.65rem] font-bold uppercase tracking-widest">
 <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-primary"></span>Accepted</span>
@@ -254,7 +239,7 @@
 </section>
 <aside class="text-right">
 <span class="block text-[0.6rem] uppercase font-bold tracking-widest text-on-surface/40">Current Period</span>
-<span id="current-period" class="text-primary font-black">JUL - AUG</span>
+<span id="current-period" class="text-primary font-black">----</span>
 </aside>
 </header>
 <section class="flex-grow flex flex-col space-y-6">

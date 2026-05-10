@@ -19,7 +19,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Update Header
-    document.querySelector('p.text-xs.font-bold').textContent = workerName || "Field Operative";
+    const nameEl = document.querySelector('p.text-xs.font-bold');
+    if (nameEl) nameEl.textContent = workerName || "Field Operative";
+    
+    const dropdownName = document.getElementById('dropdown-name');
+    if (dropdownName) dropdownName.textContent = workerName || "Field Operative";
 
     loadMyAssignedTasks(workerId);
 });
@@ -121,38 +125,6 @@ async function toggleCompletedTasks() {
 
 
 
-async function toggleCompletedTasks() {
-    const container = document.getElementById('completed-tasks-list');
-    const button = document.querySelector('footer button');
-    
-    if (completedVisible) {
-        container.innerHTML = '';
-        button.innerHTML = '<span class="material-symbols-outlined text-sm">history</span> Show Completed Tasks';
-        completedVisible = false;
-        return;
-    }
-
-    // Instead of fetching again, we use the data we already stored
-    if (archivedReports.length === 0) {
-        container.innerHTML = '<p class="text-[10px] text-center uppercase tracking-widest text-neutral-600 py-4">No completed operations found.</p>';
-    } else {
-        container.innerHTML = archivedReports.map(report => `
-            <div class="flex justify-between items-center p-4 bg-surface-container-high/20 border border-outline/10 rounded-xl mb-3">
-                <section>
-                    <p class="text-[10px] font-mono text-primary/60 opacity-50">#${report.ReportID}</p>
-                    <h4 class="text-sm font-bold text-on-surface">${report.Type}</h4>
-                </section>
-                <section class="text-right">
-                    <p class="text-[10px] font-black uppercase text-on-surface-variant">Archived</p>
-                    <p class="text-[9px] text-neutral-600">${report.DateFulfilled ? new Date(report.DateFulfilled).toLocaleDateString() : 'Finalized'}</p>
-                </section>
-            </div>
-        `).join('');
-    }
-
-    button.innerHTML = '<span class="material-symbols-outlined text-sm">expand_less</span> Hide Completed Tasks';
-    completedVisible = true;
-}
 //workers can accept tasks 
 async function acceptTask(reportId) {
     try {
@@ -327,7 +299,7 @@ async function showTaskDetails(reportId) {
         // Populate fields
         document.getElementById('detail-id').textContent = `Task Reference: #${report.ReportID}`;
         document.getElementById('detail-type').textContent = report.Type;
-        document.getElementById('detail-description').textContent = report.Description || "No additional briefing provided.";
+        document.getElementById('detail-description').textContent = report.Brief || "No additional briefing provided.";
         document.getElementById('detail-ward').textContent = `Ward ${report.WardID}`;
         document.getElementById('detail-status').textContent = report.Progress;
 
@@ -431,6 +403,40 @@ function renderPreviews(reportId) {
         reader.readAsDataURL(file);
     });
 }
+// ── Profile dropdown ──────────────────────────────────────────────────────────
+function toggleProfileDropdown() {
+    const dropdown = document.getElementById('profile-dropdown');
+    dropdown.classList.toggle('hidden');
+
+    // Close when clicking outside
+    if (!dropdown.classList.contains('hidden')) {
+        setTimeout(() => {
+            document.addEventListener('click', closeDropdownOutside, { once: true });
+        }, 0);
+    }
+}
+
+function closeDropdownOutside(e) {
+    const wrap = document.getElementById('profile-dropdown-wrap');
+    if (wrap && !wrap.contains(e.target)) {
+        document.getElementById('profile-dropdown').classList.add('hidden');
+    }
+}
+
+function openEditProfile() {
+    document.getElementById('profile-dropdown').classList.add('hidden');
+    if (window._profileModal) {
+        window._profileModal.open();
+    }
+}
+
+function logoutWorker() {
+    document.getElementById('profile-dropdown').classList.add('hidden');
+    if (!confirm('Are you sure you want to log out?')) return;
+    localStorage.clear();
+    window.location.href = '../Login/Worker_Login.html';
+}
+
 
 async function uploadTaskImages(reportId) {
     const filesToUpload = taskImages[reportId];

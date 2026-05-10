@@ -4,6 +4,13 @@
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <title>Groundwork - Public Dashboard</title>
+
+    <!-- Leaflet dependencies for interactive map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+    <!--  -->
+
     <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;700;900&amp;display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
@@ -79,6 +86,19 @@
                     <h2 id="wards-heading" class="text-[3.5rem] font-black tracking-tighter leading-none mb-2">Find a Ward</h2>
                     <p class="text-on-surface-variant max-w-xl font-body leading-relaxed">Select a region below to view an interactive map and all associated public reports.</p>
                 </header>
+
+                <!-- Add the Map Container in your <body> -->
+                <section class="col-span-12 bg-surface-container-low p-6 rounded-xl border border-white/5 shadow-xl">
+                    <header class="mb-4 flex justify-between items-center">
+                        <h3 class="text-sm font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                            <span class="material-symbols-outlined">map</span> 
+                            Pinpoint Location
+                        </h3>
+                        <span id="map-status" class="text-[10px] font-mono opacity-50 uppercase">Ready</span>
+                    </header>
+                    <div id="map-container" class="w-full rounded-lg border border-white/10 overflow-hidden" style="height: 350px; min-height: 350px;"></div>
+                </section>
+                <!--  -->
 
                 <form id="guest-ward-form" class="p-8 space-y-8 bg-surface-container-low border border-white/5 shadow-2xl rounded-xl">
                     
@@ -157,6 +177,6 @@
         </div>
     </dialog>
 
-    <script src="GuestDashboard.js"></script>
+    <script type="module" src="GuestDashboard.js"></script>
 </body>
 </html>

@@ -105,16 +105,47 @@
 </section>
 <section class="flex items-center gap-4">
     <div id="notif-shell" class="notif-shell"></div>
-    <button class="material-symbols-outlined text-neutral-400 hover:text-orange-500 transition-transform active:scale-95">settings</button>
     
-    <figure class="w-8 h-8 rounded-full overflow-hidden bg-surface-container-high border border-orange-500/30 hover:border-orange-500 cursor-pointer transition-all" 
-            onclick="window._profileModal.open()" 
-            title="Edit Admin Profile">
-        <img id="admin-profile-pic" 
-             alt="Admin Profile Avatar" 
-             src="https://lh3.googleusercontent.com/aida-public/AB6AXuAgc3M10u8mWqC-KcCYU3S-gy1pevh0zteIiTqeR9mLPZSfgNksMiu4wbb7OEyoCQLQ6qw6xbWUQAsaFSjk1jQcUdbn74p5kaUTy4BAIy-Qjmi46qsP4ohclkIiC3jy1pLRZtJvYLUj3fdTmnq7S-xPYVOHqNBR5xmFuZeI4zpYdCfoTovBq-jXg-7UPp3hdcjgmzjUhFPx_9kfHalx9iLwUIQa31BUugvoP6lD701jG1CnoZZ-IfYGrd8a3nv6aJpLQrn0GJZe0Iu2"
-             class="w-full h-full object-cover">
-    </figure>
+    <!-- Admin profile dropdown -->
+    <div class="relative" id="admin-profile-dropdown-wrap">
+        <button onclick="toggleAdminDropdown()" class="group">
+            <figure class="w-8 h-8 rounded-full overflow-hidden bg-surface-container-high border border-orange-500/30 hover:border-orange-500 cursor-pointer transition-all">
+                <img id="admin-profile-pic" 
+                     alt="Admin Profile Avatar" 
+                     src="https://lh3.googleusercontent.com/aida-public/AB6AXuAgc3M10u8mWqC-KcCYU3S-gy1pevh0zteIiTqeR9mLPZSfgNksMiu4wbb7OEyoCQLQ6qw6xbWUQAsaFSjk1jQcUdbn74p5kaUTy4BAIy-Qjmi46qsP4ohclkIiC3jy1pLRZtJvYLUj3fdTmnq7S-xPYVOHqNBR5xmFuZeI4zpYdCfoTovBq-jXg-7UPp3hdcjgmzjUhFPx_9kfHalx9iLwUIQa31BUugvoP6lD701jG1CnoZZ-IfYGrd8a3nv6aJpLQrn0GJZe0Iu2"
+                     class="w-full h-full object-cover">
+            </figure>
+        </button>
+
+        <div id="admin-profile-dropdown"
+             class="hidden absolute right-0 top-full mt-3 w-52 bg-[#1a1a1a] border border-white/08 rounded-xl shadow-2xl overflow-hidden z-[200]"
+             style="border-color: rgba(255,255,255,0.08);">
+            
+            <div class="px-4 py-3 border-b" style="border-color: rgba(255,255,255,0.06);">
+                <p class="text-xs font-bold text-on-surface">Admin</p>
+                <p class="text-[10px] text-neutral-500 uppercase tracking-wider mt-0.5">Civic Ledger</p>
+            </div>
+
+            <ul class="py-1 list-none m-0 p-0">
+                <li>
+                    <button onclick="openAdminProfile()"
+                            class="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold uppercase tracking-widest text-neutral-400 hover:text-orange-400 hover:bg-white/4 transition-all text-left"
+                            style="background:none; border:none; cursor:pointer;">
+                        <span class="material-symbols-outlined text-base">manage_accounts</span>
+                        Edit Profile
+                    </button>
+                </li>
+                <li class="border-t" style="border-color: rgba(255,255,255,0.06);">
+                    <button onclick="logoutAdmin()"
+                            class="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold uppercase tracking-widest text-red-400 hover:text-red-300 hover:bg-red-900/10 transition-all text-left"
+                            style="background:none; border:none; cursor:pointer;">
+                        <span class="material-symbols-outlined text-base">logout</span>
+                        Logout
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </div>
 </section>
 </figure>
 </section>
@@ -246,11 +277,25 @@
 </aside>
 
 <article class="md:col-span-12 bg-surface-container-low p-8 mt-6">
-    <header class="flex justify-between items-center mb-10">
+    <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <hgroup>
             <h2 class="text-2xl font-bold tracking-tight mb-1">Active Assignment Ledger</h2>
             <p class="text-xs uppercase tracking-widest text-neutral-400">Personnel-linked tasks for performance oversight</p>
         </hgroup>
+        <!-- Progress filter -->
+        <select id="assignment-filter" 
+                onchange="filterAssignments()"
+                class="bg-surface-container-highest text-on-surface text-[10px] border border-outline/20 rounded-lg px-3 py-2 uppercase font-black cursor-pointer outline-none">
+            <option value="all">All Progress</option>
+            <option value="assigned">Assigned</option>
+            <option value="in progress">In Progress</option>
+            <option value="25%">25% — Excavation</option>
+            <option value="50%">50% — Active Repairs</option>
+            <option value="75%">75% — Quality Testing</option>
+            <option value="resolved">Resolved</option>
+            <option value="fixed">Fixed</option>
+            <option value="declined">Declined</option>
+        </select>
     </header>
     
     <section class="overflow-x-auto">
@@ -261,14 +306,71 @@
                     <th class="p-4">Operative</th>
                     <th class="p-4">Task Type</th>
                     <th class="p-4">Current Progress</th>
-                    <th class="p-4 text-right">Contact</th>
+                    <th class="p-4 text-right">Actions</th>
                 </tr>
             </thead>
-            <tbody id="assigned-tasks-body">
-                </tbody>
+            <tbody id="assigned-tasks-body"></tbody>
         </table>
+        <p id="no-filter-results" class="hidden text-center text-[10px] uppercase tracking-widest text-neutral-600 py-10 font-black">
+            No assignments match this filter
+        </p>
     </section>
 </article>
+
+<!-- Assignment Detail Modal -->
+<aside id="assignment-detail-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/90 backdrop-blur-md">
+    <article class="bg-surface-container-low border border-outline/30 w-full max-w-2xl p-10 rounded-3xl shadow-2xl overflow-y-auto max-h-[90vh]">
+        <header class="flex justify-between items-start mb-8">
+            <hgroup>
+                <small id="asgn-report-id" class="text-xs font-mono text-primary-container uppercase tracking-widest block mb-1"></small>
+                <h2 id="asgn-type" class="text-4xl font-black tracking-tighter text-on-surface"></h2>
+            </hgroup>
+            <button onclick="closeAssignmentDetail()" 
+                    class="material-symbols-outlined hover:text-primary transition-colors text-neutral-400 p-2">close</button>
+        </header>
+
+        <section class="grid grid-cols-2 gap-6 mb-8">
+            <div class="bg-surface-container-high p-4 rounded-xl">
+                <p class="text-[9px] font-black uppercase tracking-widest text-neutral-500 mb-1">Operative</p>
+                <p id="asgn-worker" class="text-sm font-bold text-on-surface"></p>
+                <p id="asgn-worker-id" class="text-[10px] text-neutral-500 mt-0.5"></p>
+            </div>
+            <div class="bg-surface-container-high p-4 rounded-xl">
+                <p class="text-[9px] font-black uppercase tracking-widest text-neutral-500 mb-1">Current Progress</p>
+                <p id="asgn-progress" class="text-sm font-bold text-primary"></p>
+            </div>
+            <div class="bg-surface-container-high p-4 rounded-xl">
+                <p class="text-[9px] font-black uppercase tracking-widest text-neutral-500 mb-1">Ward</p>
+                <p id="asgn-ward" class="text-sm font-bold text-on-surface"></p>
+            </div>
+            <div class="bg-surface-container-high p-4 rounded-xl">
+                <p class="text-[9px] font-black uppercase tracking-widest text-neutral-500 mb-1">Priority</p>
+                <p id="asgn-priority" class="text-sm font-bold text-on-surface"></p>
+            </div>
+        </section>
+
+        <section class="mb-8">
+            <p class="text-[9px] font-black uppercase tracking-widest text-neutral-500 mb-2">Description</p>
+            <p id="asgn-description" class="text-sm text-neutral-300 leading-relaxed bg-surface-container-high p-4 rounded-xl"></p>
+        </section>
+
+        <section id="asgn-images-section" class="mb-8 hidden">
+            <p class="text-[9px] font-black uppercase tracking-widest text-neutral-500 mb-3">Proof of Work</p>
+            <div id="asgn-images-grid" class="grid grid-cols-3 gap-3"></div>
+        </section>
+
+        <footer class="flex gap-3 pt-6 border-t border-outline/20">
+            <a id="asgn-email-btn" href="#" 
+               class="flex-1 bg-surface-container-high text-on-surface px-4 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 hover:bg-surface-container-highest transition-all">
+                <span class="material-symbols-outlined text-sm">mail</span> Email Operative
+            </a>
+            <button onclick="closeAssignmentDetail()" 
+                    class="flex-1 bg-surface-container-high text-neutral-400 px-4 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-surface-container-highest transition-all">
+                Close
+            </button>
+        </footer>
+    </article>
+</aside>
 <script src="notifications-ui.js" defer></script>
 <script src="profile-modal.js" defer></script>
 </body></html>

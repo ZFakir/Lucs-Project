@@ -17,8 +17,16 @@ router.get('/report/:reportId', async (req, res) => {
         if (!images || images.length === 0) {
             return res.status(404).json({ message: 'No images found for this report.' });
         }
-        
-        res.json(images);
+
+        const formattedImages = images.map(img => {
+            const imgData = img.toJSON();
+
+            if (imgData.Image) {
+                imgData.base64 = Buffer.from(imgData.Image).toString('base64');
+            }
+        return imgData;
+        });
+        res.json(formattedImages);
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: err.message });
@@ -48,7 +56,7 @@ router.get('/:id', async (req, res) => {
 router.post('/report/:reportId', async (req, res) => {
     try {
         const reportId = req.params.reportId;
-        
+        const {imageBase64} = req.body;
         // Ensure the report actually exists before attaching an image to it
         const reportExists = await Report.findByPk(reportId);
         if (!reportExists) {

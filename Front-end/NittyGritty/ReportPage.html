@@ -4,10 +4,11 @@
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
 
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>The Civic Ledger - Report Pothole</title>
+<title>GroundWorks. Report New Issue</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;600;700;900&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
@@ -136,11 +137,18 @@
 <!-- Map Selection Section -->
 <section class="space-y-4">
   <header class="flex justify-between items-end">
-    <h2 class="text-xs font-bold uppercase tracking-[0.2em] text-primary">01. Location Protocol</h2>
+    <h2 class="text-xs font-bold uppercase tracking-[0.2em] text-primary">Place the marker on the site of the issue</h2>
   </header>
 
   <article id="map" class="relative w-full aspect-video rounded-xl overflow-hidden bg-surface-container-lowest border-0 ring-1 ring-outline-variant/15 z-10">
     </article>
+            <section class="p-4 bg-surface-container-highest rounded-lg border border-outline-variant/30 mt-6">
+            <label class="block text-[10px] font-bold uppercase tracking-widest text-primary mb-2">Detected Geolocation</label>
+            <p id="location-text-display" class="text-sm font-medium text-on-surface">Drop the pin on the map to detect location...</p>
+            
+            <input type="hidden" id="detected-ward-id" name="WardID" value="">
+            <input type="hidden" id="detected-muni-id" name="MunicipalityID" value="">
+        </section>
 </section>
 <!-- Media Capture Section -->
 
@@ -154,7 +162,7 @@
 </section>
  -->
 <section class="space-y-4">
-<h2 class="text-xs font-bold uppercase tracking-[0.2em] text-primary">02. Visual Evidence</h2>
+<h2 class="text-xs font-bold uppercase tracking-[0.2em] text-primary">Attach an image of the issue</h2>
 <article class="grid grid-cols-2 gap-4">
 <section class="flex flex-col items-center justify-center aspect-square bg-surface-container-low rounded-xl border-2 border-dashed border-outline-variant/30 hover:border-primary/50 hover:bg-surface-container transition-all group">
   <input type="file" id="imageInput" accept="image/*" multiple class="hidden" />
@@ -162,7 +170,10 @@
     <span class="material-symbols-outlined text-3xl mb-2 text-on-surface-variant group-hover:text-primary" data-icon="add_a_photo">add_a_photo</span>
     <span class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Capture</span>
     </label>
+
+    
   </section>
+  <output id="imagePreview" class="grid grid-cols-2 gap-4 mt-4"></output> 
 
 <!-- /* Below is for pothole image */ -->
 
@@ -177,94 +188,38 @@
 </section>
 <!-- Form Submission -->
 <form id="pothole_report_form" class="space-y-6">
-<fieldset class="space-y-4">
-<legend class="text-xs font-bold uppercase tracking-[0.2em] text-primary mb-4">03. Ledger Details</legend>
-<section class="space-y-2">
-<label class="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant ml-1" for="pothole-type">Infrastructure Hazard Type</label>
+<form id="pothole_report_form" class="space-y-6">
+    <fieldset class="space-y-4">
+        <legend class="text-xs font-bold uppercase tracking-[0.2em] text-primary mb-4">Additional information</legend>
+        
+        <section class="space-y-2">
+            <label class="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant ml-1" for="pothole-type">Problem Type</label>
 <select class="w-full bg-surface-container-lowest border-0 border-b-2 border-outline-variant/30 focus:border-primary-container focus:ring-0 text-on-surface font-headline py-3" id="pothole-type">
-<option>Pothole</option>
-<option>Sinkhole</option>
-<option>Road Crack</option>
-<option>Unfinished Repair</option>
-<option>Water Leak</option>
-<option>Street Light</option>
-<option>Illegal Dumping</option>
-<option>Electricity</option>
-<option>Sanitation</option>
-<option>Other</option>
+    <option value="" disabled selected>Select an issue...</option>
+    <option value="Pothole">Pothole</option>
+    <option value="Sinkhole">Sinkhole</option>
+    <option value="Road Crack">Road Crack</option>
+    <option value="Unfinished Repair">Unfinished Repair</option>
+    <option value="Water Leak">Water Leak</option>
+    <option value="Street Light">Street Light</option>
+    <option value="Illegal Dumping">Illegal Dumping</option>
+    <option value="Electricity">Electricity</option>
+    <option value="Sanitation">Sanitation</option>
+    <option value="Other">Other</option>
 </select>
-</section>
-<section class="space-y-2">
-<label class="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant ml-1" for="frequency">Recurrence Status</label>
-<select class="w-full bg-surface-container-lowest border-0 border-b-2 border-outline-variant/30 focus:border-primary-container focus:ring-0 text-on-surface font-headline py-3" id="frequency">
-    <option value="" disabled selected>Select frequency</option>
-    <option value="1">First time observed</option>
-    <option value="2">Occurs occasionally</option>
-    <option value="3">Persistent issue</option>
-</select>
-</section>
-<section class="space-y-2">
-<label class="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant ml-1" for="description">Situation Briefing</label>
-<textarea class="w-full bg-surface-container-lowest border-0 border-b-2 border-outline-variant/30 focus:border-primary-container focus:ring-0 text-on-surface font-headline py-3 placeholder:text-on-surface-variant/30" id="description" placeholder="Describe the depth, surrounding hazards, and urgency..." rows="3"></textarea>
-</section>
+        </section>
 
-<!-- ─────────────────────────────────────────────────────────────────
-     WARD SELECTOR
-     ───────────────────────────────────────────────────────────────── -->
- 
-<!-- Province -->
-<section class="space-y-2">
-  <label class="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant ml-1"
-         for="province-select">Province</label>
-  <select
-    class="w-full bg-surface-container-lowest border-0 border-b-2 border-outline-variant/30
-           focus:border-primary-container focus:ring-0 text-on-surface font-headline py-3"
-    id="province-select"
-    name="province"
-  >
-    <option value="" disabled selected>Loading wards…</option>
-  </select>
-</section>
- 
-<!-- Municipality -->
-<section class="space-y-2">
-  <label class="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant ml-1"
-         for="municipality-select">Municipality</label>
-  <select
-    class="w-full bg-surface-container-lowest border-0 border-b-2 border-outline-variant/30
-           focus:border-primary-container focus:ring-0 text-on-surface font-headline py-3
-           disabled:opacity-40 disabled:cursor-not-allowed"
-    id="municipality-select"
-    name="municipality"
-    disabled
-  >
-    <option value="" disabled selected>Select a municipality…</option>
-  </select>
-</section>
- 
-<!-- Ward -->
-<section class="space-y-2">
-  <label class="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant ml-1"
-         for="ward-select">Ward</label>
-  <select
-    class="w-full bg-surface-container-lowest border-0 border-b-2 border-outline-variant/30
-           focus:border-primary-container focus:ring-0 text-on-surface font-headline py-3
-           disabled:opacity-40 disabled:cursor-not-allowed"
-    id="ward-select"
-    name="wardId"
-    disabled
-  >
-    <option value="" disabled selected>Select a ward…</option>
-  </select>
-</section>
+        <section class="space-y-2">
+            <label class="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant ml-1" for="description">Description</label>
+            <textarea class="w-full bg-surface-container-lowest border-0 border-b-2 border-outline-variant/30 focus:border-primary-container focus:ring-0 text-on-surface font-headline py-3 placeholder:text-on-surface-variant/30" id="description" placeholder="Describe the issue..." rows="3"></textarea>
+        </section>
 
-<!--  ============================================================= -->
+  
 
-</fieldset>
+
+    </fieldset>
 <section class="p-4 bg-surface-container-low rounded-xl space-y-3">
 <aside class="flex justify-between items-center">
-<label class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Resident UID</label>
-<span class="text-xs font-mono text-primary">CIV-990-221X</span>
 </aside>
 <aside class="flex justify-between items-center">
 <label class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Entry Date</label>
@@ -278,95 +233,8 @@
 <output id="imagePreview" class="grid grid-cols-2 gap-4 mt-4"></output>           
 </form>
 </main>
-<footer class="h-12"></footer>
-
-<script src="js/ReportPage.js" defer></script>
-<!-- <script src="js/MapComponent.js" defer></script> -->
-<script type="module">
-    import { initWardSelector } from './js/wardSelector.js';
-
-  initWardSelector();
- 
-    // Initialise the cascading dropdowns once the DOM is fully loaded
-    document.addEventListener('ward:selected', (e) => {
-        console.log('Ward chosen:', e.detail);
-    });
-
-    // Initialise map without a setView initially
-    const map = L.map('map');
-
-    // Add your tiles as before
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-    }).addTo(map);
-
-    // Set default position to device location
-    map.locate({setView: true, maxZoom: 16});
-
-
-    let currentLat = null;
-    let currentLng = null;
-    // Handle successful location finding
-    map.on('locationfound', (e) => {
-        // Store location data
-        currentLat = e.latlng.lat;
-        currentLng = e.latlng.lng;
-        // Add a marker at the user's location
-        L.marker(e.latlng).addTo(map).bindPopup("Current Location").openPopup();
-    });
-
-    // Handle location error (e.g., user denied permission)
-    map.on('locationerror', (e) => {
-        console.warn("Location access denied. Defaulting to national view.");
-        map.setView([-30.5595, 22.9375], 5);
-    });
-
-    // Gets current date + updates element
-    const dateElement = document.getElementById('current-date');
-    const now = new Date();
-  
-    const options = { month: 'short', day: '2-digit', year: 'numeric' };
-    const formattedDate = now.toLocaleDateString('en-UK', options).toUpperCase();
-  
-    dateElement.textContent = formattedDate;
-
-    // ============ Building actual report data ============
-
-    document.addEventListener('DOMContentLoaded', () => {
-      const reportForm = document.getElementById('pothole-report-form');
-
-      reportForm.addEventListener('submit', (event) => {
-        // Prevent the page from reloading
-        event.preventDefault();
-
-        // Use FormData to grab all named inputs at once
-        const formData = new FormData(reportForm);
-        
-        // Combine standard fields with the cascading dropdown values
-        // const reportData = {
-        //   hazardType: formData.get('hazardType'),
-        //   recurrence: formData.get('recurrence'),
-        //   briefing: formData.get('briefing'),
-        //   province: formData.get('province'),
-        //   municipality: formData.get('municipality'),
-        //   wardId: formData.get('wardId'),
-        //   latitude: currentLat,
-        //   longitude: currentLng,
-        //   timestamp: new Date().toISOString(),
-        //   // Add coordinates from your map marker if available
-        //   location: marker.getLatLng() 
-        // };
-
-        // Store locally (Great for PWA offline capability)
-        localStorage.setItem('lastSavedReport', JSON.stringify(reportData));
-        
-        console.log('Report Data Stored:', reportData);
-        alert('Report saved locally!');
-      });
-});
-
-    // =====================================================
-</script> 
-
-</body></html>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script> <script src="js/ReportPage.js" defer></script>
+</body>
+</html>

@@ -353,46 +353,175 @@ async function loadWorkerDropdown() {
     }
 }
 
+// Store all allocations globally for filtering
+let allAllocations = [];
+
 async function loadAssignedTasks() {
     try {
         const response = await fetch('/api/reports/admin/tracker');
-        const allocations = await response.json();
-        
-        const tableBody = document.getElementById('assigned-tasks-body');
-        if (!tableBody) return;
-        tableBody.innerHTML = '';
-
-        if (allocations.length === 0) {
-            tableBody.innerHTML = `<tr><td colspan="5" class="p-10 text-center text-[10px] uppercase text-neutral-600">No active field assignments.</td></tr>`;
-            return;
-        }
-
-        allocations.forEach(item => {
-            // item.Report and item.MunicipalWorker come from the Sequelize 'include'
-            const row = `
-            <tr class="border-b border-outline/10 hover:bg-white/5 transition-colors">
-                <td class="p-4 font-mono text-xs text-primary-container">#${item.ReportID}</td>
-                <td class="p-4">
-                    <div class="flex flex-col">
-                        <span class="font-bold text-sm text-on-surface">${item.MunicipalWorker.FirstName} ${item.MunicipalWorker.LastName}</span>
-                        <span class="text-[9px] uppercase text-neutral-500">ID: ${item.EmployeeID}</span>
-                    </div>
-                </td>
-                <td class="p-4 font-medium text-xs">${item.Report.Type}</td>
-                <td class="p-4">
-                    <span class="px-2 py-1 rounded bg-surface-container-highest text-[10px] font-black uppercase text-primary border border-primary/20">
-                        ${item.Report.Progress || 'In Transit'}
-                    </span>
-                </td>
-                <td class="p-4 text-right">
-                    <a href="mailto:${item.MunicipalWorker.Email}" class="material-symbols-outlined text-neutral-500 hover:text-primary transition-colors">mail</a>
-                </td>
-            </tr>`;
-            tableBody.insertAdjacentHTML('beforeend', row);
-        });
+        allAllocations = await response.json();
+        renderAssignmentRows(allAllocations);
     } catch (err) {
         console.error("Error loading tracker:", err);
     }
+}
+
+function renderAssignmentRows(allocations) {
+    const tableBody = document.getElementById('assigned-tasks-body');
+    const noResults = document.getElementById('no-filter-results');
+    if (!tableBody) return;
+    tableBody.innerHTML = '';
+
+    if (allocations.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="5" class="p-10 text-center text-[10px] uppercase text-neutral-600">No active field assignments.</td></tr>`;
+        if (noResults) noResults.classList.add('hidden');
+        return;
+    }
+
+    const progressColors = {
+        'assigned':    'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
+        'in progress': 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+        'resolved':    'bg-green-500/10 text-green-400 border-green-500/20',
+        'fixed':       'bg-green-500/10 text-green-400 border-green-500/20',
+        'declined':    'bg-red-500/10 text-red-400 border-red-500/20',
+    };
+
+    allocations.forEach(item => {
+        const progressLower = (item.Report.Progress || '').toLowerCase();
+        const colorClass = Object.entries(progressColors).find(([key]) => progressLower.includes(key))?.[1]
+            || 'bg-surface-container-highest text-primary border-primary/20';
+
+        const row = `
+        <tr class="border-b border-outline/10 hover:bg-white/5 transition-colors cursor-pointer group"
+            onclick="openAssignmentDetail(${item.ReportID}, ${item.EmployeeID})">
+            <td class="p-4 font-mono text-xs text-primary-container">#${item.ReportID}</td>
+            <td class="p-4">
+                <div class="flex flex-col">
+                    <span class="font-bold text-sm text-on-surface">${item.MunicipalWorker.FirstName} ${item.MunicipalWorker.LastName}</span>
+                    <span class="text-[9px] uppercase text-neutral-500">ID: ${item.EmployeeID}</span>
+                </div>
+            </td>
+            <td class="p-4 font-medium text-xs text-neutral-300">${item.Report.Type}</td>
+            <td class="p-4">
+                <span class="px-2 py-1 rounded border text-[10px] font-black uppercase ${colorClass}">
+                    ${item.Report.Progress || 'In Transit'}
+                </span>
+            </td>
+            <td class="p-4 text-right">
+                <a href="mailto:${item.MunicipalWorker.Email}" 
+                   onclick="event.stopPropagation()"
+                   class="material-symbols-outlined text-neutral-500 hover:text-primary transition-colors">mail</a>
+            </td>
+        </tr>`;
+        tableBody.insertAdjacentHTML('beforeend', row);
+    });
+
+    if (noResults) noResults.classList.add('hidden');
+}
+
+function filterAssignments() {
+    const filter = document.getElementById('assignment-filter').value.toLowerCase();
+    if (filter === 'all') {
+        renderAssignmentRows(allAllocations);
+        return;
+    }
+    const filtered = allAllocations.filter(item =>
+        (item.Report.Progress || '').toLowerCase().includes(filter)
+    );
+    if (filtered.length === 0) {
+        document.getElementById('assigned-tasks-body').innerHTML = '';
+        document.getElementById('no-filter-results').classList.remove('hidden');
+    } else {
+        document.getElementById('no-filter-results').classList.add('hidden');
+        renderAssignmentRows(filtered);
+    }
+}
+
+async function openAssignmentDetail(reportId, employeeId) {
+    document.getElementById('assignment-detail-modal').classList.remove('hidden');
+
+    // Set loading state
+    document.getElementById('asgn-type').textContent = 'Loading...';
+    document.getElementById('asgn-description').textContent = '—';
+
+    try {
+        // Fetch report details and images in parallel
+        const [reportRes, imagesRes, workerRes] = await Promise.all([
+            fetch(`/api/reports/${reportId}`),
+            fetch(`/api/report-images/report/${reportId}`),
+            fetch(`/api/workers/${employeeId}/profile`)
+        ]);
+
+        const report = await reportRes.json();
+        const images = await imagesRes.json();
+        const worker = await workerRes.json();
+
+        const priorityMap = { 1: '🔴 Critical', 2: '🟠 High', 3: '🔵 Routine' };
+
+        // Populate fields
+        document.getElementById('asgn-report-id').textContent = `Report #${report.ReportID}`;
+        document.getElementById('asgn-type').textContent = report.Type;
+        document.getElementById('asgn-worker').textContent = `${worker.FirstName} ${worker.LastName}`;
+        document.getElementById('asgn-worker-id').textContent = `Employee ID: ${employeeId}`;
+        document.getElementById('asgn-progress').textContent = report.Progress || 'Pending';
+        document.getElementById('asgn-ward').textContent = `Ward ${report.WardID || 'N/A'}`;
+        document.getElementById('asgn-priority').textContent = priorityMap[report.Priority] || '🔵 Routine';
+        document.getElementById('asgn-description').textContent = report.Description || 'No description provided.';
+        document.getElementById('asgn-email-btn').href = `mailto:${worker.Email}`;
+
+        // Images
+        const imagesSection = document.getElementById('asgn-images-section');
+        const imagesGrid = document.getElementById('asgn-images-grid');
+        if (images.length > 0) {
+            imagesSection.classList.remove('hidden');
+            imagesGrid.innerHTML = images.map(img => `
+                <figure class="aspect-square rounded-lg overflow-hidden border border-outline/20 cursor-pointer m-0"
+                        onclick="window._notifModule && window._notifModule.openImageFullscreen('data:${img.Type};base64,${img.base64}')">
+                    <img src="data:${img.Type};base64,${img.base64}" 
+                         class="w-full h-full object-cover hover:scale-105 transition-transform" 
+                         alt="Proof of work"/>
+                </figure>`).join('');
+        } else {
+            imagesSection.classList.add('hidden');
+        }
+
+    } catch (err) {
+        console.error('Failed to load assignment details:', err);
+        document.getElementById('asgn-type').textContent = 'Error loading details';
+    }
+}
+
+function closeAssignmentDetail() {
+    document.getElementById('assignment-detail-modal').classList.add('hidden');
+}
+
+function toggleAdminDropdown() {
+    const dropdown = document.getElementById('admin-profile-dropdown');
+    dropdown.classList.toggle('hidden');
+    if (!dropdown.classList.contains('hidden')) {
+        setTimeout(() => {
+            document.addEventListener('click', closeAdminDropdownOutside, { once: true });
+        }, 0);
+    }
+}
+
+function closeAdminDropdownOutside(e) {
+    const wrap = document.getElementById('admin-profile-dropdown-wrap');
+    if (wrap && !wrap.contains(e.target)) {
+        document.getElementById('admin-profile-dropdown').classList.add('hidden');
+    }
+}
+
+function openAdminProfile() {
+    document.getElementById('admin-profile-dropdown').classList.add('hidden');
+    if (window._profileModal) window._profileModal.open();
+}
+
+function logoutAdmin() {
+    document.getElementById('admin-profile-dropdown').classList.add('hidden');
+    if (!confirm('Are you sure you want to log out?')) return;
+    localStorage.clear();
+    window.location.href = '../Login/Login.html';
 }
 
 // Handles the actual assignment submission

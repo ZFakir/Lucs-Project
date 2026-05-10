@@ -157,32 +157,24 @@ async function openIssueModal(reportId) {
 
     activeReportId = reportId;
 
-    let fetchedImages = [];
-    try {
-        const response = await fetch(`/api/reports/report/${reportId}`);
-        if (response.ok) {
-            const imgData = await response.json();
-            fetchedImages = imgData.map(img => `data:${img.Type || 'image/jpeg'};base64,${img.base64}`);
-        }
-    } catch (error) {
-        console.error('Failed to fetch images for report:', error);
-    }
+    // 🚨 1. We removed the manual image fetch! CivicModal handles it now.
 
-    // 🚨 Update: Map data including the real Municipality Name
     const modalData = {
+        id: report.ReportID, // 🚨 2. THIS IS REQUIRED: Tells CivicModal what to fetch
         type: report.Type,
-        description: report.Brief || report.Progress || 'No description provided.',
+        description: report.Brief ||'No description provided.',
         date: report.CreatedAt,
         status: report.Progress || report.Status,
         ward: report.WardID,
-        municipality: currentMuniName.toUpperCase(), // 🚨 Fixes the "N/A" bug
-        images: fetchedImages
+        municipality: currentMuniName.toUpperCase() 
     };
 
-    issueModal.open(modalData);
+    // 🚨 4. We added 'await' because issueModal.open is now an asynchronous function
+    await issueModal.open(modalData);
+    
+    // Inject the bump button after the modal has rendered
     injectBumpButton(report);
 }
-
 // --- Dynamic Bump Button Logic ---
 function injectBumpButton(report) {
     const modalMain = document.querySelector(`#${issueModal.modalId} main`);

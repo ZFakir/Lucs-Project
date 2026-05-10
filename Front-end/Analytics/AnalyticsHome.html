@@ -1,19 +1,19 @@
 <!DOCTYPE html>
-
-<html class="dark" lang="en"><head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<nav id="dynamic-nav" class="flex items-center text-[0.65rem] font-bold uppercase tracking-widest text-on-surface/40 -mb-4">
-    <a id="home-link" href="ResidentHome.html" class="flex items-center hover:text-primary transition-colors cursor-pointer group">
-        <span class="material-symbols-outlined mr-2 text-lg group-hover:-translate-x-1 transition-transform">arrow_back</span>
-        <span id="home-link-text">Return to Dashboard</span>
-    </a>
-</nav>
-<title>CIVIC LEDGER | Operational Health</title>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,100..900;1,100..900&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<script id="tailwind-config">
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <nav id="dynamic-nav" class="flex items-center text-base font-bold uppercase tracking-widest text-on-surface/40 px-8 pt-8 -mb-4">
+        <a id="home-link" href="ResidentHome.html" class="flex items-center hover:text-primary transition-colors cursor-pointer group">
+            <span class="material-symbols-outlined mr-2 text-lg group-hover:-translate-x-1 transition-transform">arrow_back</span>
+            <span id="home-link-text">Return to Dashboard</span>
+        </a>
+    </nav>
+    <title>CIVIC LEDGER | Operational Health</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,100..900;1,100..900&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
         tailwind.config = {
             darkMode: "class",
             theme: {
@@ -66,194 +66,130 @@
                         "tertiary-fixed": "#c7e7ff",
                         "surface": "#131313",
                         "inverse-on-surface": "#303030"
-                    },
-                    "borderRadius": {
-                        "DEFAULT": "0.5rem",
-                        "lg": "0.5rem",
-                        "xl": "0.75rem",
-                        "full": "9999px"
-                    },
-                    "fontFamily": {
-                        "headline": ["Public Sans", "sans-serif"],
-                        "body": ["Public Sans", "sans-serif"],
-                        "label": ["Public Sans", "sans-serif"]
                     }
                 },
             },
         }
     </script>
-<style>
+    <style>
         body { font-family: 'Public Sans', sans-serif; background-color: #000000; color: #E2E2E2; }
         .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
     </style>
 </head>
 <body class="min-h-screen overflow-x-hidden selection:bg-primary-container selection:text-on-primary bg-black">
 <main class="min-h-screen">
-<header class="px-8 py-16">
-<h1 class="text-6xl md:text-8xl font-black tracking-tighter text-on-surface mb-4 font-headline uppercase">Operational Health</h1>
-<p class="text-neutral-500 font-body text-xl max-w-3xl">Real-time telemetry from the municipal grid. All data points are verified through the decentralized ledger protocol.</p>
-</header>
-<section class="px-8 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 pb-12">
-
-<!-- Request Volume -->
-<article onclick="window.location.href='ReqVol.html'" class="bg-surface-container-low p-8 rounded-lg group cursor-pointer hover:bg-surface-container-high transition-all duration-300 flex flex-col h-full relative overflow-hidden">
-    <header class="flex justify-between items-start mb-12">
-        <section>
-            <span class="text-[10px] font-bold uppercase tracking-widest text-primary-container mb-4 block">Metric Alpha</span>
-            <h2 class="text-3xl font-black tracking-tight text-on-surface font-headline leading-none">Request Volume &amp; Resolution</h2>
-        </section>
-        <span class="material-symbols-outlined text-primary-container text-4xl group-hover:scale-110 transition-transform">analytics</span>
+    <header class="px-8 py-16">
+        <h1 class="text-6xl md:text-8xl font-black tracking-tighter text-on-surface mb-4 font-headline uppercase">Operational Health</h1>
+        <p class="text-neutral-500 font-body text-xl max-w-3xl">Real-time telemetry from the municipal grid. All data points are verified through the decentralized ledger protocol.</p>
     </header>
 
-    <section class="flex-1 flex items-end gap-2 mb-8 h-64">
-        <figure class="flex-1 bg-surface-container-highest rounded-sm h-[40%] group-hover:bg-primary-container/20 transition-colors"></figure>
-        <figure class="flex-1 bg-surface-container-highest rounded-sm h-[65%] group-hover:bg-primary-container/40 transition-colors"></figure>
-        <figure class="flex-1 bg-primary-container rounded-sm h-[90%]"></figure>
-        <figure class="flex-1 bg-surface-container-highest rounded-sm h-[55%] group-hover:bg-primary-container/40 transition-colors"></figure>
-        <figure class="flex-1 bg-surface-container-highest rounded-sm h-[75%] group-hover:bg-primary-container/20 transition-colors"></figure>
-    </section>
+    <section class="px-8 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 pb-12">
 
-    <footer class="flex justify-between items-center mt-auto border-t border-white/5 pt-6">
-        <section>
-            <p id="total-active-count" class="text-3xl font-black tracking-tighter text-on-surface">1,284</p>
-            <p class="text-[10px] font-bold uppercase tracking-widest text-neutral-500">Active requests</p>
-        </section>
-        <nav class="flex items-center gap-2 text-primary-container font-bold text-xs uppercase tracking-widest group-hover:gap-4 transition-all">
-            View Report
-            <span class="material-symbols-outlined text-sm">arrow_forward</span>
-        </nav>
-    </footer>
-</article>
-<!-- Worker Performance -->
-<article onclick="window.location.href='WorkerPerform.html'" class="bg-surface-container-low p-8 rounded-lg group cursor-pointer hover:bg-surface-container-high transition-all duration-300 flex flex-col h-full">
-<header class="flex justify-between items-start mb-12">
-<section>
-<span class="text-[10px] font-bold uppercase tracking-widest text-primary-container mb-4 block">Metric Beta</span>
-<h2 class="text-3xl font-black tracking-tight text-on-surface font-headline leading-none">Worker Performance</h2>
-</section>
-<span class="material-symbols-outlined text-primary-container text-4xl group-hover:scale-110 transition-transform">engineering</span>
-</header>
-<section class="flex-1 flex flex-col justify-center gap-6 mb-8">
-<section class="flex justify-between items-end border-b border-white/5 pb-4">
-<p class="text-5xl font-black tracking-tighter text-on-surface">88%</p>
-<p class="text-[10px] font-bold uppercase tracking-widest text-neutral-500 text-right">Avg. Efficiency</p>
-</section>
-<section class="flex items-center gap-4">
-<figure class="w-full h-1 bg-surface-container-highest rounded-full overflow-hidden">
-<aside class="w-[88%] h-full bg-primary-container shadow-[0_0_10px_#FF8C00]"></aside>
-</figure>
-</section>
-</section>
-<footer class="flex justify-between items-center mt-auto border-t border-white/5 pt-6">
-<section>
-<p class="text-3xl font-black tracking-tighter text-on-surface">24.2</p>
-<p class="text-[10px] font-bold uppercase tracking-widest text-neutral-500">Avg. Resolved / Day</p>
-</section>
-<nav class="flex items-center gap-2 text-primary-container font-bold text-xs uppercase tracking-widest group-hover:gap-4 transition-all">
+        <article onclick="window.location.href='ReqVol.html'" class="bg-surface-container-low p-8 rounded-lg group cursor-pointer hover:bg-surface-container-high transition-all duration-300 flex flex-col h-full relative overflow-hidden">
+            <header class="flex justify-between items-start mb-12">
+                <section>
+                    <span class="text-[10px] font-bold uppercase tracking-widest text-primary-container mb-2 block">VOLUME METRICS</span>
+                    <h2 class="text-3xl font-black tracking-tight text-on-surface font-headline leading-tight">Request Volume &amp; Resolution</h2>
+                </section>
+                <span class="material-symbols-outlined text-primary-container text-4xl group-hover:scale-110 transition-transform">analytics</span>
+            </header>
+
+            <section class="flex-1 flex items-end gap-2 mb-12 h-72">
+                <figure class="flex-1 bg-surface-container-highest rounded-sm h-[30%] group-hover:bg-primary-container/20 transition-colors"></figure>
+                <figure class="flex-1 bg-surface-container-highest rounded-sm h-[45%] group-hover:bg-primary-container/30 transition-colors"></figure>
+                <figure class="flex-1 bg-surface-container-highest rounded-sm h-[20%] group-hover:bg-primary-container/20 transition-colors"></figure>
+                <figure class="flex-1 bg-primary-container rounded-sm h-[70%]"></figure>
+                <figure class="flex-1 bg-surface-container-highest rounded-sm h-[55%] group-hover:bg-primary-container/40 transition-colors"></figure>
+                <figure class="flex-1 bg-surface-container-highest rounded-sm h-[85%] group-hover:bg-primary-container/60 transition-colors"></figure>
+                <figure class="flex-1 bg-primary-container rounded-sm h-[40%]"></figure>
+                <figure class="flex-1 bg-surface-container-highest rounded-sm h-[60%] group-hover:bg-primary-container/40 transition-colors"></figure>
+                <figure class="flex-1 bg-surface-container-highest rounded-sm h-[95%] group-hover:bg-primary-container/80 transition-colors"></figure>
+                <figure class="flex-1 bg-surface-container-highest rounded-sm h-[35%] group-hover:bg-primary-container/20 transition-colors"></figure>
+            </section>
+
+            <footer class="flex justify-between items-center border-t border-white/5 pt-6">
+                <nav class="flex items-center gap-2 text-primary-container font-bold text-xs uppercase tracking-widest group-hover:gap-4 transition-all">
                     View Report
                     <span class="material-symbols-outlined text-sm">arrow_forward</span>
-</nav>
-</footer>
-</article>
-<!-- The Bottleneck -->
-<article onclick="window.location.href='AgeReport.html'" class="bg-surface-container-lowest p-8 rounded-lg group cursor-pointer ring-1 ring-orange-900/30 hover:bg-surface-container-low transition-all duration-300 flex flex-col h-full relative border-none">
-<aside class="absolute top-0 right-0 p-4">
-<span class="flex h-3 w-3 relative">
-<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
-<span class="relative inline-flex rounded-full h-3 w-3 bg-orange-600"></span>
-</span>
-</aside>
-<header class="flex justify-between items-start mb-12">
-<section>
-<span class="text-[10px] font-bold uppercase tracking-widest text-primary-container mb-4 block">Critical Status</span>
-<h2 class="text-3xl font-black tracking-tight text-on-surface font-headline leading-none">The Bottleneck (Aging Report)</h2>
-</section>
-<span class="material-symbols-outlined text-primary-container text-4xl group-hover:rotate-12 transition-transform">warning</span>
-</header>
-<section class="flex-1 flex flex-col gap-4 mb-8">
-<article class="bg-neutral-950 p-4 rounded flex justify-between items-center">
-<p class="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Infrastructure</p>
-<p class="text-primary-container font-black">12 Days Over</p>
-</article>
-<article class="bg-neutral-950 p-4 rounded flex justify-between items-center">
-<p class="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Waste Mgmt</p>
-<p class="text-primary-container font-black">8 Days Over</p>
-</article>
-</section>
-<footer class="flex justify-between items-center mt-auto border-t border-white/5 pt-6">
-<section>
-<p class="text-3xl font-black tracking-tighter text-primary-container">42</p>
-<p class="text-[10px] font-bold uppercase tracking-widest text-neutral-500">Overdue Reports</p>
-</section>
-<nav class="flex items-center gap-2 text-primary-container font-bold text-xs uppercase tracking-widest group-hover:gap-4 transition-all">
+                </nav>
+            </footer>
+        </article>
+
+        <article onclick="window.location.href='WorkerPerform.html'" class="bg-surface-container-low p-8 rounded-lg group cursor-pointer hover:bg-surface-container-high transition-all duration-300 flex flex-col h-full">
+            <header class="flex justify-between items-start mb-12">
+                <section>
+                    <span class="text-[10px] font-bold uppercase tracking-widest text-primary-container mb-2 block">WORKER METRICS</span>
+                    <h2 class="text-3xl font-black tracking-tight text-on-surface font-headline leading-tight">Worker Performance</h2>
+                </section>
+                <span class="material-symbols-outlined text-primary-container text-4xl group-hover:scale-110 transition-transform">engineering</span>
+            </header>
+            
+            <section class="flex-1 flex flex-col justify-center mb-12 h-72">
+                <div class="grid grid-cols-8 gap-2 opacity-60 group-hover:opacity-100 transition-opacity">
+                    <div class="w-full aspect-square bg-primary-container rounded-full"></div>
+                    <div class="w-full aspect-square bg-primary-container rounded-full"></div>
+                    <div class="w-full aspect-square bg-surface-container-highest rounded-full"></div>
+                    <div class="w-full aspect-square bg-primary-container rounded-full"></div>
+                    <div class="w-full aspect-square bg-primary-container rounded-full"></div>
+                    <div class="w-full aspect-square bg-primary-container rounded-full"></div>
+                    <div class="w-full aspect-square bg-surface-container-highest rounded-full"></div>
+                    <div class="w-full aspect-square bg-primary-container rounded-full"></div>
+                    <div class="w-full aspect-square bg-primary-container rounded-full"></div>
+                    <div class="w-full aspect-square bg-surface-container-highest rounded-full"></div>
+                    <div class="w-full aspect-square bg-primary-container rounded-full"></div>
+                    <div class="w-full aspect-square bg-primary-container rounded-full"></div>
+                    <div class="w-full aspect-square bg-primary-container rounded-full"></div>
+                    <div class="w-full aspect-square bg-primary-container rounded-full"></div>
+                    <div class="w-full aspect-square bg-surface-container-highest rounded-full"></div>
+                    <div class="w-full aspect-square bg-primary-container rounded-full"></div>
+                </div>
+            </section>
+
+            <footer class="flex justify-between items-center border-t border-white/5 pt-6">
+                <nav class="flex items-center gap-2 text-primary-container font-bold text-xs uppercase tracking-widest group-hover:gap-4 transition-all">
+                    View Report
+                    <span class="material-symbols-outlined text-sm">arrow_forward</span>
+                </nav>
+            </footer>
+        </article>
+
+        <article onclick="window.location.href='AgeReport.html'" class="bg-surface-container-lowest p-8 rounded-lg group cursor-pointer ring-1 ring-orange-900/30 hover:bg-surface-container-low transition-all duration-300 flex flex-col h-full relative">
+            <aside class="absolute top-0 right-0 p-6">
+                <span class="flex h-4 w-4 relative">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-4 w-4 bg-orange-600"></span>
+                </span>
+            </aside>
+            <header class="flex justify-between items-start mb-12">
+                <section>
+                    <span class="text-[10px] font-bold uppercase tracking-widest text-primary-container mb-2 block">TIMELINE METRICS</span>
+                    <h2 class="text-3xl font-black tracking-tight text-on-surface font-headline leading-tight">Report Aging</h2>
+                </section>
+                <span class="material-symbols-outlined text-primary-container text-4xl group-hover:rotate-12 transition-transform">warning</span>
+            </header>
+
+            <section class="flex-1 mb-12 h-72 flex flex-col justify-center">
+                <svg class="w-full h-32 text-orange-600/50 group-hover:text-orange-500 transition-colors" viewBox="0 0 100 40" preserveAspectRatio="none">
+                    <path d="M0 35 L10 32 L20 38 L30 25 L40 28 L50 10 L60 15 L70 5 L80 12 L90 2 L100 8" fill="none" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke" />
+                </svg>
+                <div class="grid grid-cols-10 gap-1 mt-6 opacity-30 group-hover:opacity-60 transition-opacity">
+                    <div class="h-2 bg-orange-900"></div><div class="h-2 bg-orange-700"></div><div class="h-2 bg-orange-500"></div><div class="h-2 bg-orange-900"></div>
+                    <div class="h-2 bg-orange-900"></div><div class="h-2 bg-orange-400"></div><div class="h-2 bg-orange-900"></div><div class="h-2 bg-orange-600"></div>
+                    <div class="h-2 bg-orange-900"></div><div class="h-2 bg-orange-900"></div>
+                </div>
+            </section>
+
+            <footer class="flex justify-between items-center border-t border-white/5 pt-6">
+                <section>
+                </section>
+                <nav class="flex items-center gap-2 text-primary-container font-bold text-xs uppercase tracking-widest group-hover:gap-4 transition-all">
                     Resolve Now
                     <span class="material-symbols-outlined text-sm">arrow_forward</span>
-</nav>
-</footer>
-</article>
-</section>
-<section class="px-8 grid grid-cols-1 lg:grid-cols-3 gap-8 pb-20">
-<article class="lg:col-span-2 bg-surface-container-low rounded-lg p-10 relative overflow-hidden flex flex-col min-h-[500px]">
-<header class="flex justify-between items-center mb-8 relative z-10">
-<h3 class="text-xl font-black uppercase tracking-widest">Municipal Grid Map</h3>
-<nav class="flex gap-4">
-<button class="text-[10px] font-bold uppercase tracking-widest text-neutral-500 hover:text-primary-container transition-colors">Sector View</button>
-<button class="text-[10px] font-bold uppercase tracking-widest text-primary-container">Live Telemetry</button>
-</nav>
-</header>
-<button class="flex-1 relative bg-black/40 rounded-lg border border-white/5 overflow-hidden w-full text-left cursor-pointer group/map">
-<!-- Visual representation of map wards -->
-<figure class="absolute inset-0 opacity-20">
-<svg class="w-full h-full" viewbox="0 0 800 400" xmlns="http://www.w3.org/2000/svg">
-<path d="M50 50 L200 30 L350 80 L400 200 L250 250 L100 220 Z" fill="none" stroke="currentColor" stroke-width="2"></path>
-<path d="M350 80 L550 50 L700 120 L650 280 L400 200 Z" fill="none" stroke="currentColor" stroke-width="2"></path>
-<path d="M100 220 L250 250 L300 380 L50 350 Z" fill="none" stroke="currentColor" stroke-width="2"></path>
-<path d="M250 250 L400 200 L650 280 L550 380 L300 380 Z" fill="none" stroke="currentColor" stroke-width="2"></path>
-</svg>
-</figure>
-<!-- Status Markers -->
-<article class="absolute top-[20%] left-[25%] flex flex-col items-center group/marker cursor-pointer">
-<span class="w-3 h-3 bg-primary-container rounded-full animate-pulse shadow-[0_0_15px_#FF8C00]"></span>
-<aside class="hidden group-hover/marker:block absolute top-full mt-2 bg-surface-container-highest p-2 rounded text-[10px] font-bold whitespace-nowrap z-20">WARD 04: ACTIVE</aside>
-</article>
-<article class="absolute top-[50%] left-[60%] flex flex-col items-center group/marker cursor-pointer">
-<span class="w-3 h-3 bg-red-600 rounded-full shadow-[0_0_15px_red]"></span>
-<aside class="hidden group-hover/marker:block absolute top-full mt-2 bg-surface-container-highest p-2 rounded text-[10px] font-bold whitespace-nowrap z-20">WARD 12: CRITICAL</aside>
-</article>
-<article class="absolute top-[75%] left-[40%] flex flex-col items-center group/marker cursor-pointer">
-<span class="w-3 h-3 bg-primary-container/40 rounded-full"></span>
-<aside class="hidden group-hover/marker:block absolute top-full mt-2 bg-surface-container-highest p-2 rounded text-[10px] font-bold whitespace-nowrap z-20">WARD 09: STABLE</aside>
-</article>
-<!-- HUD Overlay -->
-<aside class="absolute bottom-4 left-4 p-4 bg-black/60 backdrop-blur-md rounded border border-white/10">
-<p class="text-[10px] font-black uppercase tracking-widest text-neutral-500 mb-2">Grid Health Index</p>
-<p class="text-2xl font-black text-primary-container">94.2%</p>
-</aside>
-</button>
-</article>
-<article class="bg-surface-container-low border-2 border-dashed border-white/10 p-10 rounded-lg flex flex-col items-center justify-center text-center group cursor-pointer hover:border-primary-container/50 hover:bg-surface-container-high transition-all">
-<header class="">
-<figure class="w-20 h-20 rounded-full border-2 border-white/10 flex items-center justify-center mb-6 group-hover:border-primary-container group-hover:scale-110 transition-all">
-<span class="material-symbols-outlined text-4xl text-neutral-500 group-hover:text-primary-container">add</span>
-</figure>
-<h3 class="text-2xl font-black tracking-tighter uppercase mb-2">Add More Analytics</h3>
-<p class="text-sm font-bold text-neutral-500 max-w-[200px] mx-auto">Customise your telemetry dashboard with new ledger-verified data streams.</p>
-</header>
-</article>
-</section>
+                </nav>
+            </footer>
+        </article>
+    </section>
 </main>
-<footer class="px-8 py-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-8">
-<section>
-<h4 class="text-2xl font-black tracking-tighter text-primary-container font-headline">CIVIC LEDGER</h4>
-<p class="text-[10px] font-bold uppercase tracking-widest text-neutral-500 mt-2">© 2024 Municipal Ledger Authority</p>
-</section>
-<nav class="flex gap-8">
-<a class="text-[10px] font-bold uppercase tracking-widest text-neutral-500 hover:text-primary-container" href="#">Ledger Protocol</a>
-<a class="text-[10px] font-bold uppercase tracking-widest text-neutral-500 hover:text-primary-container" href="#">City Charter</a>
-<a class="text-[10px] font-bold uppercase tracking-widest text-neutral-500 hover:text-primary-container" href="#">Privacy</a>
-</nav>
-</footer>
 <script src="AnalyticsHome.js"></script>
-<script src="../ModalUtilities/DashboardExporter.js"></script>
-</body></html>
+</body>
+</html>

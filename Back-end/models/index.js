@@ -28,12 +28,14 @@ Report.hasMany(ReportImage, { foreignKey: 'ReportID' });
 ReportImage.belongsTo(Report, { foreignKey: 'ReportID' });
 
 // "Super Many-to-Many": Subscriptions (Residents <-> Wards)
-// We use constraints: false because we handled the composite FK manually in SQL
+// Note: We use a simplified association because Ward has a composite primary key (WardID, MunicipalityID).
+// The backend routes use manual 'on' clauses to properly join on both keys.
 Resident.hasMany(Subscription, { foreignKey: 'ResidentID' });
 Subscription.belongsTo(Resident, { foreignKey: 'ResidentID' });
 
-Ward.hasMany(Subscription, { foreignKey: 'WardID', sourceKey: 'WardID'});
-Subscription.belongsTo(Ward, { foreignKey: 'WardID', targetKey: 'WardID'});
+// Simplified associations - the routes will use manual 'on' clauses for proper composite key joins
+Ward.hasMany(Subscription, { foreignKey: 'WardID', sourceKey: 'WardID', constraints: false});
+Subscription.belongsTo(Ward, { foreignKey: 'WardID', targetKey: 'WardID', constraints: false});
 
 // Many-to-Many: Allocations (Reports <-> Workers)
 Report.belongsToMany(MunicipalWorker, { through: Allocation, foreignKey: 'ReportID' });
