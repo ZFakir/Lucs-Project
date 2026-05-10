@@ -434,7 +434,7 @@ function logoutWorker() {
     document.getElementById('profile-dropdown').classList.add('hidden');
     if (!confirm('Are you sure you want to log out?')) return;
     localStorage.clear();
-    window.location.href = '../Login/Worker_Login.html';
+    window.location.href = '../Login/Login.html';
 }
 
 
