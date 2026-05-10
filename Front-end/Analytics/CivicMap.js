@@ -42,7 +42,7 @@ constructor(containerId, geoJsonPath, onClickCallback) {
             .catch(err => console.warn("Map data pending...", err));
     }
 
-    // --- NEW METHOD: Swap the Data ---
+    //Swap data based on path
     loadNewLayer(newGeoJsonPath) {
         // 1. Remove the old polygons if they exist
         if (this.geojsonLayer) {
@@ -54,7 +54,7 @@ constructor(containerId, geoJsonPath, onClickCallback) {
 
     renderBoundaries(geojsonData) {
         this.geojsonLayer = L.geoJSON(geojsonData, {
-            // Default styling for all shapes
+            //default styling
             style: function () {
                 return {
                     color: "#564334",
@@ -68,11 +68,8 @@ constructor(containerId, geoJsonPath, onClickCallback) {
                 const muniId = feature.properties.MAP_TITLE || feature.properties.Municipali; 
                 const provId = feature.properties.adm1_name; 
 
-                // 🚨 THE FIX: Reverse the priority! 
                 let areaName = "Unknown Region";
                 if (wardId) {
-                    // If you want just the ward: areaName = `Ward ${wardId}`;
-                    // If you want both (recommended!):
                     areaName = `Ward ${wardId}`; 
                 } else if (muniId) {
                     areaName = muniId;
@@ -82,16 +79,16 @@ constructor(containerId, geoJsonPath, onClickCallback) {
 
                 layer.bindTooltip(`<b>${areaName}</b>`, { sticky: true });
 
-                // Map Interactions!
+                // Map Interactions
                 layer.on({
-                    // 1. Hover In
+                    //Hover In
                     mouseover: (e) => {
                         const targetLayer = e.target;
                         // Only apply the hover effect if this ISN'T the currently clicked ward
                         if (this.selectedLayer !== targetLayer) {
                             targetLayer.setStyle({
-                                fillOpacity: 0.3, // Brighten the orange fill
-                                weight: 2         // Thicken the border slightly
+                                fillOpacity: 0.3, // Brighten
+                                weight: 2         // Thicken the border
                             });
                         }
                     },

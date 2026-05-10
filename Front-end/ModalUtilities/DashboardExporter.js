@@ -75,7 +75,7 @@ generatePDF() {
             }
         };
 
-        // No more setTimeouts, no more manual reverting
+        // Remove set timeout and reverting
         html2pdf().set(opt).from(element).save().then(() => {
             this.exportBtn.innerHTML = originalHtml;
             window.scrollTo(originalScrollX, originalScrollY);

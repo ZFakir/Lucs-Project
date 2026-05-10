@@ -70,10 +70,10 @@ export class LocationPicker {
         }
 
         if (statusEl) statusEl.textContent = "Calculating...";
-        const pt = turf.point([lng, lat]);
+        const pt = turf.point([lng, lat]);//Using turf to perform point in goermetry 
         let foundFeature = null;
 
-        turf.featureEach(this.wardGeoData, (currentFeature) => {
+        turf.featureEach(this.wardGeoData, (currentFeature) => { //linear searches through wards
             if (turf.booleanPointInPolygon(pt, currentFeature)) foundFeature = currentFeature;
         });
 
@@ -86,8 +86,7 @@ export class LocationPicker {
             const provId = this.provinceFullNameToId[provNameRaw];
 
             if (statusEl) statusEl.textContent = `Locked: Ward ${wardNo}, ${muniNameRaw}`;
-            // 🚨 Send the data back to whatever file called this class!
-            console.log(provId);
+            //Sending back
             this.onLocationFound({ 
                 success: true, 
                 wardNo: wardNo, 

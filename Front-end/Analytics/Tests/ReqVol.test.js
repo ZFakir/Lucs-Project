@@ -132,7 +132,7 @@ describe('ReqVol.js Integration Tests', () => {
         });
 
         test('renders a table row with correct icon for pothole', () => {
-            const reports = [{ Type: 'pothole', Description: 'Big hole', CreatedAt: '2026-05-01', ReportID: 123 }];
+            const reports = [{ Type: 'pothole', Brief: 'Big hole', CreatedAt: '2026-05-01', ReportID: 123 }];
             renderLedgerTable(reports);
 
             const tbody = document.getElementById('ledger-table-body');

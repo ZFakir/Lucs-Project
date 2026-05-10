@@ -30,6 +30,12 @@ const Resident = sequelize.define('Resident', {
      allowNull: true }
 }, {
   tableName: 'Residents', // Matches your SQL script
+  indexes: [
+        {
+            unique: true,
+            fields: ['Email']
+        }
+    ],
   timestamps: false       // Prevents Sequelize from looking for 'createdAt' columns
 });
 

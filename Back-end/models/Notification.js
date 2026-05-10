@@ -12,6 +12,13 @@ module.exports = (sequelize, DataTypes) => {
                 as: 'Worker',
                 constraints: false // Because admins don't have a worker ID
             });
+            
+            // Link notification to the report it relates to
+            Notification.belongsTo(models.Report, {
+                foreignKey: 'ReportID',
+                as: 'Report',
+                constraints: false
+            });
         }
     }
 

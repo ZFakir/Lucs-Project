@@ -1,6 +1,4 @@
-// ==========================================
-// 1. GLOBAL STATE
-// ==========================================
+//GLOBAL STATE VARIABLES
 // Allow variables to be initialized from global scope for testing
 let currentDisplayedReports = []; 
 let workerMap = typeof global !== 'undefined' && global.workerMap ? global.workerMap : null;
@@ -19,7 +17,7 @@ const searchInput = document.getElementById('employee-search');
     const employeeList = document.getElementById('employee-list');
     
     if (searchInput && employeeList) {
-        const employeeButtons = employeeList.querySelectorAll('button');
+        const employeeButtons = employeeList.querySelectorAll('button');//searches in existing DOM
 
         searchInput.addEventListener('input', (e) => {
             // Grab what the user typed, make it lowercase, and remove extra spaces
@@ -39,17 +37,14 @@ const searchInput = document.getElementById('employee-search');
         });
     }
 
-// ==========================================
-// 2. INITIALIZE MODULAR COMPONENTS
-// ==========================================
 
+//MODULAR COMPONNENTS
 // 2A. The Modal Viewer
 const issueViewer = new CivicModal();
 
-// 2B. The Table Viewer (Hooked up to open the modal on row click!)
-const historyTable = new CivicTable('worker-ledger-container', async (clickedReport) => { // Make it async!
+// 2B. The Table Viewer
+const historyTable = new CivicTable('worker-ledger-container', async (clickedReport) => {
     
-    // 🚨 FETCH THE WORKERS BEFORE OPENING
     let allocatedWorkers = [];
     try {
         const res = await fetch(`/api/sandbox/report/${clickedReport.ReportID}/workers`);
@@ -115,7 +110,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 2. Initialize Map explicitly forcing only municipal data
     workerMap = new CivicMap('map', 'data/sa_municipal.json', (data) => {
-        // 🚨 WHEN A MUNICIPALITY IS CLICKED:
         if (data.muniId) {
             const cleanName = normalizeName(data.muniId);
             currentActiveMuniId = MunicipalityMap[cleanName];
@@ -155,7 +149,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const modal = document.getElementById('ledger-modal');
     
     document.getElementById('view-history-btn').addEventListener('click', () => {
-        // 🚨 This ensures it ONLY loads the specific worker's reports into the table!
         historyTable.render(currentWorkerReports); 
         modal.showModal();
     });
@@ -211,8 +204,6 @@ async function fetchMunicipalityReports() {
         if (!response.ok) throw new Error("Failed to fetch municipality reports");
         
         currentDisplayedReports = await response.json();
-        console.log(currentDisplayedReports);
-        console.log(start,end);
         drawPinsOnMap(currentDisplayedReports);
         
     } catch (error) {
@@ -228,8 +219,6 @@ function drawPinsOnMap(reports) {
         workerMap.map.removeLayer(pinLayerGroup);
     }
     pinLayerGroup = L.layerGroup().addTo(workerMap.map);
-
-    //console.log(`📍 Dropping ${reports.length} pins for selected timeframe/municipality...`);
 
     // 2. Loop through reports and create color-coded markers
     reports.forEach(report => {
@@ -256,7 +245,7 @@ marker.on('click',async () => {
             // 🚨 REVERSE LOOKUP: Find the name that matches our ID
             let muniName = Object.keys(MunicipalityMap).find(key => MunicipalityMap[key] === currentActiveMuniId);
             if (muniName) {
-                muniName = muniName.replace(/\b\w/g, letter => letter.toUpperCase()); // Capitalize it
+                muniName = muniName.replace(/\b\w/g, letter => letter.toUpperCase()); // Capitalize each word start
             } else {
                 muniName = 'Unknown Municipality';
             }
@@ -303,7 +292,7 @@ async function fetchAndPopulateWorkers() {
             const btn = document.createElement('button');
             btn.className = 'flex items-center p-4 hover:bg-[#353535]/20 text-on-surface/60 text-left transition-colors w-full border-l-4 border-transparent focus:border-[#FF8C00] focus:bg-[#FF8C00]/10 focus:text-on-surface';
             
-            // Use UI-Avatars to generate a cool placeholder profile pic based on their name!
+            // Use UI-Avatars generates icons based on names
             const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(worker.Name)}&background=353535&color=FF8C00&bold=true`;
 
             btn.innerHTML = `
@@ -352,7 +341,6 @@ async function fetchSelectedWorkerStats() {
     const acceptanceUrl = `/api/sandbox/worker/${currentWorkerId}/acceptance`;
 
     try {
-        // 🚨 Fire both fetch requests at the exact same time!
         const [reportsRes, acceptanceRes] = await Promise.all([
             fetch(reportsUrl),
             fetch(acceptanceUrl)
@@ -362,10 +350,7 @@ async function fetchSelectedWorkerStats() {
 
         currentWorkerReports = await reportsRes.json(); 
         const acceptanceData = await acceptanceRes.json();
-        console.log(currentWorkerReports);
-        console.log(start,end);
 
-        // 🚨 Pass BOTH sets of data into the UI updater
         updateAnalyticsUI(currentWorkerReports, acceptanceData);
         
         drawPinsOnMap(currentWorkerReports);
@@ -381,9 +366,7 @@ function updateAnalyticsUI(reports, acceptanceData) {
     const totalTasks = reports.length;
     document.getElementById('tasks-total').textContent = totalTasks.toLocaleString();
 
-    // --------------------------------------------------------
-    // 🚨 TASK ACCEPTANCE RATE LOGIC (Using the Micro-Route Data)
-    // --------------------------------------------------------
+
     // Calculate percentage (protect against dividing by zero)
     const acceptanceRate = acceptanceData.total > 0 
         ? (acceptanceData.accepted / acceptanceData.total) * 100 
@@ -453,11 +436,8 @@ function updateAnalyticsUI(reports, acceptanceData) {
     // --------------------------------------------------------
 
     // --------------------------------------------------------
-    // 5. Update Recent Resolution History (Top 3)
-    // (Keep your existing history table code below this line)
-    // --------------------------------------------------------
+    //Resolution history to top 3
     const recentBody = document.getElementById('recent-history-body');
-    // ... rest of your function ...
     recentBody.innerHTML = '';
 
     if (totalTasks === 0) {

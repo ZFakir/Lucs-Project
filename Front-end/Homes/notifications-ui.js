@@ -10,11 +10,14 @@
     function init() {
     const role = localStorage.getItem('role');
     const workerId = localStorage.getItem('workerId');
+    const residentId = localStorage.getItem('residentId');
 
     if (role === 'admin') {
         currentRecipientId = 'admin';
     } else if (role === 'worker' && workerId) {
         currentRecipientId = workerId;
+    } else if (role === 'resident' && residentId) {
+        currentRecipientId = residentId;
     } else {
         return;
     }
@@ -86,6 +89,11 @@
             const unreadClass = n.IsRead ? '' : 'notif-unread';
             const icon = typeIcon(n.Type);
             const accentClass = typeAccent(n.Type);
+            
+            // Extract ward ID and issue from the related report
+            const wardId = n.Report?.WardID ? `Ward ${n.Report.WardID}` : '';
+            const issue = n.Report?.IssueType || '';
+            const details = [wardId, issue].filter(Boolean).join(' • ');
 
             return `
             <li class="notif-item ${unreadClass}" data-id="${n.NotificationID}">
@@ -95,6 +103,7 @@
                 </div>
                 <div class="notif-body" onclick="window._notifModule.markRead(${n.NotificationID}, ${n.ReportID || 'null'})">
                     <p class="notif-title">${escHtml(n.Title)}</p>
+                    ${details ? `<p class="notif-details" style="font-size:0.85em;color:#aaa;margin:4px 0;">${escHtml(details)}</p>` : ''}
                     <p class="notif-msg">${escHtml(n.Message)}</p>
                     <p class="notif-time">${time}</p>
                 </div>

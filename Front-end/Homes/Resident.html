@@ -96,7 +96,7 @@
     <hr class="border-white/5 my-1">
 
     <li>
-        <a href="../Login/Login.html" onclick="localStorage.clear()" class="flex items-center px-4 py-3 text-sm font-bold uppercase tracking-widest text-red-400 hover:bg-red-500/10 transition-colors">
+        <a href="../Login/Login.html" onclick="localStorage.removeItem('residentId')" class="flex items-center px-4 py-3 text-sm font-bold uppercase tracking-widest text-red-400 hover:bg-red-500/10 transition-colors">
             <span class="material-symbols-outlined mr-3 text-lg">logout</span>
             Sign Out
         </a>
@@ -104,7 +104,6 @@
 </ul>
                 </details>
             </nav>
-            <!-- ======================= -->
         </section>
     </header>
 
@@ -190,7 +189,6 @@
         </header>
 
         <form id="add-ward-form" class="p-8 space-y-8 bg-surface-container-lowest">
-            <form id="add-ward-form" class="p-8 space-y-6 bg-surface-container-lowest">
             
             <fieldset class="group border-none p-0 m-0">
                 <label class="block font-bold text-xs uppercase tracking-widest text-[#FFB77D] mb-3">Drop Pin to Auto-fill</label>
@@ -274,19 +272,15 @@
             </div>
             <input type="checkbox" id="mute-all" class="w-6 h-6 rounded border-outline-variant bg-surface-container-high text-orange-500 focus:ring-orange-500 focus:ring-offset-background cursor-pointer transition-all">
         </fieldset>
-
-        <fieldset id="specific-wards-fieldset" class="group border-none p-0 m-0 transition-opacity">
-            <label class="block font-bold text-xs uppercase tracking-widest text-[#FFB77D] mb-2" for="mute-ward-select">Mute Specific Wards</label>
-            <p class="text-[10px] text-on-surface-variant uppercase mb-3">Hold Ctrl/Cmd to select multiple</p>
+        <fieldset class="group border-none p-0 m-0 transition-opacity">
+            <label class="block font-bold text-xs uppercase tracking-widest text-[#FFB77D] mb-3">Muted Wards</label>
             
-            <select multiple class="w-full bg-[#0E0E0E] text-white border border-outline-variant focus:border-primary-container focus:ring-0 py-3 px-3 text-sm rounded-lg transition-all" id="mute-ward-select" name="mute-ward-select">
-            </select>
+            <ul id="muted-wards-list" class="bg-[#0E0E0E] border border-outline-variant focus:border-primary-container focus:ring-0 py-3 px-3 text-sm rounded-lg transition-all space-y-2 min-h-[60px] max-h-48 overflow-y-auto">
+                <li class="text-sm text-on-surface-variant opacity-50 italic">No wards are currently muted.</li>
+            </ul>
         </fieldset>
 
         <footer class="pt-4 flex flex-col space-y-4">
-                <button type="submit" class="w-full py-4 text-[#4d2600] font-black text-sm uppercase tracking-widest rounded-lg shadow-lg bg-gradient-to-br from-[#FF8C00] to-[#FFB77D] hover:scale-[1.02] active:scale-[0.98] transition-transform">
-                    Save Preferences
-                </button>
                 <button id="close-mute-modal-btn" type="button" class="w-full py-3 text-on-surface-variant font-bold uppercase tracking-widest hover:text-primary transition-colors active:translate-y-px">
                     Cancel
                 </button>

@@ -1,6 +1,4 @@
-// ==========================================
-// 1. GLOBAL STATE & DICTIONARIES
-// ==========================================
+//GLOBAL STATE VARIABLES
 let currentSelection = { type: 'province', ids: { provinceId: 1 } }; 
 let MunicipalityMap = {};
 let dashboardMap = null;
@@ -12,7 +10,7 @@ const provinceFullNameToId = {
     'Western Cape': 2, 
     'Eastern Cape': 3,
     'Northern Cape': 4,
-    'Nothern Cape': 4, // Catching the geojson typo!
+    'Nothern Cape': 4, //MDB MISPELLED THIS. NOT ME. DO NOT CHANGE
     'Free State': 5,
     'KwaZulu-Natal': 6, 
     'North West': 7,
@@ -30,13 +28,11 @@ const normalizeName = (name) => {
         .trim();
 };
 
-// ==========================================
-// DATE HELPER
-// ==========================================
+
 function getDateRange() {
-    // Find the active time button (the one with the orange background)
+    // Find the active time selected in radio group
     const activeBtn = document.querySelector('button.bg-primary-container');
-    const selectedTime = activeBtn ? activeBtn.textContent.trim() : '30 DAYS'; // Default fallback
+    const selectedTime = activeBtn ? activeBtn.textContent.trim() : '30 DAYS'; 
     console.log(selectedTime);
 
     const endDate = new Date();
@@ -57,9 +53,7 @@ function getDateRange() {
     };
 }
 
-// ==========================================
-// 2. DATA FETCHING
-// ==========================================
+//DATA FETCHING
 async function buildMunicipalityMap() {
     try {
         const response = await fetch('/api/sandbox/municipality-map');
@@ -69,15 +63,10 @@ async function buildMunicipalityMap() {
         console.error("Error loading municipality map:", error);
         return {};
     }
-}
+}//Fetches the municipality names from the database for comparison with the geojson later(they do not perfectly align)
 
-// 🚨 This will be the main function we build out next to fetch the aging data!
-// ==========================================
-// THE MAIN FETCH & UPDATE LOGIC
-// ==========================================
+// Fetch and update logic
 async function fetchAgingData() {
-    console.log("Fetching bottleneck data for:", currentSelection);
-    
     const { start, end } = getDateRange();
     const { type, ids } = currentSelection;
     let url = '';
@@ -92,22 +81,15 @@ async function fetchAgingData() {
     }
 
     try {
-        // 2. Fetch the data from your database
+        //fetch from database
         const response = await fetch(url);
         if (!response.ok) throw new Error('Failed to fetch aging reports');
         
         const reports = await response.json();
-        console.log(reports);
-        
-        // 3. Render the Unassigned Scrollable Ledger (from the previous step)
-        if (typeof renderUnassignedTable === 'function') {
-            renderUnassignedTable(reports);
-        }
-
+        //Render
+        renderUnassignedTable(reports);
         drawPinsOnMap(reports);
         updateAssignmentDurationLedger(reports);
-
-        // 4. Calculate Top-Level Bottleneck Metrics
         calculateBottleneckMetrics(reports);
 
     } catch (error) {
@@ -115,13 +97,12 @@ async function fetchAgingData() {
     }
 }
 
-// ==========================================
-// ASSIGNMENT DURATION LEDGER
-// ==========================================
+
+//ASSIGNMENT DURATION LEDGER WITH THE BARS
 function updateAssignmentDurationLedger(reports) {
     const now = new Date();
 
-    // 1. Setup buckets for our 4 categories
+    //The object which the bars are rendered from
     const categories = {
         water: { unassignedTotal: 0, assignedTotal: 0, count: 0 },
         electricity: { unassignedTotal: 0, assignedTotal: 0, count: 0 },
@@ -134,32 +115,32 @@ function updateAssignmentDurationLedger(reports) {
         const type = (r.Type || '').toLowerCase();
         let cat = null;
 
-        // Map database types to our UI categories
+        //Map from type to category
         if (type.includes('water') || type.includes('pipe')) cat = 'water';
         else if (type.includes('electric') || type.includes('power') || type.includes('light')) cat = 'electricity';
         else if (type.includes('road') || type.includes('pothole')) cat = 'roads';
         else if (type.includes('sanitation') || type.includes('dumping') || type.includes('sewage')) cat = 'sanitation';
 
-        if (!cat) return; // Skip if it doesn't match a main category
+        if (!cat) return; // Skip if not found
 
         const created = new Date(r.CreatedAt);
         let unassignedHours = 0;
         let assignedHours = 0;
 
-        // Math: Time spent Unassigned vs Assigned
+        //Time spent
         if (r.AssignedAt) {
             const assigned = new Date(r.AssignedAt);
-            unassignedHours = Math.max(0, (assigned - created) / (1000 * 60 * 60));
-            
+            unassignedHours = Math.max(0, (assigned - created) / (1000 * 60 * 60)); //diff between assigned and created in hours(given in ms)
+            //We take the max incase of somehow assigned before created
             if (r.DateFulfilled) {
-                // Resolved task: Assigned time is between Assignment and Fulfillment
+                // Assigned time is between Assignment and Fulfillment
                 assignedHours = Math.max(0, (new Date(r.DateFulfilled) - assigned) / (1000 * 60 * 60));
             } else {
-                // In Progress task: Assigned time is from Assignment until right now
+                // if not fulfilled Assigned time is from Assignment until right now
                 assignedHours = Math.max(0, (now - assigned) / (1000 * 60 * 60));
             }
         } else {
-            // Unassigned task: Sat there from creation until right now
+            // Unassigned
             unassignedHours = Math.max(0, (now - created) / (1000 * 60 * 60));
         }
 
@@ -169,7 +150,7 @@ function updateAssignmentDurationLedger(reports) {
         categories[cat].count += 1;
     });
 
-    // 3. Render the UI updates
+    // 3. Render the bars for each bar
     Object.keys(categories).forEach(cat => {
         const data = categories[cat];
         
@@ -183,18 +164,18 @@ function updateAssignmentDurationLedger(reports) {
         if (total > 0) {
             unassignedPct = (avgUnassigned / total) * 100;
             assignedPct = (avgAssigned / total) * 100;
-        }
+        }//In case total is 0 or negative
 
         const unassignedBar = document.getElementById(`${cat}-unassigned-bar`);
         const assignedBar = document.getElementById(`${cat}-assigned-bar`);
 
-        if (unassignedBar && assignedBar) {
+        if (unassignedBar && assignedBar) { //in case deleted
             // Only show text if it's wide enough to fit, and percentage > 0
             unassignedBar.style.width = `${unassignedPct}%`;
             unassignedBar.textContent = unassignedPct > 5 ? `${avgUnassigned}H` : '';
             
             assignedBar.style.width = `${assignedPct}%`;
-            assignedBar.textContent = assignedPct > 5 ? `${avgAssigned}H` : '';
+            assignedBar.textContent = assignedPct > 5 ? `${avgAssigned}H` : '';//Text only if more than 5
         }
     });
 }
@@ -232,7 +213,7 @@ function calculateBottleneckMetrics(reports) {
     const avgUnassigned = getAverage(unassignedHoursArray);
     const avgResolution = getAverage(resolutionHoursArray);
 
-    // 3. Update the DOM elements (Make sure these selectors match your HTML!)
+    // DOM UPDATE CODE
     // For Avg Unassigned Time
     const unassignedEl = document.querySelector('article.border-surface-variant p.text-7xl');
     if (unassignedEl) {
@@ -247,24 +228,19 @@ function calculateBottleneckMetrics(reports) {
 }
 
 
-// ==========================================
-// 3. MAP EVENT HANDLERS
-// ==========================================
+//MAP EVENTS
 function onMapClick(type, ids) {
     currentSelection = { type, ids };
-    fetchAgingData(); // Fetch new analytics whenever a map region is clicked
+    fetchAgingData();
 }
 
-// ==========================================
-// 4. INITIALIZATION
-// ==========================================
+//INITIALIZATION
 document.addEventListener('DOMContentLoaded', async () => {
     
-    // 1. Load the dictionary first
+    //Load Dictionary
     MunicipalityMap = await buildMunicipalityMap();
-    console.log(`✅ Dictionary Loaded! Found ${Object.keys(MunicipalityMap).length} municipalities.`);
 
-    // 2. Initialize the Map
+    //Initialize Map
     dashboardMap = new CivicMap('map', 'data/sa_provincial.json', (data) => {
         if (data.wardId) {
             onMapClick('ward', { wardId: data.wardId, municipalityId: MunicipalityMap[normalizeName(data.muniId)]});
@@ -275,7 +251,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // 3. Hook up the Granularity Radio Buttons
+    //Date radiobuttons
     const granularityRadios = document.querySelectorAll('input[name="granularity"]');
     granularityRadios.forEach(radio => {
         radio.addEventListener('change', (e) => {
@@ -304,7 +280,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     });
 
-    // Hook up Temporal Range Buttons
+    //DateRange
     const timeButtons = document.querySelectorAll('nav.grid button');
     timeButtons.forEach(btn => {
         btn.addEventListener('click', (e) => {
@@ -320,20 +296,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     });
 
-    // 4. Initial Data Fetch
+    //Initial Data Fetch
     fetchAgingData();
 
     const pdfExporter = new DashboardExporter('export-pdf-btn', 'body', 'Aging_Bottlenecks_Report');
 });
 
-// ==========================================
-// 5. LEDGER TABLE RENDERER
-// ==========================================
+//RENDER UNASSIGNED TABLE
 function renderUnassignedTable(reports) {
     const tbody = document.getElementById('unassigned-table-body');
     if (!tbody) return;
 
-// 1. Filter by checking if AssignedAt is null (or undefined, just to be safe with JSON)
+// 1. Filter by checking if AssignedAt is null or undef
     const unassignedReports = reports.filter(r => 
         r.AssignedAt === null || r.AssignedAt === undefined
     );
@@ -345,21 +319,21 @@ function renderUnassignedTable(reports) {
         return;
     }
 
-    // 2. Sort by oldest first so the most critical bottlenecks are at the top
+    //Sort by oldest
     unassignedReports.sort((a, b) => new Date(a.CreatedAt) - new Date(b.CreatedAt));
 
     const now = new Date();
-    // We use 72 hours as the "100% width" baseline for the bar chart
-    const maxDurationHours = 72; 
+    // We use 168 (one week) hours as the "100% width" baseline for the bar chart
+    const maxDurationHours = 168; 
 
     unassignedReports.forEach(report => {
         const createdDate = new Date(report.CreatedAt);
         const hoursUnassigned = Math.max(0, Math.floor((now - createdDate) / (1000 * 60 * 60)));
         
-        // Calculate bar width (cap at 100%)
+        // Calculate bar width capped at 100
         const widthPct = Math.min(100, (hoursUnassigned / maxDurationHours) * 100);
         
-        // 3. Color mapping for urgency
+        // Color mapping for severity of delay
         let barColor = 'bg-surface-variant';
         let textColor = 'text-on-surface';
         
@@ -415,16 +389,11 @@ function renderUnassignedTable(reports) {
     });
 }
 
-// ==========================================
-// MAP PIN RENDERER
-// ==========================================
-// ==========================================
-// MAP PIN RENDERER
-// ==========================================
+//Render PINS
 function drawPinsOnMap(reports) {
     if (!dashboardMap || !dashboardMap.map) return;
 
-    // 1. Clear existing pins
+    //Remove current pins
     if (pinLayerGroup) {
         dashboardMap.map.removeLayer(pinLayerGroup);
     }
@@ -435,9 +404,8 @@ function drawPinsOnMap(reports) {
         // Skip if no GPS data
         if (!report.Latitude || !report.Longitude) return;
 
-        // 🚨 3. Determine Color based purely on database timestamps!
+        //Colour Mapping based on state
         let pinColor = '#FF8C00'; // Default: Orange (Unallocated)
-        // Rule 1: Does it have a DateFulfilled? If yes, it's done.
         if (report.DateFulfilled !== null) {
             pinColor = '#000000'; // Black: Resolved/Fulfilled
         } 
@@ -445,8 +413,6 @@ function drawPinsOnMap(reports) {
         else if (report.AssignedAt !== null) {
             pinColor = '#808080'; // Grey: Allocated/Assigned
         }
-        // Fallback remains Orange because it failed both checks above.
-
         // 4. Create the Marker
         const marker = L.circleMarker([report.Latitude, report.Longitude], {
             radius: 8,
@@ -461,17 +427,18 @@ function drawPinsOnMap(reports) {
         const statusText = report.DateFulfilled ? 'Resolved' : (report.AssignedAt ? 'Assigned' : 'Unassigned');
         marker.bindTooltip(`<b>${report.Type || 'Issue'}</b><br/>${statusText}`, { direction: 'top' });
 
-        // 5. Make it clickable to open the CivicModal!
+        //Clickable and opens modal
         marker.on('click', () => {
             let muniName = Object.keys(MunicipalityMap).find(key => MunicipalityMap[key] === report.MunicipalityID);
             muniName = muniName ? muniName.replace(/\b\w/g, letter => letter.toUpperCase()) : 'Unknown';
+            //mapping from id in db to name
 
             issueViewer.open({
                 id: report.ReportID,
                 type: report.Type,
                 description: report.Brief,
                 date: report.CreatedAt,
-                status: statusText, // Pass our newly derived status string to the modal
+                status: statusText,
                 ward: report.WardID || 'N/A',
                 municipality: muniName
             });
@@ -479,6 +446,8 @@ function drawPinsOnMap(reports) {
     });
 }
 
+
+///JEST EXPORTS
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         // Functions

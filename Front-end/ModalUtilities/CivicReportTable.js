@@ -16,7 +16,7 @@ class CivicTable {
 getBadgeHTML(statusStr) {
         const progressStr = (statusStr || '').toLowerCase(); 
         
-        // 🚨 ADDED: 'whitespace-nowrap' and 'inline-block' to prevent text wrapping!
+        //Fix textwrapping for "in progress"
         const baseClasses = "px-3 py-1 text-[10px] font-black uppercase rounded-full whitespace-nowrap inline-block";
 
         if (progressStr === 'resolved') {
@@ -93,8 +93,8 @@ getBadgeHTML(statusStr) {
                         <span class="font-bold text-white uppercase tracking-tight">${report.Type || 'General'}</span>
                     </span>
                 </td>
-                <td class="px-8 py-4 text-on-surface-variant font-medium text-sm truncate max-w-[200px]" title="${report.Description || 'No description provided.'}">
-                    ${report.Description || 'No description provided.'}
+                <td class="px-8 py-4 text-on-surface-variant font-medium text-sm truncate max-w-[200px]" title="${report.Brief || 'No description provided.'}">
+                    ${report.Brief || 'No description provided.'}
                 </td>
                 <td class="px-8 py-4 text-center">${statusBadge}</td>
                 <td class="px-8 py-4 text-right font-mono text-on-surface-variant text-sm">${formattedDate}</td>

@@ -68,7 +68,7 @@ describe('CivicTable Component Tests', () => {
             const mockReports = [
                 { 
                     Type: 'Water Leak', 
-                    Description: 'Burst pipe', 
+                    Brief: 'Burst pipe', 
                     Progress: 'Resolved', 
                     CreatedAt: '2026-05-01' 
                 }

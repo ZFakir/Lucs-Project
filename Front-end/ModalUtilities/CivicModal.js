@@ -105,7 +105,7 @@ getBadgeHTML(statusStr) {
         }
     }
 
-    // 🚨 NEW METHOD: The Modal now fetches its own images
+    //Modals must fetch their own images
     async fetchImagesForReport(reportId) {
         try {
             const response = await fetch(`/api/reports/report/${reportId}`);
@@ -119,7 +119,7 @@ getBadgeHTML(statusStr) {
         }
     }
 
-   // 🚨 NEW: Made async so it can wait for the images
+   //Async fetch
    async open(data) {
         // Set basic text data immediately
         document.getElementById(`${this.modalId}-title`).textContent = data.type || 'General Issue';
@@ -133,17 +133,16 @@ getBadgeHTML(statusStr) {
 
         const carousel = document.getElementById(`${this.modalId}-carousel`);
         
-        // 🚨 Show a beautiful loading state inside the carousel immediately
+        //Loading state inside modal
         carousel.innerHTML = `
             <li class="snap-center shrink-0 w-full h-full flex items-center justify-center bg-[#1B1B1B]">
                 <span class="text-[#FF8C00] animate-pulse text-xs font-bold uppercase tracking-widest">Loading evidence...</span>
             </li>
         `;
         
-        // Show the modal right away so it feels snappy
         this.dialog.showModal();
 
-        // Now, fetch the images seamlessly in the background
+        // Image fetching
         const fetchedImages = await this.fetchImagesForReport(data.id);
         
         // Clear the loading state

@@ -7,15 +7,13 @@
 let currentSelection = { type: 'province', ids: { provinceId: 1 } }; 
 let currentFilteredReports = []; // Stores the reports currently matching the date filter
 let MunicipalityMap={};
-let dashboardMap = null;   // 🚨 NEW: Global map instance
-let pinLayerGroup = null;  // 🚨 NEW: Stores the pins so we can clear them easily
+let dashboardMap = null;  
+let pinLayerGroup = null;  
 
 
 
 
-// ==========================================
-// 2. THE MAP CLICK HANDLER
-// ==========================================
+
 
 const provinceFullNameToId = {
     'Gauteng': 1, 
@@ -35,7 +33,7 @@ function onMapClick(type, ids) {
     
     const radios = document.querySelectorAll('input[name="granularity"]');
     radios.forEach(radio => {
-        // Updated to handle "Provincial" vs "province"
+        //handles "Provincial" vs "province"
         const label = radio.nextElementSibling.textContent.trim().toLowerCase();
         if (label.includes(type.substring(0, 4))) radio.checked = true;
     });
@@ -43,9 +41,6 @@ function onMapClick(type, ids) {
     fetchDashboardData();
 }
 
-// ==========================================
-// 3. TIMEFRAME & FETCH LOGIC
-// ==========================================
 function getDateRange() {
     const selectedTime = document.querySelector('input[name="timeframe"]:checked').nextElementSibling.textContent.trim();
     const endDate = new Date();
@@ -69,12 +64,7 @@ async function buildMunicipalityMapOuter(){
 
     // 2. Count how many items are in it
     const mapSize = Object.keys(MunicipalityMap).length;
-    
-    // 3. Print the results!
-    console.log(`✅ Dictionary Loaded! Found ${mapSize} municipalities.`);
-    
-    // 4. Draw the actual data as a table
-    console.table(MunicipalityMap);
+
 }
 
 async function fetchDashboardData() {
@@ -92,7 +82,6 @@ async function fetchDashboardData() {
     }
 
     try {
-        console.log(url);
         const response = await fetch(url);
         if (!response.ok) throw new Error('Network response was not ok');
         const reports = await response.json();
@@ -106,14 +95,12 @@ async function fetchDashboardData() {
     }
 }
 
-// ==========================================
 // 4. UI UPDATER
-// ==========================================
 function updateUI(reports, startDateStr, endDateStr) {
-    // 1. Convert the dates so we can compare them
+    //Date conversion
     const start = new Date(startDateStr).getTime();
     const endObj = new Date(endDateStr);
-    endObj.setHours(23, 59, 59, 999);
+    endObj.setHours(23, 59, 59, 999);//Midnight of the end date
     const end = endObj.getTime();
 
     // 2. Build the combined list for the Modal (Created OR Resolved in this window)
@@ -163,7 +150,7 @@ function updateUI(reports, startDateStr, endDateStr) {
 // 6. BAR CHART GENERATOR
 // ==========================================
 function updateBarCharts(reports, startDateStr, endDateStr) {
-    const numBuckets = 7; // Matches the 7 visual bars you had in your design
+    const numBuckets = 7; //We use seven bars
     const reqCounts = new Array(numBuckets).fill(0);
     const resCounts = new Array(numBuckets).fill(0);
 
@@ -189,7 +176,8 @@ function updateBarCharts(reports, startDateStr, endDateStr) {
         }
 
         // 2. Bucket the Resolutions (When was it fixed?)
-        if ((report.Progress || '').toLowerCase() === 'resolved' && report.DateFulfilled) {
+        console.log(report.Progress);
+        if ((report.Progress || '').toLowerCase() === 'resolved' || report.DateFulfilled) {
             const resolvedTime = new Date(report.DateFulfilled).getTime();
             if (resolvedTime >= start && resolvedTime <= end) {
                 let bucketIndex = Math.floor(((resolvedTime - start) / timeSpan) * numBuckets);
@@ -224,7 +212,7 @@ function renderChart(containerId, dataArr) {
         const heightPct = val === 0 ? 5 : (val / maxVal) * 100;
         span.style.height = `${heightPct}%`;
         
-        // Add a tooltip so hovering over the bar shows the exact number!
+        //ToolTip to show requests in that window
         span.title = `${val} reports`;
         
         container.appendChild(span);
@@ -264,9 +252,7 @@ async function buildMunicipalityMap() {
     }
 }
 
-// ==========================================
 // 5. INITIALIZATION
-// ==========================================
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Existing Timeframe Logic
    buildMunicipalityMapOuter();
@@ -276,12 +262,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
    // 2. Instantiate the modular map (Starting with Provinces!)
-   //Fetches only from data from provincial.json I think but then why does it work?
-   //THIS DOES NOT FUCKING WORK
-
     dashboardMap = new CivicMap(
         'map', 
-        'data/sa_provincial.json', // <-- Removed the leading slash, updated filename
+        'data/sa_provincial.json',
         (data) => {
             if (data.wardId) {
                 //Municipality Require mapping
@@ -377,7 +360,6 @@ function renderLedgerTable(reports) {
 
         const tr = document.createElement('tr'); 
         
-        // 🚨 NEW PART 1: Added 'cursor-pointer' so the mouse turns into a hand when hovering
         tr.className = 'hover:bg-surface-container-high transition-colors group cursor-pointer';
         
         tr.innerHTML = `
@@ -387,14 +369,13 @@ function renderLedgerTable(reports) {
                     <span class="font-bold text-white uppercase tracking-tight">${report.Type || 'General'}</span>
                 </span>
             </td>
-            <td class="px-8 py-4 text-on-surface-variant font-medium text-sm truncate max-w-[200px]" title="${report.Description || 'No description provided.'}">
-                ${report.Description || 'No description provided.'}
+            <td class="px-8 py-4 text-on-surface-variant font-medium text-sm truncate max-w-[200px]" title="${report.Brief || 'No description provided.'}">
+                ${report.Brief || 'No description provided.'}
             </td>
             <td class="px-8 py-4 text-center">${statusBadge}</td>
             <td class="px-8 py-4 text-right font-mono text-on-surface-variant text-sm">${formattedDate}</td>
         `;
         
-        // 🚨 NEW PART 2: We are ADDING the click handler right here!
         // When this specific row is clicked, it feeds its data to the CivicModal class
         tr.onclick = () => {
             openIssueModal(report.ReportID);
@@ -405,11 +386,10 @@ function renderLedgerTable(reports) {
 }
 
 //ModalView
-// 1. Initialize the modal manager at the top of your file
+// 1. Initialize the modal manager
 const issueViewer = new CivicModal();
 
 // 2. Call it in your row click handler
-// 🚨 Make sure to add 'async' here
 async function openIssueModal(reportId) {
     const report = currentFilteredReports.find(r => r.ReportID === reportId);
     if (!report) return;
@@ -472,10 +452,9 @@ function drawPinsOnMap(reports) {
             fillOpacity: 0.9
         }).addTo(pinLayerGroup);
 
-        // Add a nice hover tooltip
+        //tooltip
         marker.bindTooltip(`<b>${report.Type || 'Issue'}</b><br/>${report.Progress || 'Active'}`, { direction: 'top' });
 
-        // 🚨 Make the pin clickable!
         // We can completely reuse the openIssueModal function you built for the table!
         marker.on('click', () => {
             openIssueModal(report.ReportID);
