@@ -59,6 +59,7 @@
         /* Ensure Leaflet map stays behind the fixed header */
         #ward-map { z-index: 10; }
     </style>
+    
 </head>
 <body class="bg-black text-on-surface antialiased">
     
@@ -74,14 +75,19 @@
         </section>
     </header>
 
-    <main class="pt-32 px-8 pb-20 max-w-7xl mx-auto">
+    <main id="pdf-region-ward" class="pt-32 px-8 pb-20 max-w-7xl mx-auto">
         
-        <nav class="mb-12">
-            <a href="GuestDashboard.html" id="back-btn" class="group inline-flex items-center gap-2 text-primary hover:text-primary-container transition-colors font-bold uppercase tracking-widest text-sm">
-                <span class="material-symbols-outlined">arrow_back</span>
-                Back to Public Dashboard
-            </a>
-        </nav>
+        <nav class="mb-12 flex justify-between items-center" data-html2canvas-ignore="true">
+    <a href="GuestDashboard.html" id="back-btn" class="group inline-flex items-center gap-2 text-primary hover:text-primary-container transition-colors font-bold uppercase tracking-widest text-sm">
+        <span class="material-symbols-outlined">arrow_back</span>
+        Back to Public Dashboard
+    </a>
+    
+    <button id="export-ward-pdf-btn" class="bg-[#FF8C00]/10 border border-[#FF8C00]/30 text-[#FF8C00] hover:bg-[#FF8C00] hover:text-white px-4 py-2 rounded-lg font-black uppercase tracking-widest text-xs transition-all flex items-center gap-2">
+        <span class="material-symbols-outlined text-sm">download</span>
+        Export PDF
+    </button>
+</nav>
 
         <header class="mb-16">
             <h1 id="ward-title" class="text-6xl font-black tracking-tighter text-white mb-4 uppercase italic">Loading Ward...</h1>
@@ -206,6 +212,8 @@
         </article>
     </dialog>
 <script src="../ModalUtilities/CivicModal.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="PublicWardView.js"></script>
+    <script src="../ModalUtilities/DashboardExporter.js"></script>
 </body>
 </html>

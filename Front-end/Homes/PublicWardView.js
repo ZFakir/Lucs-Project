@@ -21,6 +21,25 @@ document.addEventListener('DOMContentLoaded', () => {
         return; 
     }
 
+    // ==========================================
+// PDF EXPORT INITIALISATION
+// ==========================================
+// We wrap this in an if-statement to check if 'DashboardExporter' exists.
+// This is a safety measure. It prevents the entire script from crashing if the HTML 
+// file failed to load the DashboardExporter.js script correctly.
+if (typeof DashboardExporter !== 'undefined') {
+    
+    // We create a new instance of our exporter utility class, passing in the 3 required arguments
+    new DashboardExporter(
+        'export-ward-pdf-btn',         // 1. The exact ID of the button listening for the click event
+        '#pdf-region-ward',            // 2. The ID of the container we want to take a snapshot of
+        `Ward_${wardId}_Public_Ledger` // 3. The dynamic filename 
+    );
+} else {
+    // If the class isn't found, we log a warning instead of breaking the page
+    console.warn("DashboardExporter script not loaded.");
+}
+
     document.getElementById('ward-title').textContent = `WARD ${wardId}`;
 
     initMap();
@@ -70,7 +89,7 @@ function renderMapMarkers(reports) {
                 <span style="color: #333;">${report.Progress || 'Pending'}</span>
             `);
 
-            // 🚨 Use the new modal directly from the map pin!
+            // 🚨 Use the new modal directly from the map pin
             marker.on('click', () => openIssueModal(report.ReportID));
 
             bounds.extend([lat, lng]);
@@ -209,7 +228,7 @@ async function openIssueModal(reportId) {
         municipality: "Local Municipality" // Falls back gracefully since we don't fetch full muni strings here
     };
 
-    // 🚨 Open the newly instantiated CivicModal (fetches images autonomously!)
+    // 🚨 Open the newly instantiated CivicModal (fetches images autonomously)
     await issueModal.open(modalData);
 }
 

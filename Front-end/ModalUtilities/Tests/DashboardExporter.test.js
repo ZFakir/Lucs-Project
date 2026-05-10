@@ -80,24 +80,32 @@ describe('DashboardExporter Component Tests', () => {
         });
 
         test('should modify the cloned document in onclone callback', () => {
-            exporter.generatePDF();
-            
-            const options = mockHtml2Pdf.set.mock.calls[0][0];
-            const onclone = options.html2canvas.onclone;
+    exporter.generatePDF();
+    
+    const options = mockHtml2Pdf.set.mock.calls[0][0];
+    const onclone = options.html2canvas.onclone;
 
-            const fakeClonedDoc = {
-                getElementById: jest.fn((id) => {
-                    if (id === 'map') return { style: {} };
-                    if (id === 'pdf-region-panel') return { style: {}, classList: { remove: jest.fn() } };
-                    return null;
-                })
-            };
+    // UPDATE THIS MOCK
+    const fakeClonedDoc = {
+        getElementById: jest.fn((id) => {
+            if (id === 'map') return { style: {} };
+            if (id === 'ward-map') return { style: {} }; // Cover the new ward-map line
+            if (id === 'pdf-region-ward') return { style: {} }; // Cover the background color line
+            if (id === 'pdf-region-panel') return { style: {}, classList: { remove: jest.fn() } };
+            return null;
+        }),
+        // ADD THIS TO PREVENT THE CRASH
+        querySelector: jest.fn((selector) => {
+            if (selector === 'nav') return { style: {} };
+            return null;
+        })
+    };
 
-            onclone(fakeClonedDoc);
+    onclone(fakeClonedDoc);
 
-            expect(fakeClonedDoc.getElementById).toHaveBeenCalledWith('map');
-            expect(fakeClonedDoc.getElementById).toHaveBeenCalledWith('pdf-region-panel');
-        });
+    expect(fakeClonedDoc.getElementById).toHaveBeenCalledWith('map');
+    expect(fakeClonedDoc.querySelector).toHaveBeenCalledWith('nav');
+});
     });
 
     describe('Error Handling', () => {
