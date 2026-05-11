@@ -1,2 +1,8 @@
 node_modules/
 .env
+
+# Testing coverage
+coverage/
+*/coverage/
+*.lcov
+clover.xml
