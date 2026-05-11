@@ -19,10 +19,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (userRole === 'admin') {
             homeLink.href = '../Homes/Admin.html';
             homeLinkText.innerText = 'Return to Admin Portal';
+            homeLinkText.style.fontSize = '20px';
+        } else if (userRole === 'guest') {
+            homeLink.href = '../Homes/GuestDashboard.html';
+            homeLinkText.innerText = 'Return to Guest Portal';
+            homeLinkText.style.fontSize = '20px';
         } else {
             homeLink.href = '../Homes/Resident.html';
-            homeLinkText.innerText = 'Return to Resident Home';
-        }
+            homeLinkText.innerText = 'Return to Resident Portal';
+            homeLinkText.style.fontSize = '20px';
+        }  
     }
 
     // 4. Security Redirect
@@ -33,3 +39,9 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = '../Homes/Resident.html';
     }
 });
+
+
+// EXPORTS FOR JEST TESTING
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {}; 
+}
