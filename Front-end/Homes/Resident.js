@@ -1,3 +1,6 @@
+
+import { LocationPicker } from '../ModalUtilities/LocationPicker.js';
+
 document.addEventListener('DOMContentLoaded', () => {
     // For testing, replace '1' with your actual logic to get the logged-in user's ID
     const residentId = localStorage.getItem('residentId');
@@ -928,6 +931,45 @@ document.addEventListener('click', (event) => {
         detailsElement.removeAttribute('open');
     }
 });
+
+
+const wardLocationPicker = new LocationPicker(
+    'add-ward-map', 
+    'map-status-text', 
+    async (result) => {
+        // This is the callback! It runs whenever the pin stops moving.
+        if (result.success && result.provId && result.muniId && result.wardNo) {
+            // Trigger your dropdown auto-fills sequentially
+            provinceSelect.value = result.provId;
+            await fetchMunicipalitiesForSelect(result.provId);
+            
+            municipalitySelect.value = result.muniId;
+            await fetchWardsForSelect(result.muniId);
+            
+            wardSelect.value = parseInt(result.wardNo);
+        } else {
+            // Reset dropdowns if outside boundaries
+            resetDropdown(municipalitySelect, 'Choose a municipality');
+            resetDropdown(wardSelect, 'Choose a ward');
+            provinceSelect.value = "";
+        }
+    }
+);
+
+// 2. Start downloading the GeoJSON in the background immediately
+document.addEventListener('DOMContentLoaded', () => {
+    wardLocationPicker.loadData();
+});
+
+// 3. Only draw the map when the user opens the modal
+document.addEventListener('click', (event) => {
+    const openBtn = event.target.closest('#open-add-ward-btn');
+    if (openBtn) {
+        wardLocationPicker.render();
+    }
+});
+
+
 
 // Expose functions to the global window object so inline HTML onclicks can use them
 window.manageNotifications = manageNotifications;
