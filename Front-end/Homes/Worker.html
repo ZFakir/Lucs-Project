@@ -141,16 +141,19 @@
     <header class="p-8 pb-4">
         <h2 class="text-xs font-black uppercase tracking-[0.2em] text-on-surface-variant">Completed Tasks</h2>
     </header>
-    <section class="px-8 pb-8 space-y-4 opacity-40 grayscale hover:opacity-100 transition-opacity" id="completed-tasks-list">
-        </section>
-</section>
 
-<footer class="p-6 bg-surface-container-high/30 border-t border-outline/20">
-    <button onclick="toggleCompletedTasks()" class="w-full py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant hover:text-primary transition-colors flex items-center justify-center gap-2">
-        <span class="material-symbols-outlined text-sm">history</span> Show Completed Tasks
-    </button>
-</footer>
-<section class="px-8 pb-8 space-y-4 opacity-40 grayscale hover:opacity-60 transition-opacity">
+    <!-- ✅ The list goes HERE — toggleCompletedTasks fills this div -->
+    <section class="px-8 pb-8 space-y-4 opacity-40 grayscale hover:opacity-100 transition-opacity" id="completed-tasks-list">
+    </section>
+
+    <!-- ✅ Footer button BELOW the list -->
+    <footer class="p-6 bg-surface-container-high/30 border-t border-outline/20">
+        <button onclick="toggleCompletedTasks()" 
+                class="w-full py-4 text-[10px] font-black uppercase tracking-[0.3em] text-on-surface-variant hover:text-primary transition-colors flex items-center justify-center gap-2">
+            <span class="material-symbols-outlined text-sm">history</span> Show Completed Tasks
+        </button>
+    </footer>
+</section>
 <!-- Sample Completed Task -->
 </section>
 </section>

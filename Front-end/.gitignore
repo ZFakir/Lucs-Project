@@ -1,5 +1,8 @@
 # Dependency directories
 node_modules/
 
-# Testing directories
+# Testing coverage
 coverage/
+*/coverage/
+*.lcov
+clover.xml
