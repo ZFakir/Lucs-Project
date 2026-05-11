@@ -286,7 +286,7 @@ async function fetchWardStats(wardId) {
 // ==========================================
 // 7. CUSTOM MODAL CONTROLLER
 // ==========================================
-// Instead of using ugly browser alert() popups, we use the native HTML <dialog> element
+// Instead of using browser alert() popups, we use the native HTML <dialog> element
 function showModal(title, message) {
     const dialog = document.getElementById('custom-modal');
     const titleEl = document.getElementById('modal-title');
