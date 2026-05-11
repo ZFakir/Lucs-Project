@@ -416,3 +416,9 @@
         wireProfileTriggers();
     }
 })();
+
+
+// EXPORTS FOR JEST TESTING
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {}; 
+}

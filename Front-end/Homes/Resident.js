@@ -998,3 +998,14 @@ document.addEventListener('click', (event) => {
 // Expose functions to the global window object so inline HTML onclicks can use them
 window.manageNotifications = manageNotifications;
 window.unsubscribeWard = unsubscribeWard;
+
+
+// EXPORTS FOR JEST TESTING
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        renderSubscribedWards, manageNotifications, toggleWardMute, showModal, 
+        unsubscribeWard, loadProvinces, fetchMunicipalitiesForSelect, 
+        fetchWardsForSelect, getTimeAgo, renderAlerts, openReportModal, 
+        closeReportModal, getMutePrefs, saveMutePrefs, loadResidentNotifications
+    };
+}
