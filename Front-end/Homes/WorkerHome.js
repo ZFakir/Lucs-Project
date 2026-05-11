@@ -436,7 +436,7 @@ function logoutWorker() {
     document.getElementById('profile-dropdown').classList.add('hidden');
     if (!confirm('Are you sure you want to log out?')) return;
     localStorage.clear();
-    window.location.href = '../Login/Worker_Login.html';
+    window.location.href = '../Login/Login.html';
 }
 
 
@@ -471,4 +471,15 @@ async function uploadTaskImages(reportId) {
     } catch (err) {
         console.error("Error during image upload process:", err);
     }
+}
+
+
+// EXPORTS FOR JEST TESTING
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        loadMyAssignedTasks, toggleCompletedTasks, acceptTask, renderTaskCard,
+        declineTask, resolveTask, showTaskDetails, closeModal, updateProgress,
+        handleImageSelect, removeImage, renderPreviews, toggleProfileDropdown,
+        closeDropdownOutside, openEditProfile, logoutWorker, uploadTaskImages
+    };
 }
