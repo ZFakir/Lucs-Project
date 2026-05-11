@@ -266,7 +266,7 @@ async function fetchWardStats(wardId) {
         openIssuesDisplay.textContent = openCount;
         resolvedIssuesDisplay.textContent = resolvedCount;
         
-        // A clever UI trick: find all elements that say "GLOBAL" and dynamically 
+        // Find all elements that say "GLOBAL" and dynamically 
         // change them to say "WARD X" so the user knows the stats are localised.
         document.querySelectorAll('.uppercase.font-black.tracking-widest').forEach(el => {
             if (el.textContent === 'GLOBAL') el.textContent = `WARD ${wardId}`;
