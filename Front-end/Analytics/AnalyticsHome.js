@@ -39,3 +39,9 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = '../Homes/Resident.html';
     }
 });
+
+
+// EXPORTS FOR JEST TESTING
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {}; 
+}

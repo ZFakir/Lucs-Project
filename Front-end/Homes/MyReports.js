@@ -287,3 +287,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         grid.innerHTML = `<p class="col-span-full text-center text-error">Error connecting to database.</p>`;
     }
 });
+
+
+// EXPORTS FOR JEST TESTING
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { 
+        injectFeedbackAction, 
+        openMyReportModal, 
+        updateStarUI,
+        resetStars
+    };
+}

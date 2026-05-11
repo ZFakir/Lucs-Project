@@ -215,5 +215,9 @@ async function openIssueModal(reportId) {
 
 // EXPORTS FOR JEST TESTING
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { fetchWardReports, fetchWardDetails, renderStats, renderTable, renderMapMarkers, openIssueModal,initMap, setCurrentReports:(fakeData)=>{currentReports=fakeData;} };
+    module.exports = { 
+        fetchWardReports, fetchWardDetails, renderStats, renderTable, 
+        renderMapMarkers, openIssueModal, initMap, 
+        setCurrentReports: (fakeData) => { currentReports = fakeData; } 
+    };
 }

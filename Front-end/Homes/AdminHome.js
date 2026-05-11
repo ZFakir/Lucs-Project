@@ -594,3 +594,15 @@ async function loadActiveWorkers() {
     }
 }
 
+// EXPORTS FOR JEST TESTING
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        handleEditSubmit, openEditModal, closeEditModal, loadUnassignedReports, 
+        updatePriority, assignToWorker, loadPendingWorkers, approveWorker, 
+        handleDelete, invalidateWorker, renderAssignmentTracker, openAssignModal, 
+        closeAssignModal, loadWorkerDropdown, loadAssignedTasks, renderAssignmentRows, 
+        filterAssignments, openAssignmentDetail, closeAssignmentDetail, 
+        toggleAdminDropdown, closeAdminDropdownOutside, openAdminProfile, 
+        logoutAdmin, loadActiveWorkers
+    };
+}

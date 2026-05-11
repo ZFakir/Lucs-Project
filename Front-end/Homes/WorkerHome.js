@@ -470,3 +470,14 @@ async function uploadTaskImages(reportId) {
         console.error("Error during image upload process:", err);
     }
 }
+
+
+// EXPORTS FOR JEST TESTING
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        loadMyAssignedTasks, toggleCompletedTasks, acceptTask, renderTaskCard,
+        declineTask, resolveTask, showTaskDetails, closeModal, updateProgress,
+        handleImageSelect, removeImage, renderPreviews, toggleProfileDropdown,
+        closeDropdownOutside, openEditProfile, logoutWorker, uploadTaskImages
+    };
+}
