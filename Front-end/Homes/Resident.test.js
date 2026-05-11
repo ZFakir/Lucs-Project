@@ -83,13 +83,20 @@ describe('Resident Dashboard Logic - Maximum Safe Coverage', () => {
 
     test('openReportModal fetches images and formats text', async () => {
         residentModule.renderAlerts([{ ReportID: 10, Title: 'Fire', Progress: 'Burning', CreatedAt: '2026-05-10T12:00:00Z' }]);
+
+        // openReportModal fires two parallel fetches:
+        //   1. GET /api/reports/10          → report details (Brief/Description)
+        //   2. GET /api/reports/report/10   → image attachments
+        fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ Brief: 'Burning' }) });
         fetch.mockResolvedValueOnce({ ok: true, json: async () => [{ Type: 'image/jpeg', base64: 'abc123xyz' }] });
 
         await residentModule.openReportModal(0);
+        await new Promise(process.nextTick);
 
         const content = document.getElementById('modal-content').innerHTML;
         expect(content).toContain('Fire');
-        expect(content).toContain('Burning');
+        // Details text is written into modal-details-container by the report-details fetch
+        expect(document.getElementById('modal-details-container').textContent).toContain('Burning');
         expect(document.getElementById('report-modal').classList.contains('hidden')).toBe(false);
     });
 
