@@ -756,4 +756,26 @@ router.post('/report/:reportId', async (req, res) => {
     }
 });
 
+// GET: Fetch all images for a specific report as base64
+router.get('/report/:reportId', async (req, res) => {
+    try {
+        const images = await ReportImage.findAll({
+            where: { ReportID: req.params.reportId }
+        });
+
+        // Convert BLOB to base64 so the frontend can display them
+        const formatted = images.map(img => ({
+            ImageID: img.ImageID,
+            Type: img.Type || 'image/jpeg',
+            base64: img.Image ? img.Image.toString('base64') : null
+        }));
+
+        res.json(formatted);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+
+
 module.exports=router;
