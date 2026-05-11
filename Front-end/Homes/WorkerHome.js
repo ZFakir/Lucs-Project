@@ -69,11 +69,10 @@ async function loadMyAssignedTasks(workerId) {
         console.error("Critical failure:", err);
     }
 }
+
 async function toggleCompletedTasks() {
     const container = document.getElementById('completed-tasks-list');
     const button = document.querySelector('footer button');
-    
-    // Always pull the ID from localStorage so it matches the logged-in user
     const workerId = localStorage.getItem('workerId');
 
     if (completedVisible) {
@@ -87,7 +86,6 @@ async function toggleCompletedTasks() {
         const response = await fetch(`/api/reports/assigned/${workerId}`);
         const reports = await response.json();
 
-        // Safer filtering using .includes() to handle "Fixed", "Resolved", or "100%"
         const completed = reports.filter(r => {
             const p = (r.Progress || "").toLowerCase();
             const s = (r.Status || "").toLowerCase();
@@ -100,15 +98,19 @@ async function toggleCompletedTasks() {
                     <p class="text-[10px] uppercase tracking-widest text-neutral-600 font-black">No completed operations found.</p>
                 </div>`;
         } else {
+            // ✅ REPLACE the old container.innerHTML with this:
             container.innerHTML = completed.map(report => `
-                <div class="flex justify-between items-center p-4 bg-surface-container-high/20 border border-outline/10 rounded-xl mb-3">
+                <div class="flex justify-between items-center p-4 bg-surface-container-high/20 border border-outline/10 rounded-xl mb-3 cursor-pointer hover:bg-surface-container-high/40 transition-colors"
+                     onclick="showTaskDetails(${report.ReportID})">
                     <section>
                         <p class="text-[10px] font-mono text-primary/60">#${report.ReportID}</p>
                         <h4 class="text-sm font-bold text-on-surface">${report.Type}</h4>
+                        <p class="text-[10px] text-neutral-500 uppercase">Ward ${report.WardID || 'N/A'}</p>
                     </section>
                     <section class="text-right">
-                        <p class="text-[10px] font-black uppercase text-on-surface-variant">Archived</p>
+                        <p class="text-[10px] font-black uppercase text-green-400">Completed</p>
                         <p class="text-[9px] text-neutral-600">${report.DateFulfilled ? new Date(report.DateFulfilled).toLocaleDateString() : 'Finalized'}</p>
+                        <span class="material-symbols-outlined text-neutral-600 text-sm">open_in_new</span>
                     </section>
                 </div>
             `).join('');

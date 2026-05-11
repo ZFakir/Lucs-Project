@@ -32,7 +32,7 @@ async function handleEditSubmit(e) {
     const id = document.getElementById('edit-report-id').value; //finds which report is being changed
     const updatedData = {
         Type: document.getElementById('edit-type').value,
-        Progress: document.getElementById('edit-description').value
+        Brief: document.getElementById('edit-description').value
     };
 
     if (!id) {
@@ -69,7 +69,7 @@ async function openEditModal(reportId) {
 
         document.getElementById('edit-report-id').value = report.ReportID;
         document.getElementById('edit-type').value = report.Type;
-        document.getElementById('edit-description').value = report.Progress || '';
+        document.getElementById('edit-description').value = report.Brief || '';
         
         document.getElementById('edit-report-modal').classList.remove('hidden');
     } catch (err) {
