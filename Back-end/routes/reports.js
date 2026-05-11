@@ -100,30 +100,46 @@ router.post('/', async (req, res) => {
         const newReport = await Report.create(req.body);
         const paused = req.headers['x-notif-paused'] === 'true';
 
-        // 2. 🚨 NEW LOGIC: Process and save the images
-        if (req.body.Images && Array.isArray(req.body.Images) && req.body.Images.length > 0) {
-            const imagePromises = req.body.Images.map(async (base64String) => {
-                // Use Regex to split the "data:image/png;base64," prefix from the raw data
-                const matches = base64String.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
-                
-                if (matches && matches.length === 3) {
-                    const mimeType = matches[1]; // e.g., 'image/jpeg'
-                    const base64Data = matches[2]; // The raw alphanumeric string
-                    
-                    // Convert the string into a binary Buffer
-                    const imageBuffer = Buffer.from(base64Data, 'base64');
+        // Safely extract images whether the frontend sent an Array OR a single String
+        // ULTIMATE IMAGE PROCESSING
+        let imageArray = [];
+        const possibleImage = req.body.Images || req.body.Image || req.body.imageBase64 || req.body.images || req.body.image;
+        
+        if (Array.isArray(possibleImage)) {
+            imageArray = possibleImage;
+        } else if (typeof possibleImage === 'string') {
+            imageArray = [possibleImage];
+        }
 
-                    // Save it to the ReportImage table
-                    return ReportImage.create({
+        console.log(`\n[DIAGNOSTIC] New Report #${newReport.ReportID} created. Incoming images count: ${imageArray.length}`);
+
+        if (imageArray.length > 0) {
+            const imagePromises = imageArray.map(async (rawString) => {
+                try {
+                    let mimeType = 'image/jpeg'; // Safe fallback
+                    let base64Data = rawString;
+
+                    // Safely split the data URI prefix from the actual image string
+                    if (rawString.includes('base64,')) {
+                        const parts = rawString.split('base64,');
+                        mimeType = parts[0].replace('data:', '').replace(';', '') || 'image/jpeg';
+                        base64Data = parts[1].trim(); // Trim removes any hidden spaces/linebreaks!
+                    }
+
+                    // Save directly to the database
+                    await ReportImage.create({
                         ReportID: newReport.ReportID,
                         Type: mimeType,
-                        Image: imageBuffer
+                        Image: Buffer.from(base64Data, 'base64')
                     });
+                    console.log(`[DIAGNOSTIC] ✅ Successfully saved 1 image to the database!`);
+                } catch (imgError) {
+                    console.error('[DIAGNOSTIC] ❌ Failed to save image to DB:', imgError);
                 }
             });
-
-            // Wait for all images to finish saving to the database
             await Promise.all(imagePromises);
+        } else {
+            console.log('[DIAGNOSTIC] ⚠️ No images found in request. Keys received were:', Object.keys(req.body));
         }
 
         // 3. Existing Notification Logic
@@ -243,11 +259,12 @@ router.put('/:id/status', async (req, res) => {
             return res.status(404).json({ message: 'Report not found' });
         }
 
+        // Fetch the updated report to get its WardID and Type for all notifications
+        const report = await Report.findByPk(reportId);
+
         // Notify admin when report is completed 
         const isCompleted = progressValue === 'Fixed' || progressValue === 'Resolved' || progressValue == 100;
         if (isCompleted) {
-            const report = await Report.findByPk(reportId);
-
             await notify(
                 'admin',
                 'REPORT_COMPLETED',
@@ -274,6 +291,57 @@ router.put('/:id/status', async (req, res) => {
                     </div>
                     `
                 );
+            }
+        }
+
+        // ─── NEW: Notify subscribed residents about the report update ───
+        if (report && report.WardID) {
+            const subscriptions = await Subscription.findAll({ 
+                where: { WardID: report.WardID } 
+            });
+
+            for (const sub of subscriptions) {
+                // 1. Create in-app notification
+                await notify(sub.ResidentID, 'WARD_REPORT_UPDATE',
+                    `Report Update: ${report.Type}`,
+                    `The status for Report #${reportId} in Ward ${report.WardID} has been updated to: ${progressValue}.`,
+                    reportId
+                );
+
+                // Inside the resident loop, right before sending the email:
+                const isCompleted = progressValue === 'Fixed' || progressValue === 'Resolved' || progressValue == 100;
+
+                let emailSubject = `🔄 Update on Report #${reportId}: ${report.Type}`;
+                let headerColor = "#3b82f6"; // Blue for standard updates
+                let headerText = "Report Status Updated";
+
+                if (isCompleted) {
+                    emailSubject = `✅ Resolved: Report #${reportId} in Your Area`;
+                    headerColor = "#4ade80"; // Green for completed
+                    headerText = "Report Resolved";
+}
+                // 2. Send email
+                const residentToNotify = await Resident.findByPk(sub.ResidentID);
+
+                if (!paused && residentToNotify && residentToNotify.Email) {
+                    await sendEmail(
+                        residentToNotify.Email, 
+                        `🔄 Update on Report #${reportId}: ${report.Type}`,
+                        `
+                        <div style="font-family:sans-serif;max-width:600px;margin:auto;background:#1a1a1a;color:#e2e2e2;padding:32px;border-radius:12px;">
+                            <h2 style="color:#3b82f6;margin:0 0 8px;">Report Status Updated</h2>
+                            <p style="color:#a3a3a3;font-size:12px;text-transform:uppercase;letter-spacing:0.1em;">Groundwork Alert</p>
+                            <hr style="border:none;border-top:1px solid #333;margin:20px 0;">
+                            <p><strong>Type:</strong> ${report.Type}</p>
+                            <p><strong>Ward:</strong> ${report.WardID}</p>
+                            <p><strong>Report ID:</strong> #${reportId}</p>
+                            <p><strong>New Status/Progress:</strong> ${progressValue}</p>
+                            <hr style="border:none;border-top:1px solid #333;margin:20px 0;">
+                            <p style="color:#737373;font-size:11px;">Log in to your dashboard to track the status of this report.</p>
+                        </div>
+                        `
+                    );
+                }
             }
         }
 
@@ -334,7 +402,7 @@ router.post('/:id/claim', async (req, res) => {
     }
 });
 
-// POST: Admin assigns a report to a worker and NOTIFIES WORKER 
+// POST: Admin assigns a report to a worker and NOTIFIES WORKER & RESIDENTS
 router.post('/:id/assign', async (req, res) => {
     try {
         const { EmployeeID } = req.body;
@@ -351,36 +419,77 @@ router.post('/:id/assign', async (req, res) => {
         const taskType = report ? report.Type : 'a task';
         const ward = report ? `Ward ${report.WardID}` : 'your area';
 
+        // 1. Notify the worker (In-app)
         await notify(EmployeeID, 'TASK_ASSIGNED',
             `New Assignment: ${taskType}`,
             `You have been assigned a new task in ${ward}. Report #${ReportID} is ready for acceptance.`,
             ReportID
         );
 
+        // 2. Email the worker
         if (!paused) {
             const worker = await MunicipalWorker.findByPk(EmployeeID);
             if (worker && worker.Email) {
                 await sendEmail(
-                worker.Email,
-                `📌 New Task Assigned: ${taskType}`,
-                `
-                <div style="font-family:sans-serif;max-width:600px;margin:auto;background:#1a1a1a;color:#e2e2e2;padding:32px;border-radius:12px;">
-                    <h2 style="color:#22d3ee;margin:0 0 8px;">New Task Assigned</h2>
-                    <p style="color:#a3a3a3;font-size:12px;text-transform:uppercase;letter-spacing:0.1em;">Civic Ledger Field Operations</p>
-                    <hr style="border:none;border-top:1px solid #333;margin:20px 0;">
-                    <p>Hi <strong>${worker.FirstName}</strong>,</p>
-                    <p>You have been assigned a new field task. Please log in to accept or decline.</p>
-                    <p><strong>Task Type:</strong> ${taskType}</p>
-                    <p><strong>Location:</strong> ${ward}</p>
-                    <p><strong>Report ID:</strong> #${ReportID}</p>
-                    <hr style="border:none;border-top:1px solid #333;margin:20px 0;">
-                    <p style="color:#737373;font-size:11px;">Log in to the Worker Dashboard to accept this task and begin work.</p>
-                </div>
-                `
-            );
+                    worker.Email,
+                    `📌 New Task Assigned: ${taskType}`,
+                    `
+                    <div style="font-family:sans-serif;max-width:600px;margin:auto;background:#1a1a1a;color:#e2e2e2;padding:32px;border-radius:12px;">
+                        <h2 style="color:#22d3ee;margin:0 0 8px;">New Task Assigned</h2>
+                        <p style="color:#a3a3a3;font-size:12px;text-transform:uppercase;letter-spacing:0.1em;">Civic Ledger Field Operations</p>
+                        <hr style="border:none;border-top:1px solid #333;margin:20px 0;">
+                        <p>Hi <strong>${worker.FirstName}</strong>,</p>
+                        <p>You have been assigned a new field task. Please log in to accept or decline.</p>
+                        <p><strong>Task Type:</strong> ${taskType}</p>
+                        <p><strong>Location:</strong> ${ward}</p>
+                        <p><strong>Report ID:</strong> #${ReportID}</p>
+                        <hr style="border:none;border-top:1px solid #333;margin:20px 0;">
+                        <p style="color:#737373;font-size:11px;">Log in to the Worker Dashboard to accept this task and begin work.</p>
+                    </div>
+                    `
+                );
             }
         } else {
-            console.log('[Email] Skipped — notifications paused by user');
+            console.log('[Email] Skipped worker email — notifications paused by user');
+        }
+
+        // ─── NEW: Notify subscribed residents about the assignment ───
+        if (report && report.WardID) {
+            const subscriptions = await Subscription.findAll({ 
+                where: { WardID: report.WardID } 
+            });
+
+            for (const sub of subscriptions) {
+                // A. Create in-app notification for the resident's panel
+                await notify(sub.ResidentID, 'WARD_REPORT_ASSIGNED',
+                    `Task Assigned: ${taskType}`,
+                    `Report #${ReportID} in Ward ${report.WardID} has been assigned to a field operative. Work will begin soon.`,
+                    ReportID
+                );
+
+                // B. Send email to the resident
+                const residentToNotify = await Resident.findByPk(sub.ResidentID);
+
+                if (!paused && residentToNotify && residentToNotify.Email) {
+                    await sendEmail(
+                        residentToNotify.Email, 
+                        `👷 Update on Report #${ReportID}: Task Assigned`,
+                        `
+                        <div style="font-family:sans-serif;max-width:600px;margin:auto;background:#1a1a1a;color:#e2e2e2;padding:32px;border-radius:12px;">
+                            <h2 style="color:#a855f7;margin:0 0 8px;">Report Assigned to Field Staff</h2>
+                            <p style="color:#a3a3a3;font-size:12px;text-transform:uppercase;letter-spacing:0.1em;">Groundwork Alert</p>
+                            <hr style="border:none;border-top:1px solid #333;margin:20px 0;">
+                            <p><strong>Type:</strong> ${taskType}</p>
+                            <p><strong>Ward:</strong> ${report.WardID}</p>
+                            <p><strong>Report ID:</strong> #${ReportID}</p>
+                            <p><strong>Status:</strong> Assigned to Field Operative</p>
+                            <hr style="border:none;border-top:1px solid #333;margin:20px 0;">
+                            <p style="color:#737373;font-size:11px;">The field operative has been notified and work will begin shortly. Log in to your dashboard to track further updates.</p>
+                        </div>
+                        `
+                    );
+                }
+            }
         }
 
         res.status(200).json({ success: true });
@@ -595,22 +704,48 @@ router.put('/:id/Rating', async (req, res) => {
     }
 });
 
-// GET: Fetch all images for a specific report as base64
-router.get('/report/:reportId', async (req, res) => {
+// POST: Upload a new image for a specific report
+router.post('/report/:reportId', async (req, res) => {
     try {
-        const images = await ReportImage.findAll({
-            where: { ReportID: req.params.reportId }
-        });
+        const reportId = req.params.reportId;
+        
+        // Grab the image regardless of what the frontend named the key!
+        const incomingImage = req.body.imageBase64 || req.body.Image || req.body.image || req.body.images;
 
-        // Convert BLOB to base64 so the frontend can display them
-        const formatted = images.map(img => ({
-            ImageID: img.ImageID,
-            Type: img.Type || 'image/jpeg',
-            base64: img.Image ? img.Image.toString('base64') : null
-        }));
+        // Ensure the report actually exists before attaching an image to it
+        const reportExists = await Report.findByPk(reportId);
+        if (!reportExists) {
+            return res.status(404).json({ message: 'Cannot attach image. Report not found.' });
+        }
 
-        res.json(formatted);
+        if (incomingImage && typeof incomingImage === 'string') {
+            const matches = incomingImage.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+
+            if (matches && matches.length === 3) {
+                const mimeType = matches[1]; 
+                const base64Data = matches[2]; 
+
+                const imageBuffer = Buffer.from(base64Data, 'base64');
+
+                const newImage = await ReportImage.create({
+                    ReportID: reportId,
+                    Type: mimeType, 
+                    Image: imageBuffer
+                });
+
+                return res.status(201).json({ 
+                    message: "Image uploaded successfully!", 
+                    image: { ImageID: newImage.ImageID } 
+                });
+            } else {
+                return res.status(400).json({ error: 'Invalid image format. Expected Base64.' });
+            }
+        }
+
+        return res.status(400).json({ error: 'No valid image data provided.' });
+
     } catch (err) {
+        console.error("Single image upload error:", err);
         res.status(500).json({ error: err.message });
     }
 });

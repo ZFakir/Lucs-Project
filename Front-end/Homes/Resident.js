@@ -516,7 +516,7 @@ function getTimeAgo(dateString) {
 // Uses Notification model fields: Title, Type, CreatedAt, _wardId
 const createAlertHTML = (notif, index) => {
     // Format the Ward Label (if the ID exists)
-    const wardLabel = notif.WardId ? `Ward ${notif.WardId}` : '';
+    const wardLabel = notif._wardId ? `Ward ${notif._wardId}` : '';
 
     //Extract the issue type by slicing the Title
     const rawTitle = notif.Title || '';
@@ -578,19 +578,31 @@ async function openReportModal(index) {
 
     const modal = document.getElementById('report-modal');
     const modalContent = document.getElementById('modal-content');
+    const modalHeader = modal.querySelector('h3'); 
 
     const createdAt = notif.CreatedAt || notif.createdAt;
 
-    // Render the text details immediately so the modal opens without delay
+    // 1. Slice and clean the title/type 
+    const rawTitle = notif.Title || 'System Alert';
+    const colonIdx = rawTitle.lastIndexOf(':');
+    const issueType = colonIdx !== -1 ? rawTitle.slice(colonIdx + 1).trim() : (notif.Type || 'Update');
+    const cleanTitle = colonIdx !== -1 ? rawTitle.slice(0, colonIdx).trim() : rawTitle;
+
+    // 2. Format the top header
+    const wardLabel = notif._wardId ? `Ward ${notif._wardId}` : '';
+    const headerText = wardLabel ? `${wardLabel} - ${issueType}` : issueType;
+    if (modalHeader) modalHeader.textContent = headerText;
+
+    // 3. Render Loading State
     modalContent.innerHTML = `
         <div class="space-y-3">
             <div class="flex justify-between items-center border-b border-white/10 pb-2">
                 <span class="text-xs uppercase tracking-widest opacity-50">Title</span>
-                <span class="font-bold">${notif.Title || 'System Alert'}</span>
+                <span class="font-bold">${cleanTitle}</span>
             </div>
             <div class="flex justify-between items-center border-b border-white/10 pb-2">
                 <span class="text-xs uppercase tracking-widest opacity-50">Type</span>
-                <span class="font-bold">${notif.Type || 'N/A'}</span>
+                <span class="font-bold">${issueType}</span>
             </div>
             <div class="flex justify-between items-center border-b border-white/10 pb-2">
                 <span class="text-xs uppercase tracking-widest opacity-50">Date Received</span>
@@ -599,8 +611,15 @@ async function openReportModal(index) {
 
             <div class="mt-6 pt-4">
                 <span class="text-xs uppercase tracking-widest opacity-50 block mb-2">Details</span>
-                <div class="bg-black/20 p-4 rounded-lg text-sm font-medium leading-relaxed">
-                    ${notif.Progress || notif.Description || 'No further details have been provided for this report.'}
+                <div id="modal-details-container" class="bg-black/20 p-4 rounded-lg text-sm font-medium leading-relaxed">
+                    <span class="text-orange-300 italic text-xs">Loading report details...</span>
+                </div>
+            </div>
+
+            <div class="mt-6 pt-4">
+                <span class="text-xs uppercase tracking-widest opacity-50 block mb-2">Attached Images</span>
+                <div id="modal-images-container" class="flex flex-wrap gap-4 min-h-[6rem] items-center">
+                    <span class="text-xs opacity-40 italic text-orange-300">Loading images...</span>
                 </div>
             </div>
         </div>
@@ -608,46 +627,52 @@ async function openReportModal(index) {
 
     modal.classList.remove('hidden');
 
-    // Fetch images only when this notification is linked to a report
+    const actualReportId = notif.ReportID || notif.ReportId || notif.reportId || notif.reportID;
     const imagesContainer = document.getElementById('modal-images-container');
-    if (!notif.ReportID) {
+    const detailsContainer = document.getElementById('modal-details-container');
+    
+    if (!actualReportId) {
         imagesContainer.innerHTML = `<span class="text-xs opacity-40 italic">No images attached.</span>`;
+        detailsContainer.innerHTML = notif.Message || 'No further details available.';
         return;
     }
 
+    // 4. Fetch BOTH the Report Details and the Images at the same time
     try {
-        const res = await fetch(`/api/reportImages/report/${notif.ReportID}`);
+        const [reportRes, imageRes] = await Promise.all([
+            fetch(`/api/reports/${actualReportId}`).catch(() => null),
+            // 🚨 THE FIX: Changed /reportImages/ to /reports/ to match your working backend route!
+            fetch(`/api/reports/report/${actualReportId}`).catch(() => null)
+        ]);
 
-        // 404 means no images were uploaded for this report — that's fine
-        if (res.status === 404) {
-            imagesContainer.innerHTML = `<span class="text-xs opacity-40 italic">No images attached.</span>`;
-            return;
-        }
-        if (!res.ok) throw new Error('Image fetch failed');
-
-        const images = await res.json();
-
-        if (!images || images.length === 0) {
-            imagesContainer.innerHTML = `<span class="text-xs opacity-40 italic">No images attached.</span>`;
-            return;
+        // A. Inject the Report Details
+        if (reportRes && reportRes.ok) {
+            const reportData = await reportRes.json();
+            detailsContainer.innerHTML = reportData.Brief || reportData.Description || notif.Message || 'No description provided by the user.';
+        } else {
+            detailsContainer.innerHTML = notif.Message || 'Could not load additional details.';
         }
 
-        // Render each image as a clickable thumbnail that opens full-size in a new tab
-        imagesContainer.innerHTML = images.map(img => `
-            <a href="data:${img.Type};base64,${img.base64}" target="_blank" rel="noopener"
-               title="Click to view full size">
-                <img
-                    src="data:${img.Type};base64,${img.base64}"
-                    alt="Report image"
-                    class="w-24 h-24 object-cover rounded-lg border border-white/10
-                           hover:border-orange-500 transition-colors cursor-pointer"
-                />
-            </a>
-        `).join('');
+        // B. Inject the Images
+        if (imageRes && imageRes.ok) {
+            const images = await imageRes.json();
+            if (images && images.length > 0) {
+                imagesContainer.innerHTML = images.map(img => `
+                    <a href="data:${img.Type};base64,${img.base64}" target="_blank" rel="noopener" title="Click to view full size">
+                        <img src="data:${img.Type};base64,${img.base64}" alt="Report image" class="w-24 h-24 object-cover rounded-lg border border-white/10 hover:border-orange-500 transition-colors cursor-pointer shadow-md" />
+                    </a>
+                `).join('');
+            } else {
+                imagesContainer.innerHTML = `<span class="text-xs opacity-40 italic">No images attached.</span>`;
+            }
+        } else {
+            imagesContainer.innerHTML = `<span class="text-xs opacity-40 italic">No images attached.</span>`;
+        }
 
     } catch (err) {
-        console.error('Failed to load report images:', err);
+        console.error('Failed to load modal data:', err);
         imagesContainer.innerHTML = `<span class="text-xs text-red-400 italic">Could not load images.</span>`;
+        detailsContainer.innerHTML = notif.Message || 'Error loading details.';
     }
 }
 
