@@ -10,7 +10,6 @@ env:
   DEPLOY_PATH: '/home/ubuntu/Lucs-Project'
 
 jobs:
-
   build-test-deploy:
     runs-on: ubuntu-latest
 
@@ -22,38 +21,33 @@ jobs:
       with:
         node-version: ${{ env.NODE_VERSION }}
 
-
-
     # --- FRONTEND TESTING ---
     - name: Test Frontend
       run: |
         cd Front-end
         npm ci
         chmod +x ./node_modules/.bin/jest
-        npm test --coverage
-
-        
-
-    # --- CodeCov ---
-    - name: Upload coverage reports to Codecov
-      uses: codecov/codecov-action@v5
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
+        npm run test:coverage
 
     # --- BACKEND TESTING ---
     - name: Test Backend
       env:
         NODE_ENV: test
-        # Dummy variables just in case your config requires them to not be undefined
         DB_HOST: localhost 
         GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
       run: |
         cd Back-end
-        npm install
-        npm test --coverage
+        npm ci
+        npm run test:coverage
+
+    # --- CodeCov ---
+    # Placed after both test suites to capture all coverage files
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v5
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
 
     # --- DEPLOYMENT ---
-    # This step ONLY runs if BOTH testing steps above pass successfully.
     - name: Copy Files to Lightsail (SCP)
       uses: appleboy/scp-action@v0.1.7
       with:
@@ -62,8 +56,6 @@ jobs:
         key: ${{ secrets.LIGHTSAIL_KEY }}
         source: "."
         target: ${{ env.DEPLOY_PATH }}
-
-      
 
     - name: Restart Server via SSH
       uses: appleboy/ssh-action@v1.0.3
@@ -76,5 +68,3 @@ jobs:
           npm install --production
           pm2 restart municipal-api || pm2 start server.js --name "municipal-api"
           pm2 save
-
-      
