@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function initMap() {
     /**
      * Initialises the Leaflet map container.
-     * Uses CartoDB 'Dark Matter' tiles to match the project's cyberpunk/dark-academic aesthetic.
+     * Uses CartoDB 'Dark Matter' tiles to match the project's aesthetic.
      */
     mainMap = L.map('ward-map').setView([-26.2041, 28.0473], 13);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
