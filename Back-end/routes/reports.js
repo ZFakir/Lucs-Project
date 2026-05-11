@@ -24,7 +24,8 @@ const transporter = nodemailer.createTransport({
 const ADMIN_EMAIL = [
     '2820314@students.wits.ac.za',
     '2799656@students.wits.ac.za',
-    '2805279@students.wits.ac.za'
+    '2805279@students.wits.ac.za',
+    'groundwork.wits@gmail.com',
 ].join(', ');
 
 // ─── Email helper 
@@ -534,11 +535,10 @@ router.put('/:id/priority', async (req, res) => {
 router.put('/:id/edit', async (req, res) => {
     try {
         const reportId = req.params.id;
-        // Destructure all possible editable fields
-        const { Type, Progress, WardID, Priority, Latitude, Longitude } = req.body;
+        const { Type, Brief, WardID, Priority, Latitude, Longitude } = req.body; 
 
         const [updatedRows] = await Report.update(
-            { Type, Progress, WardID, Priority, Latitude, Longitude },
+            { Type, Brief, WardID, Priority, Latitude, Longitude }, 
             { where: { ReportID: reportId } }
         );
 

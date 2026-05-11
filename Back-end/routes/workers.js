@@ -5,7 +5,8 @@ const {MunicipalWorker} = require('../models');
 const ADMIN_EMAILS = [
     '2820314@students.wits.ac.za',
     '2799656@students.wits.ac.za',
-    '2805279@students.wits.ac.za'
+    '2805279@students.wits.ac.za',
+    'groundwork.wits@gmail.com'
 ];
 
 
