@@ -80,6 +80,7 @@ async function handleCredentialResponse(response) {
             if (result.role === 'admin') {
                 localStorage.clear();
                 localStorage.setItem('role', 'admin');
+                localStorage.setItem('adminEmail', result.adminEmail);
                 localStorage.removeItem('residentId');
                 localStorage.setItem('workerId', 'admin-001'); 
                 localStorage.setItem('profilePic', result.pictureUrl);

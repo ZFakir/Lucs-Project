@@ -13,6 +13,12 @@ const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+const ADMIN_EMAILS = [
+    '2820314@students.wits.ac.za',
+    '2799656@students.wits.ac.za',
+    '2805279@students.wits.ac.za'
+];
+
 // --- 1. MIDDLEWARE ---
 app.use(cors()); 
 app.use(express.json({ limit: '50mb' })); // Vital for the base64 images
@@ -31,11 +37,12 @@ app.post('/api/auth/google', async (req, res) => {
         const { email, name, picture } = payload; // Added picture here //ticket with user information.
 
         // --- SPECIAL ADMIN CASE ---
-        if (email === "2820314@students.wits.ac.za" || email==="2799656@students.wits.ac.za" || email==="2805279@students.wits.ac.za") {
+        if (ADMIN_EMAILS.includes(email)) {
             return res.status(200).json({ 
                 success: true, 
                 role: 'admin', 
                 name: name,
+                adminEmail: email,
                 pictureUrl: picture,
                 message: "Admin recognized" 
             });
@@ -121,8 +128,7 @@ app.delete('/api/admin/delete-report/:id', async (req, res) => {
     const reportId = req.params.id;
     const { adminEmail } = req.body; // Sent from the frontend to verify identity
 
-    // 1. Hardcoded Admin Check (Using your Wits email)
-    if (adminEmail !== "2820314@students.wits.ac.za") {
+    if (!ADMIN_EMAILS.includes(adminEmail)) {
         return res.status(403).json({ success: false, message: "Unauthorized: Admin access only." });
     }
 

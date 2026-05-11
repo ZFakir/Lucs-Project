@@ -1,6 +1,13 @@
+
+function getAdminEmail() {
+    return localStorage.getItem('adminEmail');
+}
+
 localStorage.setItem('role', 'admin');
 localStorage.removeItem('workerId');
 localStorage.removeItem('workerName');
+
+const adminEmail = getAdminEmail();
 
 document.addEventListener('DOMContentLoaded', () => {
     loadUnassignedReports();
@@ -13,6 +20,10 @@ document.addEventListener('DOMContentLoaded', () => {
         editForm.addEventListener('submit', handleEditSubmit);
     }
 });
+
+
+
+let currentDetailReportId = null;
 
 // Separate the submission logic for clarity
 async function handleEditSubmit(e) {
@@ -242,8 +253,8 @@ async function approveWorker(employeeId) {
 
 // delete reports
 const handleDelete = async (reportId) => {
-    const adminEmail = "2820314@students.wits.ac.za"; 
 
+    const adminEmail = getAdminEmail();
     if (!window.confirm("Are you sure you want to delete this report?")) return;
 
     try {
@@ -269,8 +280,7 @@ const handleDelete = async (reportId) => {
 };
 
 async function invalidateWorker(employeeId) {
-    const adminEmail = "2820314@students.wits.ac.za";
-
+    const adminEmail = getAdminEmail();
     if (!confirm("Are you sure you want to disable this account?")) return;
 
     try {
@@ -438,6 +448,7 @@ function filterAssignments() {
 }
 
 async function openAssignmentDetail(reportId, employeeId) {
+    currentDetailReportId = reportId;
     document.getElementById('assignment-detail-modal').classList.remove('hidden');
 
     // Set loading state
@@ -466,7 +477,7 @@ async function openAssignmentDetail(reportId, employeeId) {
         document.getElementById('asgn-progress').textContent = report.Progress || 'Pending';
         document.getElementById('asgn-ward').textContent = `Ward ${report.WardID || 'N/A'}`;
         document.getElementById('asgn-priority').textContent = priorityMap[report.Priority] || '🔵 Routine';
-        document.getElementById('asgn-description').textContent = report.Description || 'No description provided.';
+        document.getElementById('asgn-description').textContent = report.Brief || 'No description provided.';
         document.getElementById('asgn-email-btn').href = `mailto:${worker.Email}`;
 
         // Images
@@ -488,6 +499,35 @@ async function openAssignmentDetail(reportId, employeeId) {
     } catch (err) {
         console.error('Failed to load assignment details:', err);
         document.getElementById('asgn-type').textContent = 'Error loading details';
+    }
+}
+
+//delete report option
+async function deleteReportFromDetail() {
+    const adminEmail = getAdminEmail();
+    if (!currentDetailReportId) return;
+    if (!confirm(`Are you sure you want to permanently delete Report #${currentDetailReportId}? This cannot be undone.`)) return;
+
+    try {
+        const response = await fetch(`/api/reports/${currentDetailReportId}`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({adminEmail})
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            alert(`Report #${currentDetailReportId} deleted successfully.`);
+            closeAssignmentDetail();
+            loadAssignedTasks();    // Refresh the ledger
+            loadUnassignedReports(); // Refresh unassigned table too
+        } else {
+            alert('Failed to delete: ' + (data.message || 'Unknown error'));
+        }
+    } catch (err) {
+        console.error('Delete error:', err);
+        alert('Network error — could not delete report.');
     }
 }
 

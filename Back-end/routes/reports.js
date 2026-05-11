@@ -6,6 +6,8 @@ const { MunicipalWorker } = require('../models');
 
 const nodemailer = require('nodemailer');
 
+
+
 // Update your transporter setup:
 const transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -19,7 +21,11 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-const ADMIN_EMAIL = '2820314@students.wits.ac.za, 2799656@students.wits.ac.za, 2805279@students.wits.ac.za';
+const ADMIN_EMAIL = [
+    '2820314@students.wits.ac.za',
+    '2799656@students.wits.ac.za',
+    '2805279@students.wits.ac.za'
+].join(', ');
 
 // ─── Email helper 
 async function sendEmail(to, subject, html) {

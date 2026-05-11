@@ -2,6 +2,12 @@ const express = require('express');
 const router = express.Router();
 const {MunicipalWorker} = require('../models');
 
+const ADMIN_EMAILS = [
+    '2820314@students.wits.ac.za',
+    '2799656@students.wits.ac.za',
+    '2805279@students.wits.ac.za'
+];
+
 
 //  GET: Fetch all non-validated workers ---
 router.get('/pending', async (req, res) => {
@@ -34,7 +40,7 @@ router.put('/invalidate/:employeeId', async (req, res) => {
     const { employeeId } = req.params;
     const { adminEmail } = req.body;
 
-    if (adminEmail !== "2820314@students.wits.ac.za") {
+    if (!ADMIN_EMAILS.includes(adminEmail)) {
         return res.status(403).json({ success: false, message: "Admin access only." });
     }
 

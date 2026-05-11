@@ -360,15 +360,19 @@
         </section>
 
         <footer class="flex gap-3 pt-6 border-t border-outline/20">
-            <a id="asgn-email-btn" href="#" 
-               class="flex-1 bg-surface-container-high text-on-surface px-4 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 hover:bg-surface-container-highest transition-all">
-                <span class="material-symbols-outlined text-sm">mail</span> Email Operative
-            </a>
-            <button onclick="closeAssignmentDetail()" 
-                    class="flex-1 bg-surface-container-high text-neutral-400 px-4 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-surface-container-highest transition-all">
-                Close
-            </button>
-        </footer>
+    <a id="asgn-email-btn" href="#" 
+       class="flex-1 bg-surface-container-high text-on-surface px-4 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 hover:bg-surface-container-highest transition-all">
+        <span class="material-symbols-outlined text-sm">mail</span> Email Operative
+    </a>
+    <button id="asgn-delete-btn" onclick="deleteReportFromDetail()"
+            class="flex-1 bg-red-900/20 text-red-400 border border-red-500/30 px-4 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-red-600 hover:text-white transition-all">
+        <span class="material-symbols-outlined text-sm">delete</span> Delete Report
+    </button>
+    <button onclick="closeAssignmentDetail()" 
+            class="bg-surface-container-high text-neutral-400 px-4 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-surface-container-highest transition-all">
+        Close
+    </button>
+</footer>
     </article>
 </aside>
 <script src="notifications-ui.js" defer></script>
