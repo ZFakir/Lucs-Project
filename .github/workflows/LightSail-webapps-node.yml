@@ -28,7 +28,7 @@ jobs:
     - name: Test Frontend
       run: |
         cd Front-end
-        npm install
+        npm ci
         chmod +x ./node_modules/.bin/jest
         npm test --coverage
 
