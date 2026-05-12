@@ -123,11 +123,12 @@ const declinedBadge = isDeclined
     : '';
 
 const row = `
-<tr class="border-b border-surface-variant hover:bg-surface-container-high transition-colors group ${isDeclined ? 'border-l-2 border-red-500/50' : ''}">
+<tr class="border-b border-surface-variant hover:bg-surface-container-high transition-colors group cursor-pointer ${isDeclined ? 'border-l-2 border-red-500/50' : ''}"
+    onclick="openAssignmentDetail(${report.ReportID}, null)">
     <td class="p-4 font-mono text-primary-container text-xs">#${report.ReportID}</td>
     <td class="p-4 font-bold text-sm tracking-tight">${report.Type} ${declinedBadge}</td>
     <td class="p-4 text-[10px] font-black uppercase text-neutral-500">Ward ${report.WardID || 'N/A'}</td>
-    <td class="p-4">
+    <td class="p-4" onclick="event.stopPropagation()">
         <select onchange="updatePriority(${report.ReportID}, this.value)" 
                 class="bg-surface-container-lowest text-[10px] border border-outline/20 rounded-lg px-3 py-1.5 text-on-surface uppercase font-black cursor-pointer">
             <option value="1" ${report.Priority == 1 ? 'selected' : ''}>1 - Critical</option>
@@ -135,7 +136,7 @@ const row = `
             <option value="3" ${report.Priority == 3 ? 'selected' : ''}>3 - Routine</option>
         </select>
     </td>
-    <td class="p-4 text-right flex gap-3 justify-end">
+    <td class="p-4 text-right flex gap-3 justify-end" onclick="event.stopPropagation()">
         <button onclick="openAssignModal(${report.ReportID})" 
                 class="bg-primary-container text-black px-4 py-2 rounded-lg text-[10px] font-black uppercase hover:bg-white transition-all">
             ${isDeclined ? 'Re-assign' : 'Assign'}
@@ -447,53 +448,75 @@ function filterAssignments() {
     }
 }
 
+async function deleteReportImage(imageId, reportId, employeeId) {
+    if (!confirm('Delete this image? This cannot be undone.')) return;
+
+    try {
+        const response = await fetch(`/api/report-images/${imageId}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            // Refresh the modal to show updated images
+            openAssignmentDetail(reportId, employeeId);
+        } else {
+            alert('Failed to delete image.');
+        }
+    } catch (err) {
+        console.error('Image delete error:', err);
+    }
+}
+
 async function openAssignmentDetail(reportId, employeeId) {
     currentDetailReportId = reportId;
     document.getElementById('assignment-detail-modal').classList.remove('hidden');
-
-    // Set loading state
     document.getElementById('asgn-type').textContent = 'Loading...';
     document.getElementById('asgn-description').textContent = '—';
 
     try {
-        // Fetch report details and images in parallel
+        const fetchWorker = employeeId 
+            ? fetch(`/api/workers/${employeeId}/profile`) 
+            : Promise.resolve(null);
+
         const [reportRes, imagesRes, workerRes] = await Promise.all([
             fetch(`/api/reports/${reportId}`),
             fetch(`/api/report-images/report/${reportId}`),
-            fetch(`/api/workers/${employeeId}/profile`)
+            fetchWorker
         ]);
 
         const report = await reportRes.json();
         const images = await imagesRes.json();
-        const worker = await workerRes.json();
+        const worker = workerRes ? await workerRes.json() : null;
 
         const priorityMap = { 1: '🔴 Critical', 2: '🟠 High', 3: '🔵 Routine' };
 
-        // Populate fields
         document.getElementById('asgn-report-id').textContent = `Report #${report.ReportID}`;
         document.getElementById('asgn-type').textContent = report.Type;
-        document.getElementById('asgn-worker').textContent = `${worker.FirstName} ${worker.LastName}`;
-        document.getElementById('asgn-worker-id').textContent = `Employee ID: ${employeeId}`;
+        document.getElementById('asgn-worker').textContent = worker ? `${worker.FirstName} ${worker.LastName}` : 'Unassigned';
+        document.getElementById('asgn-worker-id').textContent = worker ? `Employee ID: ${employeeId}` : '—';
         document.getElementById('asgn-progress').textContent = report.Progress || 'Pending';
         document.getElementById('asgn-ward').textContent = `Ward ${report.WardID || 'N/A'}`;
         document.getElementById('asgn-priority').textContent = priorityMap[report.Priority] || '🔵 Routine';
         document.getElementById('asgn-description').textContent = report.Brief || 'No description provided.';
-        document.getElementById('asgn-email-btn').href = `mailto:${worker.Email}`;
 
-        // Images
+        // Images with delete buttons
         const imagesSection = document.getElementById('asgn-images-section');
         const imagesGrid = document.getElementById('asgn-images-grid');
         if (images.length > 0) {
             imagesSection.classList.remove('hidden');
             imagesGrid.innerHTML = images.map(img => `
-                <figure class="aspect-square rounded-lg overflow-hidden border border-outline/20 cursor-pointer m-0"
-                        onclick="window._notifModule && window._notifModule.openImageFullscreen('data:${img.Type};base64,${img.base64}')">
+                <figure class="aspect-square rounded-lg overflow-hidden border border-outline/20 relative m-0 group">
                     <img src="data:${img.Type};base64,${img.base64}" 
-                         class="w-full h-full object-cover hover:scale-105 transition-transform" 
+                         class="w-full h-full object-cover" 
                          alt="Proof of work"/>
+                    <button onclick="deleteReportImage(${img.ImageID}, ${reportId}, ${employeeId})"
+                            class="absolute top-1 right-1 bg-red-600/80 hover:bg-red-600 p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span class="material-symbols-outlined text-white text-sm">delete</span>
+                    </button>
                 </figure>`).join('');
         } else {
             imagesSection.classList.add('hidden');
+            imagesGrid.innerHTML = '';
         }
 
     } catch (err) {
@@ -643,6 +666,6 @@ if (typeof module !== 'undefined' && module.exports) {
         closeAssignModal, loadWorkerDropdown, loadAssignedTasks, renderAssignmentRows, 
         filterAssignments, openAssignmentDetail, closeAssignmentDetail, 
         toggleAdminDropdown, closeAdminDropdownOutside, openAdminProfile, 
-        logoutAdmin, loadActiveWorkers
+        logoutAdmin, loadActiveWorkers,deleteReportImage
     };
 }
