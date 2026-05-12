@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>GroundWork | Data Policy</title>
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;700;900&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        background: "#131313",
+                        "on-background": "#e2e2e2",
+                        "surface-container-low": "#1b1b1b",
+                        "surface-container-high": "#2a2a2a",
+                        "surface-container-highest": "#353535",
+                        primary: "#ffb77d",
+                        "primary-container": "#ff8c00",
+                        "on-surface-variant": "#ddc1ae",
+                        "outline-variant": "#564334"
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Public Sans', sans-serif; background-color: #131313; color: #e2e2e2; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        h1 { color: #ff8c00; font-size: 3rem; font-weight: 900; letter-spacing: -0.02em; margin-bottom: 0.5rem; text-transform: uppercase; }
+        h2 { color: #ffb77d; font-size: 1.5rem; font-weight: 700; margin-top: 2rem; margin-bottom: 1rem; letter-spacing: 0.05em; text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem; }
+        p { margin-bottom: 1.25rem; line-height: 1.7; color: #a3a3a3; font-size: 1.05rem; }
+        ul { margin-bottom: 1.5rem; padding-left: 1.5rem; list-style-type: disc; color: #a3a3a3; line-height: 1.7; font-size: 1.05rem; }
+        li { margin-bottom: 0.5rem; }
+        strong { color: #e2e2e2; }
+        a { color: #ff8c00; text-decoration: none; transition: color 0.2s; }
+        a:hover { color: #ffb77d; text-decoration: underline; }
+        .subtitle { font-size: 0.875rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.2em; color: #564334; margin-bottom: 3rem; }
+    </style>
+</head>
+<body class="bg-background text-on-background selection:bg-primary-container selection:text-black">
+    <header class="fixed top-0 w-full z-50 bg-[#131313]/80 backdrop-blur-xl flex justify-between items-center px-8 h-20 border-b border-white/5">
+        <section class="flex items-center">
+            <span class="text-2xl font-black tracking-tighter text-[#E2E2E2] uppercase">GroundWork.</span>
+        </section>
+        <section>
+            <a href="javascript:history.back()" class="text-xs font-black uppercase tracking-widest text-primary hover:text-white transition-colors flex items-center gap-2 bg-surface-container-high px-4 py-2 rounded-lg border border-white/5 hover:border-primary/50">
+                <span class="material-symbols-outlined text-base">arrow_back</span>
+                Back
+            </a>
+        </section>
+    </header>
+    <main class="pt-32 px-8 pb-16 max-w-4xl mx-auto min-h-screen">
+
+        <h1>Data & Privacy Policy</h1>
+        <p class="subtitle">Last Updated: May 2026</p>
+
+        <section class="bg-surface-container-low p-8 rounded-2xl border border-white/5 shadow-xl">
+            <p>At <strong>GroundWork</strong>, we respect your privacy. This policy outlines how we collect, use, and protect your data when you use our civic reporting platform.</p>
+
+            <h2>1. Information We Collect</h2>
+            <p>To provide an effective municipal service, we collect the following types of data:</p>
+            <ul>
+                <li><strong>Account Information:</strong> Names, email addresses, and phone numbers provided during registration (for Residents and Workers).</li>
+                <li><strong>Location Data:</strong> When submitting a report, we collect geolocation coordinates (Latitude/Longitude) to pinpoint the issue.</li>
+                <li><strong>User-Generated Content:</strong> Descriptions of civic issues and any images uploaded as proof of the fault or proof of work.</li>
+                <li><strong>System Preferences:</strong> Notification settings, such as "muted wards," are stored to tailor your experience.</li>
+            </ul>
+
+            <h2>2. How We Use Your Data</h2>
+            <p>Your data is used strictly for operational and municipal purposes:</p>
+            <ul>
+                <li><strong>Routing Reports:</strong> Location data is used to automatically map issues to the correct municipal ward and dispatch relevant workers.</li>
+                <li><strong>Communication:</strong> Email addresses and phone numbers are used to send status updates on reports you've submitted or wards you track.</li>
+                <li><strong>Analytics:</strong> Aggregated, anonymised data is used to generate performance reports (e.g., resolution times, issue density) for administrators.</li>
+            </ul>
+
+            <h2>3. Data Sharing & Security</h2>
+            <p>Your personal information is never sold to third parties. Data is shared only with authorised municipal personnel (Administrators and Field Operatives) necessary to resolve the reported issues.</p>
+            <p>We utilise secure, encrypted databases to store your information. Images uploaded to the platform are converted to secure Base64 formats and tied strictly to their respective Report IDs.</p>
+
+            <h2>4. Your Rights</h2>
+            <p>Under applicable data protection laws, you have the right to:</p>
+            <ul>
+                <li>Request access to the personal data we hold about you.</li>
+                <li>Correct or update inaccurate information via your Profile settings.</li>
+                <li>Request the deletion of your account and associated personal data (note that civic reports themselves may be anonymised and retained for municipal public record).</li>
+            </ul>
+
+            <h2>5. Cookies & Local Storage</h2>
+            <p>GroundWork uses local storage (e.g., saving your <code>Resident ID</code> or <code>Role</code>) to maintain your login session and save your preferences (like notification mutes). We do not use third-party tracking cookies.</p>
+        </section>
+
+    </main>
+    <footer class="border-t border-white/5 py-8 text-center text-xs text-neutral-500 uppercase tracking-widest font-bold">
+        &copy; 2026 GroundWork Civic Ledger. All rights reserved.
+    </footer>
+</body>
+</html>

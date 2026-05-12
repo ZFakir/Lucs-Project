@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>GroundWork | Terms of Service</title>
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;700;900&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        background: "#131313",
+                        "on-background": "#e2e2e2",
+                        "surface-container-low": "#1b1b1b",
+                        "surface-container-high": "#2a2a2a",
+                        "surface-container-highest": "#353535",
+                        primary: "#ffb77d",
+                        "primary-container": "#ff8c00",
+                        "on-surface-variant": "#ddc1ae",
+                        "outline-variant": "#564334"
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Public Sans', sans-serif; background-color: #131313; color: #e2e2e2; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        h1 { color: #ff8c00; font-size: 3rem; font-weight: 900; letter-spacing: -0.02em; margin-bottom: 0.5rem; text-transform: uppercase; }
+        h2 { color: #ffb77d; font-size: 1.5rem; font-weight: 700; margin-top: 2rem; margin-bottom: 1rem; letter-spacing: 0.05em; text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem; }
+        p { margin-bottom: 1.25rem; line-height: 1.7; color: #a3a3a3; font-size: 1.05rem; }
+        ul { margin-bottom: 1.5rem; padding-left: 1.5rem; list-style-type: disc; color: #a3a3a3; line-height: 1.7; font-size: 1.05rem; }
+        li { margin-bottom: 0.5rem; }
+        strong { color: #e2e2e2; }
+        a { color: #ff8c00; text-decoration: none; transition: color 0.2s; }
+        a:hover { color: #ffb77d; text-decoration: underline; }
+        .subtitle { font-size: 0.875rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.2em; color: #564334; margin-bottom: 3rem; }
+    </style>
+</head>
+<body class="bg-background text-on-background selection:bg-primary-container selection:text-black">
+    <header class="fixed top-0 w-full z-50 bg-[#131313]/80 backdrop-blur-xl flex justify-between items-center px-8 h-20 border-b border-white/5">
+        <section class="flex items-center">
+            <span class="text-2xl font-black tracking-tighter text-[#E2E2E2] uppercase">GROUNDWORK.</span>
+        </section>
+        <section>
+            <a href="javascript:history.back()" class="text-xs font-black uppercase tracking-widest text-primary hover:text-white transition-colors flex items-center gap-2 bg-surface-container-high px-4 py-2 rounded-lg border border-white/5 hover:border-primary/50">
+                <span class="material-symbols-outlined text-base">arrow_back</span>
+                Back
+            </a>
+        </section>
+    </header>
+    <main class="pt-32 px-8 pb-16 max-w-4xl mx-auto min-h-screen">
+
+        <h1>Terms of Service</h1>
+        <p class="subtitle">Last Updated: May 2026</p>
+
+        <section class="bg-surface-container-low p-8 rounded-2xl border border-white/5 shadow-xl">
+            <p>Welcome to <strong>GroundWork</strong>. By accessing or using our civic reporting and ledger platform, you agree to be bound by these Terms of Service. Please read them carefully.</p>
+
+            <h2>1. Description of Service</h2>
+            <p>GroundWork provides a digital ledger and communication platform connecting residents, municipal workers, and administrators. It enables residents to report local issues (e.g., potholes, water leaks), allows field operatives to update the status of these tasks, and gives administrators oversight into municipal operations.</p>
+
+            <h2>2. User Responsibilities & Conduct</h2>
+            <p>As a user of this platform (whether as a Guest, Resident, Worker, or Admin), you agree to use the service responsibly. Specifically, you agree <strong>not</strong> to:</p>
+            <ul>
+                <li>Submit false, misleading, or malicious reports that waste municipal resources.</li>
+                <li>Upload images that are inappropriate, offensive, or unrelated to the civic issue being reported.</li>
+                <li>Attempt to gain unauthorised access to administrative or worker dashboards.</li>
+                <li>Use the platform to harass, threaten, or abuse municipal staff or other residents.</li>
+            </ul>
+
+            <h2>3. Account Security</h2>
+            <p>Residents and workers are responsible for maintaining the confidentiality of their login credentials. Any activity that occurs under your account is your responsibility. If you suspect your account has been compromised, you must notify an administrator immediately.</p>
+
+            <h2>4. Intellectual Property</h2>
+            <p>All content, branding, designs, and code related to the GroundWork platform are the intellectual property of GroundWork and the associated municipality. Users retain rights to the images they upload, but grant GroundWork a non-exclusive license to use, display, and process these images for the purpose of resolving civic issues.</p>
+
+            <h2>5. Termination of Access</h2>
+            <p>Groundwork administrators reserve the right to suspend or terminate access to any user account that violates these Terms of Service, particularly in cases of repeated false reporting or abusive behaviour.</p>
+
+            <h2>6. Limitation of Liability</h2>
+            <p>GroundWork serves as an intermediary reporting tool. We do not guarantee specific resolution times for reported issues, as this is dependent on municipal resources and worker availability. GroundWork is not liable for any damages or losses resulting from unresolved civic faults.</p>
+        </section>
+
+    </main>
+    <footer class="border-t border-white/5 py-8 text-center text-xs text-neutral-500 uppercase tracking-widest font-bold">
+        &copy; 2026 GroundWork Civic Ledger. All rights reserved.
+    </footer>
+</body>
+</html>
