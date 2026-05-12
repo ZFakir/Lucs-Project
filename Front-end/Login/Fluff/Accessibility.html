@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>GroundWork | Accessibility</title>
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;700;900&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        background: "#131313",
+                        "on-background": "#e2e2e2",
+                        "surface-container-low": "#1b1b1b",
+                        "surface-container-high": "#2a2a2a",
+                        "surface-container-highest": "#353535",
+                        primary: "#ffb77d",
+                        "primary-container": "#ff8c00",
+                        "on-surface-variant": "#ddc1ae",
+                        "outline-variant": "#564334"
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Public Sans', sans-serif; background-color: #131313; color: #e2e2e2; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        h1 { color: #ff8c00; font-size: 3rem; font-weight: 900; letter-spacing: -0.02em; margin-bottom: 0.5rem; text-transform: uppercase; }
+        h2 { color: #ffb77d; font-size: 1.5rem; font-weight: 700; margin-top: 2rem; margin-bottom: 1rem; letter-spacing: 0.05em; text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem; }
+        p { margin-bottom: 1.25rem; line-height: 1.7; color: #a3a3a3; font-size: 1.05rem; }
+        ul { margin-bottom: 1.5rem; padding-left: 1.5rem; list-style-type: disc; color: #a3a3a3; line-height: 1.7; font-size: 1.05rem; }
+        li { margin-bottom: 0.5rem; }
+        strong { color: #e2e2e2; }
+        a { color: #ff8c00; text-decoration: none; transition: color 0.2s; }
+        a:hover { color: #ffb77d; text-decoration: underline; }
+        .subtitle { font-size: 0.875rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.2em; color: #564334; margin-bottom: 3rem; }
+    </style>
+</head>
+<body class="bg-background text-on-background selection:bg-primary-container selection:text-black">
+    <header class="fixed top-0 w-full z-50 bg-[#131313]/80 backdrop-blur-xl flex justify-between items-center px-8 h-20 border-b border-white/5">
+        <section class="flex items-center">
+            <span class="text-2xl font-black tracking-tighter text-[#E2E2E2] uppercase">GROUNDWORK.</span>
+        </section>
+        <section>
+            <a href="javascript:history.back()" class="text-xs font-black uppercase tracking-widest text-primary hover:text-white transition-colors flex items-center gap-2 bg-surface-container-high px-4 py-2 rounded-lg border border-white/5 hover:border-primary/50">
+                <span class="material-symbols-outlined text-base">arrow_back</span>
+                Back
+            </a>
+        </section>
+    </header>
+    <main class="pt-32 px-8 pb-16 max-w-4xl mx-auto min-h-screen">
+
+        <h1>Accessibility Statement</h1>
+        <p class="subtitle">Last Updated: May 2026</p>
+
+        <section class="bg-surface-container-low p-8 rounded-2xl border border-white/5 shadow-xl">
+            <p>At <strong>GroundWork</strong>, we are committed to ensuring digital accessibility for people with disabilities. We are continually improving the user experience for everyone and applying the relevant accessibility standards to guarantee our civic ledger and reporting tools are usable by all residents, workers, and administrators.</p>
+
+            <h2>Conformance Status</h2>
+            <p>The Web Content Accessibility Guidelines (WCAG) defines requirements for designers and developers to improve accessibility for people with disabilities. It defines three levels of conformance: Level A, Level AA, and Level AAA.</p>
+            <p>GroundWork strives to adhere to <strong>WCAG 2.1 Level AA</strong> standards. We have actively incorporated accessibility into our design and development processes.</p>
+
+            <h2>Accessibility Features</h2>
+            <p>Our platform includes the following accessibility implementations:</p>
+            <ul>
+                <li><strong>High Contrast UI:</strong> Our dark theme utilizes high-contrast colour palettes (e.g., bright orange on deep greys/blacks) to ensure text and interactive elements are highly visible.</li>
+                <li><strong>Keyboard Navigation:</strong> All interactive elements, including modals, dropdowns, and form submissions, are fully navigable using a keyboard.</li>
+                <li><strong>Semantic HTML:</strong> We use native <code>&lt;dialog&gt;</code> elements, proper heading hierarchies, and ARIA labels where appropriate to support screen readers.</li>
+                <li><strong>Scalable Typography:</strong> Our fonts (Public Sans) scale naturally with user browser preferences without breaking page layouts.</li>
+            </ul>
+
+            <h2>Feedback & Support</h2>
+            <p>We welcome your feedback on the accessibility of GroundWork. If you encounter accessibility barriers while using our platform—whether trying to submit a fault report or viewing ward analytics—please let us know:</p>
+            <ul>
+                <li><strong>Email:</strong> accessibility@groundwork.civic</li>
+                <li><strong>Phone:</strong> +27 00 000 0000</li>
+            </ul>
+            <p>We aim to respond to accessibility feedback within 2 business days and will work diligently to rectify any reported barriers.</p>
+        </section>
+
+    </main>
+    <footer class="border-t border-white/5 py-8 text-center text-xs text-neutral-500 uppercase tracking-widest font-bold">
+        &copy; 2026 Groundwork Civic Ledger. All rights reserved.
+    </footer>
+</body>
+</html>

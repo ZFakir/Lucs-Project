@@ -12,6 +12,32 @@ document.addEventListener('DOMContentLoaded', () => {
     renderSubscribedWards(residentId);
 });
 
+async function loadResidentProfilePic(residentId) {
+    try {
+        const res = await fetch(`/api/residents/${residentId}/profile`);
+        if (res.ok) {
+            const profile = await res.json();
+            const picEl = document.getElementById('resident-profile-pic');
+            const fallbackEl = document.getElementById('resident-profile-fallback');
+            
+            if (picEl) {
+                if (profile.ProfilePicture) {
+                    picEl.src = profile.ProfilePicture;
+                } else {
+                    // Generate the default initial avatar to match the modal
+                    const name = profile.Username || 'Resident';
+                    picEl.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=353535&color=FF8C00&bold=true&size=128`;
+                }
+                
+                picEl.classList.remove('hidden');
+                if (fallbackEl) fallbackEl.remove(); // Safely remove the fallback icon
+            }
+        }
+    } catch (err) {
+        console.error("Failed to load profile pic:", err);
+    }
+}
+
 async function renderSubscribedWards(residentId) {
     const wardsGrid = document.getElementById('wards-grid');
     const addButton = wardsGrid.lastElementChild; // Keep the "Track New Ward" button
@@ -408,7 +434,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Success (201 Created)! 
                     closeAddModal(); // Hide the modal
                     await renderSubscribedWards(residentId); // Refresh the cards to show the new ward
-                    
+                    loadResidentProfilePic(residentId);
                     
                 } else {
                     // This catches your 400 (duplicate subscription) and 404 errors
