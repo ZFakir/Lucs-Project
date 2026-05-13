@@ -209,9 +209,9 @@ function renderTaskCard(report, container) {
                                 onchange="updateProgress(${report.ReportID}, this.value)" 
                                 class="bg-neutral-900 text-neutral-300 text-xs border border-white/10 rounded-lg px-3 py-2 focus:ring-1 focus:ring-primary outline-none">
                             <option value="" disabled selected>Update current stage...</option>
-                            <option value="In Progress - 25%" ${report.Progress.includes('25%') ? 'selected' : ''}>25% - Excavation/Prep</option>
-                            <option value="In Progress - 50%" ${report.Progress.includes('50%') ? 'selected' : ''}>50% - Active Repairs</option>
-                            <option value="In Progress - 75%" ${report.Progress.includes('75%') ? 'selected' : ''}>75% - Quality Testing</option>
+                            <option value="In Progress - 25%" ${report.Progress.includes('25%') ? 'selected' : ''}>25% </option>
+                            <option value="In Progress - 50%" ${report.Progress.includes('50%') ? 'selected' : ''}>50% </option>
+                            <option value="In Progress - 75%" ${report.Progress.includes('75%') ? 'selected' : ''}>75% </option>
                         </select>
 
                         <div class="mt-3 border-t border-white/10 pt-3">

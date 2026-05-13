@@ -33,6 +33,18 @@ router.get('/report/:reportId', async (req, res) => {
     }
 });
 
+router.delete('/:imageId', async (req, res) => {
+    try {
+        const deleted = await ReportImage.destroy({
+            where: { ImageID: req.params.imageId }
+        });
+        if (deleted === 0) return res.status(404).json({ message: 'Image not found' });
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // GET: Fetch a single image by its exact ID
 router.get('/:id', async (req, res) => {
     try {
