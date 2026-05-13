@@ -83,13 +83,38 @@ describe('Admin Dashboard Logic - High Coverage', () => {
     });
 
     test('openAssignmentDetail handles parallel fetches for report, images, and worker', async () => {
-        fetch
-            .mockResolvedValueOnce({ ok: true, json: async () => ({ ReportID: 1, Type: 'Burst Pipe', Progress: 'Fixed', Description: 'Big leak' }) })
-            .mockResolvedValueOnce({ ok: true, json: async () => [{ Type: 'image/png', base64: 'abc' }] })
-            .mockResolvedValueOnce({ ok: true, json: async () => ({ FirstName: 'Bob', LastName: 'Builder', Email: 'bob@city.gov' }) });
+        // fetch
+        //     .mockResolvedValueOnce({ ok: true, json: async () => ({ ReportID: 1, Type: 'Burst Pipe', Progress: 'Fixed', Description: 'Big leak' }) })
+        //     .mockResolvedValueOnce({ ok: true, json: async () => [{ Type: 'image/png', base64: 'abc' }] })
+        //     .mockResolvedValueOnce({ ok: true, json: async () => ({ FirstName: 'Bob', LastName: 'Builder', Email: 'bob@city.gov' }) });
 
+        // await adminModule.openAssignmentDetail(1, 10);
+
+        // expect(document.getElementById('asgn-type').textContent).toBe('Burst Pipe');
+        // expect(document.getElementById('asgn-worker').textContent).toBe('Bob Builder');
+        fetch.mockImplementation((url) => {
+            if (url.includes('/api/reports/1')) {
+                return Promise.resolve({ 
+                    ok: true, 
+                    json: async () => ({ ReportID: 1, Type: 'Burst Pipe', Priority: 2, Progress: 'Assigned', Brief: 'Water leaking' }) 
+                });
+            }
+            if (url.includes('/api/report-images')) {
+                return Promise.resolve({ ok: true, json: async () => [] }); // No images
+            }
+            if (url.includes('/api/workers/10/profile')) {
+                return Promise.resolve({ 
+                    ok: true, 
+                    json: async () => ({ FirstName: 'Bob', LastName: 'Builder', Email: 'bob@build.com' }) 
+                });
+            }
+            return Promise.resolve({ ok: false });
+        });
+
+        // 3. Trigger the function
         await adminModule.openAssignmentDetail(1, 10);
 
+        // 4. Verify the UI updated correctly
         expect(document.getElementById('asgn-type').textContent).toBe('Burst Pipe');
         expect(document.getElementById('asgn-worker').textContent).toBe('Bob Builder');
     });
