@@ -8,6 +8,40 @@ import { LocationPicker } from '../ModalUtilities/LocationPicker.js';
 // before we try to attach any JavaScript to it. If we didn't wait, JS might try 
 // to grab a dropdown menu that hasn't been drawn yet, causing a crash.
 document.addEventListener('DOMContentLoaded', async () => {
+    // ==========================================
+    // 🦆 DUCK MODE EASTER EGG
+    // ==========================================
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('mode') === 'duck') {
+        function quackify(node) {
+            // If it's a Text Node and isn't just empty space
+            if (node.nodeType === 3 && node.nodeValue.trim() !== '') {
+                node.nodeValue = node.nodeValue.replace(/[a-zA-Z]+/g, (match) => {
+                    // Match the original capitalization!
+                    if (match === match.toUpperCase() && match.length > 1) return 'QUACK';
+                    if (match[0] === match[0].toUpperCase()) return 'Quack';
+                    return 'quack';
+                });
+            } 
+            // If it's an element (but NOT a script or style tag), search its children
+            else if (node.nodeType === 1 && node.nodeName !== 'SCRIPT' && node.nodeName !== 'STYLE') {
+                node.childNodes.forEach(quackify);
+            }
+        }
+
+        // 1. Quackify the initial HTML on the screen
+        quackify(document.body);
+
+        // 2. Set up an observer to instantly quackify any API data that loads into the dropdowns
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                mutation.addedNodes.forEach(node => quackify(node));
+            });
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+    }
+    // ==========================================
+
     // Set role to guest
     localStorage.setItem('userRole', 'guest');
 
