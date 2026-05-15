@@ -1,6 +1,9 @@
 
 import { LocationPicker } from '../ModalUtilities/LocationPicker.js';
 
+
+const civicModal = new CivicModal();
+
 document.addEventListener('DOMContentLoaded', () => {
     // For testing, replace '1' with your actual logic to get the logged-in user's ID
     const residentId = localStorage.getItem('residentId');
@@ -600,110 +603,82 @@ function renderAlerts(reports) {
 //Open a notification's detail modal
 async function openReportModal(index) {
     const notif = loadedReports[index];
+    console.log(notif);
     if (!notif) return;
 
-    const modal = document.getElementById('report-modal');
-    const modalContent = document.getElementById('modal-content');
-    const modalHeader = modal.querySelector('h3'); 
+    const actualReportId = notif.ReportID;
+    const createdAt = notif.CreatedAt;
 
-    const createdAt = notif.CreatedAt || notif.createdAt;
-
-    // Slice and clean the title/type 
     const rawTitle = notif.Title || 'System Alert';
     const colonIdx = rawTitle.lastIndexOf(':');
     const issueType = colonIdx !== -1 ? rawTitle.slice(colonIdx + 1).trim() : (notif.Type || 'Update');
-    const cleanTitle = colonIdx !== -1 ? rawTitle.slice(0, colonIdx).trim() : rawTitle;
 
-    // Format the top header
-    const wardLabel = notif._wardId ? `Ward ${notif._wardId}` : '';
-    const headerText = wardLabel ? `${wardLabel} - ${issueType}` : issueType;
-    if (modalHeader) modalHeader.textContent = headerText;
+    // Base data we already know from the notification
+    const modalData = {
+        id: actualReportId,
+        type: issueType,
+        description: notif.Message || 'No description provided.',
+        date: createdAt,
+        status: notif.Status || 'Active',
+        ward: notif._wardId || 'N/A',
+        municipality: 'Loading...', // Temporary state while we fetch
+        workers: []
+    };
 
-    // Render Loading State
-    //opened notifcation modal
-    modalContent.innerHTML = `
-        <div class="space-y-3">
-            <div class="flex justify-between items-center border-b border-white/10 pb-2">
-                <span class="text-xs uppercase tracking-widest opacity-50">Title</span>
-                <span class="font-bold">${cleanTitle}</span>
-            </div>
-            <div class="flex justify-between items-center border-b border-white/10 pb-2">
-                <span class="text-xs uppercase tracking-widest opacity-50">Type</span>
-                <span class="font-bold">${issueType}</span>
-            </div>
-            <div class="flex justify-between items-center border-b border-white/10 pb-2">
-                <span class="text-xs uppercase tracking-widest opacity-50">Date Received</span>
-                <span class="font-bold">${new Date(createdAt).toLocaleDateString()} ${new Date(createdAt).toLocaleTimeString()}</span>
-            </div>
+    if (actualReportId) {
+        try {
+            // 1. Fetch the main report to get the Brief, Progress, and MunicipalityID
+            const reportRes = await fetch(`/api/reports/${actualReportId}`);
+            
+            if (reportRes.ok) {
+                const reportData = await reportRes.json();
+                console.log(reportData);
+                // Override with full report details
+                modalData.type = reportData.Type;
+                modalData.description = reportData.Brief;
+                modalData.status = reportData.Progress;
+                modalData.ward = reportData.WardID;
+                modalData.date=reportData.CreatedAt;
 
-            <div class="mt-6 pt-4">
-                <span class="text-xs uppercase tracking-widest opacity-50 block mb-2">Details</span>
-                <div id="modal-details-container" class="bg-black/20 p-4 rounded-lg text-sm font-medium leading-relaxed">
-                    <span class="text-orange-300 italic text-xs">Loading report details...</span>
-                </div>
-            </div>
-
-            <div class="mt-6 pt-4">
-                <span class="text-xs uppercase tracking-widest opacity-50 block mb-2">Attached Images</span>
-                <div id="modal-images-container" class="flex flex-wrap gap-4 min-h-[6rem] items-center">
-                    <span class="text-xs opacity-40 italic text-orange-300">Loading images...</span>
-                </div>
-            </div>
-        </div>
-    `;
-
-    modal.classList.remove('hidden');
-
-    const actualReportId = notif.ReportID || notif.ReportId || notif.reportId || notif.reportID;
-    const imagesContainer = document.getElementById('modal-images-container');
-    const detailsContainer = document.getElementById('modal-details-container');
-    
-    if (!actualReportId) {
-        imagesContainer.innerHTML = `<span class="text-xs opacity-40 italic">No images attached.</span>`;
-        detailsContainer.innerHTML = notif.Message || 'No further details available.';
-        return;
-    }
-
-    // get the report Details and the images at the same time
-    try {
-        const [reportRes, imageRes] = await Promise.all([
-            fetch(`/api/reports/${actualReportId}`).catch(() => null),
-            fetch(`/api/reports/report/${actualReportId}`).catch(() => null)
-        ]);
-
-        // display report details
-        if (reportRes && reportRes.ok) {
-            const reportData = await reportRes.json();
-            detailsContainer.innerHTML = reportData.Brief || reportData.Description || notif.Message || 'No description provided by the user.';
-        } else {
-            detailsContainer.innerHTML = notif.Message || 'Could not load additional details.';
-        }
-
-        // show images 
-        if (imageRes && imageRes.ok) {
-            const images = await imageRes.json();
-            if (images && images.length > 0) {
-                imagesContainer.innerHTML = images.map(img => `
-                    <a href="data:${img.Type};base64,${img.base64}" target="_blank" rel="noopener" title="Click to view full size">
-                        <img src="data:${img.Type};base64,${img.base64}" alt="Report image" class="w-24 h-24 object-cover rounded-lg border border-white/10 hover:border-orange-500 transition-colors cursor-pointer shadow-md" />
-                    </a>
-                `).join('');
-            } else {
-                imagesContainer.innerHTML = `<span class="text-xs opacity-40 italic">No images attached.</span>`;
+                // 2. REVERSE LOOKUP: Fetch Municipality Name using the ID
+                if (reportData.MunicipalityID) {
+                    try {
+                        const muniRes = await fetch(`/api/geography/municipalities/${reportData.MunicipalityID}`);
+                        if (muniRes.ok) {
+                            const muniData = await muniRes.json();
+                            modalData.municipality = muniData.MunicipalityName 
+                                ? muniData.MunicipalityName.toUpperCase() 
+                                : 'Unknown Municipality';
+                        } else {
+                            modalData.municipality = `Muni ID: ${reportData.MunicipalityID}`;
+                        }
+                    } catch (e) {
+                        console.error('Failed to fetch municipality name:', e);
+                        modalData.municipality = 'Unknown';
+                    }
+                } else {
+                    modalData.municipality = 'Unknown';
+                }
             }
-        } else {
-            imagesContainer.innerHTML = `<span class="text-xs opacity-40 italic">No images attached.</span>`;
+            // 3. Fetch Allocated Workers (Exactly like WorkerPerform does)
+            try {
+                const workerRes = await fetch(`/api/sandbox/report/${actualReportId}/workers`);
+                if (workerRes.ok) {
+                    modalData.workers = await workerRes.json();
+                }
+            } catch (e) {
+                console.error("Failed to fetch allocated workers:", e);
+            }
+
+
+        } catch (err) {
+            console.error('Failed to load full report details:', err);
+            modalData.municipality = 'Unknown';
         }
-
-    } catch (err) {
-        console.error('Failed to load modal data:', err);
-        imagesContainer.innerHTML = `<span class="text-xs text-red-400 italic">Could not load images.</span>`;
-        detailsContainer.innerHTML = notif.Message || 'Error loading details.';
     }
-}
 
-function closeReportModal() {
-    document.getElementById('report-modal').classList.add('hidden');
+    // 4. Pass the fully assembled, translated object into the modal
+    civicModal.open(modalData);
 }
 
 //Mute preference helpers
@@ -856,21 +831,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // listen for close button click
-    const closeBtn = document.getElementById('close-modal-btn');
-    if (closeBtn) {
-        closeBtn.addEventListener('click', closeReportModal);
-    }
 
-    // close the modal if the user clicks the dark background outside the modal
-    const modal = document.getElementById('report-modal');
-    if (modal) {
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                closeReportModal();
-            }
-        });
-    }
 
 //  Notification Settings Logic
     const bellBtn = document.getElementById('notification-bell-btn');
