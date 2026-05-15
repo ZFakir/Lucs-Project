@@ -168,10 +168,9 @@ getBadgeHTML(statusStr) {
                 carousel.innerHTML += `
                     <li class="snap-center shrink-0 w-full h-full relative p-0 m-0 list-none">
                         <img src="${imgSrc}" 
-                             alt="Issue Photo ${i+1}" 
-                             class="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                             onclick="window.open(this.src, '_blank')"
-                             onerror="this.src='https://placehold.co/800x600?text=Image+Unavailable'" />
+                            alt="Issue Photo ${i+1}" 
+                            class="w-full h-full object-cover hover:opacity-90 transition-opacity"
+                            onerror="this.src='https://placehold.co/800x600?text=Image+Unavailable'" />
                     </li>
                 `;
             });
