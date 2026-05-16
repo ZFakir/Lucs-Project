@@ -26,6 +26,10 @@ describe('Worker Dashboard Logic - Maximum Safe Coverage', () => {
     let originalLocation;
 
     beforeEach(async () => {
+
+        delete window.location; // Allow mocking of location
+        window.location = { href: '' }; // Mock location for navigation checks
+
         jest.resetModules();
         localStorage.clear();
         localStorage.setItem('workerId', 'W-101');
@@ -45,6 +49,7 @@ describe('Worker Dashboard Logic - Maximum Safe Coverage', () => {
         delete window.location;
         window.location = { href: 'http://localhost/', search: '', reload: mockReload };
 
+        // 2. Inject complete required DOM
         // 2. Inject complete required DOM
         document.body.innerHTML = `
             <header>
@@ -68,6 +73,17 @@ describe('Worker Dashboard Logic - Maximum Safe Coverage', () => {
                 <p id="detail-ward"></p>
                 <p id="detail-status"></p>
             </dialog>
+
+            <dialog id="worker-edit-modal"></dialog>
+            <input type="text" id="edit-task-type" />
+            <textarea id="edit-task-brief"></textarea>
+            <select id="edit-task-priority">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+            </select>
+            <div id="edit-image-gallery"></div>
+            <input type="file" id="edit-photo-input" />
         `;
 
         jest.clearAllMocks();
@@ -236,7 +252,7 @@ describe('Worker Dashboard Logic - Maximum Safe Coverage', () => {
             fetch.mockResolvedValueOnce({ ok: true });
             await workerModule.uploadTaskImages(88);
             
-            expect(fetch).toHaveBeenCalledWith('/api/reportImages/report/88', expect.objectContaining({ method: 'POST' }));
+            expect(fetch).toHaveBeenCalledWith('/api/report-images/report/88', expect.objectContaining({ method: 'POST' }));
             
             // Should be cleared, so second call won't fetch
             fetch.mockClear();
@@ -318,6 +334,115 @@ describe('Worker Dashboard Logic - Maximum Safe Coverage', () => {
             window.confirm.mockReturnValueOnce(false);
             workerModule.logoutWorker();
             expect(localStorage.getItem('workerId')).toBe('W-101');
+        });
+    });
+    // ==========================================
+    // 5. EXTRA COVERAGE (CANCELLATIONS & UI)
+    // ==========================================
+    describe('Cancellations & UI Rendering', () => {
+        test('renderTaskCard generates correct HTML for new and active tasks', () => {
+            const container = document.getElementById('active-tasks-container');
+            container.innerHTML = '';
+            
+            const mockNewReport = { ReportID: 1, Priority: 1, Progress: 'Pending Assignment', Type: 'Pothole', WardID: 1 };
+            const mockActiveReport = { ReportID: 2, Priority: 3, Progress: 'In Progress - 50%', Type: 'Water Leak', WardID: 1 };
+
+            workerModule.renderTaskCard(mockNewReport, container);
+            workerModule.renderTaskCard(mockActiveReport, container);
+
+            const html = container.innerHTML;
+            expect(html).toContain('Accept');
+            expect(html).toContain('Decline');
+            expect(html).toContain('Update Progress');
+            expect(html).toContain('Attach Proof of Work');
+        });
+
+        test('resolveTask does nothing if user cancels confirm', async () => {
+            window.confirm.mockReturnValueOnce(false);
+            await workerModule.resolveTask(99);
+            expect(fetch).not.toHaveBeenCalledWith('/api/reports/99/status', expect.anything());
+        });
+        
+        test('logoutWorker executes localstorage clear and redirects', () => {
+            window.confirm.mockReturnValueOnce(true);
+            try { workerModule.logoutWorker(); } catch(e) {}
+            expect(localStorage.getItem('workerId')).toBeNull();
+        });
+    });
+
+    // ==========================================
+    // 6. WORKER EDIT MODAL LOGIC
+    // ==========================================
+    describe('Worker Edit Modal', () => {
+        test('openWorkerEditModal fetches details and opens dialog', async () => {
+            const mockReport = { Type: 'Water', Brief: 'Pipe burst', Priority: 2 };
+            
+            fetch.mockResolvedValueOnce({ ok: true, json: async () => mockReport })
+                 .mockResolvedValueOnce({ ok: true, json: async () => [] }); 
+
+            await workerModule.openWorkerEditModal(99);
+            
+            expect(document.getElementById('edit-task-type').value).toBe('Water');
+            expect(document.getElementById('edit-task-priority').value).toBe('2');
+            expect(document.getElementById('worker-edit-modal').showModal).toHaveBeenCalled();
+        });
+
+        test('closeEditModal closes dialog', () => {
+            workerModule.closeEditModal();
+            expect(document.getElementById('worker-edit-modal').close).toHaveBeenCalled();
+        });
+
+        test('saveWorkerEdits sends PUT request and handles UI', async () => {
+            fetch.mockResolvedValueOnce({ ok: true });
+            const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+            document.getElementById('edit-task-type').value = 'Test';
+            await workerModule.saveWorkerEdits();
+            
+            expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/worker-edit'), expect.objectContaining({ method: 'PUT' }));
+            consoleSpy.mockRestore();
+        });
+
+        test('fetchEditImages populates gallery', async () => {
+            fetch.mockResolvedValueOnce({ ok: true, json: async () => ({}) }).mockResolvedValueOnce({ ok: true, json: async () => [] });
+            await workerModule.openWorkerEditModal(99);
+
+            const mockImages = [{ ImageID: 1, Type: 'image/png', base64: 'abc' }];
+            fetch.mockResolvedValueOnce({ ok: true, json: async () => mockImages });
+            
+            await workerModule.fetchEditImages();
+            expect(document.getElementById('edit-image-gallery').innerHTML).toContain('<img');
+        });
+
+        test('deleteWorkerPhoto sends DELETE request', async () => {
+            window.confirm.mockReturnValueOnce(true);
+            fetch.mockResolvedValueOnce({ ok: true }); 
+            fetch.mockResolvedValueOnce({ ok: true, json: async () => [] }); 
+            
+            await workerModule.deleteWorkerPhoto(1);
+            expect(fetch).toHaveBeenCalledWith('/api/report-images/1', expect.objectContaining({ method: 'DELETE' }));
+        });
+
+        test('uploadWorkerPhoto alerts if no file is selected', async () => {
+            Object.defineProperty(document.getElementById('edit-photo-input'), 'files', { value: [] });
+            
+            await workerModule.uploadWorkerPhoto();
+            
+            expect(window.alert).toHaveBeenCalledWith('Select a file first.');
+        });
+
+        test('uploadWorkerPhoto successfully uploads file and refreshes gallery', async () => {
+            const mockFile = new File([''], 'edit-proof.png', { type: 'image/png' });
+            Object.defineProperty(document.getElementById('edit-photo-input'), 'files', { value: [mockFile] });
+
+            fetch.mockResolvedValueOnce({ status: 201 }) 
+                 .mockResolvedValueOnce({ ok: true, json: async () => [] }); 
+            
+            await workerModule.uploadWorkerPhoto();
+            
+            await new Promise(r => setTimeout(r, 10)); // Wait for MockFileReader
+            
+            expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/api/report-images/report/'), expect.objectContaining({ method: 'POST' }));
         });
     });
 });
