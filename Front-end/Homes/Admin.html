@@ -123,14 +123,6 @@
             </div>
 
             <ul class="py-1 list-none m-0 p-0">
-                <li>
-                    <button onclick="openAdminProfile()"
-                            class="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold uppercase tracking-widest text-neutral-400 hover:text-orange-400 hover:bg-white/4 transition-all text-left"
-                            style="background:none; border:none; cursor:pointer;">
-                        <span class="material-symbols-outlined text-base">manage_accounts</span>
-                        Edit Profile
-                    </button>
-                </li>
                 <li class="border-t" style="border-color: rgba(255,255,255,0.06);">
                     <button onclick="logoutAdmin()"
                             class="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold uppercase tracking-widest text-red-400 hover:text-red-300 hover:bg-red-900/10 transition-all text-left"
@@ -300,7 +292,6 @@
                     <th class="p-4">Operative</th>
                     <th class="p-4">Task Type</th>
                     <th class="p-4">Current Progress</th>
-                    <th class="p-4 text-right">Actions</th>
                 </tr>
             </thead>
             <tbody id="assigned-tasks-body"></tbody>
@@ -354,10 +345,6 @@
         </section>
 
         <footer class="flex gap-3 pt-6 border-t border-outline/20">
-    <a id="asgn-email-btn" href="#" 
-       class="flex-1 bg-surface-container-high text-on-surface px-4 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 hover:bg-surface-container-highest transition-all">
-        <span class="material-symbols-outlined text-sm">mail</span> Email Operative
-    </a>
     <button id="asgn-delete-btn" onclick="deleteReportFromDetail()"
             class="flex-1 bg-red-900/20 text-red-400 border border-red-500/30 px-4 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-red-600 hover:text-white transition-all">
         <span class="material-symbols-outlined text-sm">delete</span> Delete Report

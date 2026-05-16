@@ -36,7 +36,7 @@ describe('Profile Modal UI - High Coverage', () => {
         };
         window.FileReader = jest.fn(() => mockFileReader);
 
-        require('./profile-modal.js');
+        require('../profile-modal.js');
         document.dispatchEvent(new Event('DOMContentLoaded'));
     });
 

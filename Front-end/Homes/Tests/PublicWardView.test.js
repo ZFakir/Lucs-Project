@@ -67,7 +67,7 @@ describe('PublicWardView Logic Tests - Safe Integration', () => {
         });
 
         fetch.mockResolvedValue({ ok: true, json: async () => [] });
-        publicWardModule = require('./PublicWardView.js');
+        publicWardModule = require('../PublicWardView.js');
         
         if (domReadyCb) domReadyCb(); // Initialises issueModal safely
         //await new Promise(process.nextTick);
