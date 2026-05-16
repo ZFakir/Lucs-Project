@@ -56,6 +56,33 @@ describe('Grievance API Endpoints', () => {
                 where: { ResidentID: 'R101' }
             });
         });
+
+        it('should return 500 on server error', async () => {
+            Grievance.findAll.mockRejectedValue(new Error('Database error'));
+            const res = await request(app).get('/grievances/resident/R101');
+            expect(res.statusCode).toBe(500);
+            expect(res.body).toHaveProperty('error');
+        });
+    });
+
+    describe('GET /grievances/municipality/:municipalId', () => {
+        it('should fetch grievances for a specific municipality', async () => {
+            Grievance.findAll.mockResolvedValue([{ GrievanceID: 2, MunicipalID: 'M1' }]);
+
+            const res = await request(app).get('/grievances/municipality/M1');
+
+            expect(res.statusCode).toBe(200);
+            expect(Grievance.findAll).toHaveBeenCalledWith({
+                where: { MunicipalID: 'M1' }
+            });
+        });
+
+        it('should return 500 on server error', async () => {
+            Grievance.findAll.mockRejectedValue(new Error('Database error'));
+            const res = await request(app).get('/grievances/municipality/M1');
+            expect(res.statusCode).toBe(500);
+            expect(res.body).toHaveProperty('error');
+        });
     });
 
     describe('GET /grievances/:id', () => {
@@ -112,6 +139,13 @@ describe('Grievance API Endpoints', () => {
             );
         });
 
+        it('should return 500 on server error', async () => {
+            Grievance.update.mockRejectedValue(new Error('Database error'));
+            const res = await request(app).put('/grievances/5/resolve');
+            expect(res.statusCode).toBe(500);
+            expect(res.body).toHaveProperty('error');
+        });
+
         it('should return 404 if trying to resolve a non-existent grievance', async () => {
             Grievance.update.mockResolvedValue([0]);
             const res = await request(app).put('/grievances/999/resolve');
@@ -127,6 +161,13 @@ describe('Grievance API Endpoints', () => {
 
             expect(res.statusCode).toBe(200);
             expect(res.body.message).toBe('Grievance deleted successfully');
+        });
+
+        it('should return 500 on server error', async () => {
+            Grievance.destroy.mockRejectedValue(new Error('Database error'));
+            const res = await request(app).delete('/grievances/10');
+            expect(res.statusCode).toBe(500);
+            expect(res.body).toHaveProperty('error');
         });
 
         it('should return 404 if delete target is not found', async () => {

@@ -504,16 +504,57 @@ async function openAssignmentDetail(reportId, employeeId) {
         const imagesGrid = document.getElementById('asgn-images-grid');
         if (images.length > 0) {
             imagesSection.classList.remove('hidden');
-            imagesGrid.innerHTML = images.map(img => `
-                <figure class="aspect-square rounded-lg overflow-hidden border border-outline/20 relative m-0 group">
-                    <img src="data:${img.Type};base64,${img.base64}" 
-                         class="w-full h-full object-cover" 
-                         alt="Proof of work"/>
-                    <button onclick="deleteReportImage(${img.ImageID}, ${reportId}, ${employeeId})"
-                            class="absolute top-1 right-1 bg-red-600/80 hover:bg-red-600 p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                        <span class="material-symbols-outlined text-white text-sm">delete</span>
-                    </button>
-                </figure>`).join('');
+            
+            // 1. Split the images using the secret MIME tag
+            const residentImages = images.filter(img => !img.Type.includes('role=worker'));
+            const workerImages = images.filter(img => img.Type.includes('role=worker'));
+            
+            let combinedHtml = '';
+
+            // 2. Render Resident Images (The Problem)
+            if (residentImages.length > 0) {
+                // col-span-full ensures the title stretches across the whole grid row
+                combinedHtml += `
+                    <div class="col-span-full mt-2">
+                        <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mb-1">Original Issue Photos</p>
+                    </div>`;
+                    
+                combinedHtml += residentImages.map(img => `
+                    <figure class="aspect-square rounded-lg overflow-hidden border border-outline/20 relative m-0 group">
+                        <img src="data:${img.Type};base64,${img.base64}" 
+                             class="w-full h-full object-cover" 
+                             alt="Original Issue"/>
+                        <button onclick="deleteReportImage(${img.ImageID}, ${reportId}, ${employeeId})"
+                                class="absolute top-1 right-1 bg-red-600/80 hover:bg-red-600 p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                            <span class="material-symbols-outlined text-white text-sm">delete</span>
+                        </button>
+                    </figure>`).join('');
+            }
+
+            // 3. Render Worker Images (The Solution/Proof of Work)
+            if (workerImages.length > 0) {
+                combinedHtml += `
+                    <div class="col-span-full mt-4">
+                        <p class="text-[10px] text-primary font-bold uppercase tracking-widest mb-1">Worker Proof of Work</p>
+                    </div>`;
+                    
+                combinedHtml += workerImages.map(img => {
+                    // Strip the secret tag before passing it to the src attribute
+                    const cleanType = img.Type.replace(';role=worker', '');
+                    return `
+                    <figure class="aspect-square rounded-lg overflow-hidden border-2 border-primary/50 relative m-0 group shadow-lg">
+                        <img src="data:${cleanType};base64,${img.base64}" 
+                             class="w-full h-full object-cover" 
+                             alt="Proof of work"/>
+                        <button onclick="deleteReportImage(${img.ImageID}, ${reportId}, ${employeeId})"
+                                class="absolute top-1 right-1 bg-red-600/80 hover:bg-red-600 p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                            <span class="material-symbols-outlined text-white text-sm">delete</span>
+                        </button>
+                    </figure>`;
+                }).join('');
+            }
+
+            imagesGrid.innerHTML = combinedHtml;
         } else {
             imagesSection.classList.add('hidden');
             imagesGrid.innerHTML = '';
@@ -666,6 +707,6 @@ if (typeof module !== 'undefined' && module.exports) {
         closeAssignModal, loadWorkerDropdown, loadAssignedTasks, renderAssignmentRows, 
         filterAssignments, openAssignmentDetail, closeAssignmentDetail, 
         toggleAdminDropdown, closeAdminDropdownOutside, openAdminProfile, 
-        logoutAdmin, loadActiveWorkers,deleteReportImage
+        logoutAdmin, loadActiveWorkers,deleteReportImage,deleteReportFromDetail
     };
 }

@@ -17,7 +17,8 @@ const ADMIN_EMAILS = [
     '2820314@students.wits.ac.za',
     '2799656@students.wits.ac.za',
     '2805279@students.wits.ac.za',
-    'groundwork.wits@gmail.com'
+    'groundwork.wits@gmail.com',
+    '2800269@students.wits.ac.za'
 ];
 
 // --- 1. MIDDLEWARE ---

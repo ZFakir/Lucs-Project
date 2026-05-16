@@ -226,7 +226,7 @@ function renderTaskCard(report, container) {
                     
                     <button onclick="openWorkerEditModal(${report.ReportID})" 
                             class="w-full bg-surface-container-highest text-on-surface px-6 py-3 rounded-xl font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-surface-container transition-all border border-white/10 mb-2">
-                        <span class="material-symbols-outlined text-base">edit</span> Edit Details & Photos
+                        <span class="material-symbols-outlined text-base">edit</span> Edit Details
                     </button>
 
                     <button onclick="resolveTask(${report.ReportID})" 
@@ -276,18 +276,24 @@ async function declineTask(reportId) {
 //Moves task to final 'Resolved' state.Sends 'Fixed' status to trigger the backend logic for DateFulfilled.
 async function resolveTask(reportId) {
     if(!confirm("Are you sure this job is finished?")) return;
+
+    // 1. Upload the images properly first
+    await uploadTaskImages(reportId);
+
     
-    let base64Images = [];
+    
+    
+    /*let base64Images = [];
     if (taskImages[reportId] && taskImages[reportId].length > 0) {
         base64Images = await Promise.all(taskImages[reportId].map(file => toBase64(file)));
-    }
+    }*/
 
     try {
         const response = await fetch(`/api/reports/${reportId}/status`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             // Using 'Fixed' status to satisfy both DB logic and Jest tests
-            body: JSON.stringify({ Status: 'Fixed', Progress: 'Resolved', images: base64Images }) 
+            body: JSON.stringify({ Status: 'Fixed', Progress: 'Resolved'}) 
         });
 
         if (response.ok) {
@@ -456,12 +462,12 @@ async function uploadTaskImages(reportId) {
         for (const file of filesToUpload) {
             const base64String = await toBase64(file);
 
-            const response = await fetch(`/api/reportImages/report/${reportId}`, {
+            const response = await fetch(`/api/report-images/report/${reportId}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     // IMPORTANT: Change to actual DB column name for image uploading
-                    ImageColumnName: base64String 
+                    Image: base64String 
                 })
             });
 
@@ -516,7 +522,7 @@ async function fetchEditImages() {
     gallery.innerHTML = '<p class="text-sm">Loading photos...</p>';
 
     try {
-        const response = await fetch(`/api/reportImages/report/${editingReportId}`);
+        const response = await fetch(`/api/report-images/report/${editingReportId}`);
         if (!response.ok) {
             gallery.innerHTML = '<p class="text-xs text-zinc-500">No photos attached.</p>';
             return;
@@ -578,7 +584,7 @@ window.uploadWorkerPhoto = async function() {
     
     reader.onload = async (e) => {
         try {
-            const response = await fetch(`/api/reportImages/report/${editingReportId}`, {
+            const response = await fetch(`/api/report-images/report/${editingReportId}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ Image: e.target.result })
@@ -602,7 +608,7 @@ window.deleteWorkerPhoto = async function(imageId) {
     if (!confirm('Remove this photo permanently?')) return;
 
     try {
-        const response = await fetch(`/api/reportImages/${imageId}`, {
+        const response = await fetch(`/api/report-images/${imageId}`, {
             method: 'DELETE'
         });
 
