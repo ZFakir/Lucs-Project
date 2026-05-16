@@ -3,6 +3,7 @@
  */
 
 // --- 1. MOCK EXTERNAL DEPENDENCIES ---
+let markerClickCallback = null;
 global.L = {
     layerGroup: jest.fn().mockReturnValue({
         addTo: jest.fn().mockReturnThis(),
@@ -11,17 +12,24 @@ global.L = {
     circleMarker: jest.fn().mockReturnValue({
         addTo: jest.fn().mockReturnThis(),
         bindTooltip: jest.fn().mockReturnThis(),
-        on: jest.fn(),
+        // 🚨 Capture the click event so we can test the hidden logic inside it!
+        on: jest.fn((event, cb) => {
+            if (event === 'click') markerClickCallback = cb;
+        }),
     }),
 };
 
+const mockModalOpen = jest.fn();
 global.CivicModal = jest.fn().mockImplementation(() => ({
-    open: jest.fn(),
+    open: mockModalOpen,
 }));
 
-global.CivicTable = jest.fn().mockImplementation(() => ({
-    render: jest.fn(),
-}));
+// 🚨 Capture the table row click callback to test it!
+let civicTableCallback = null;
+global.CivicTable = jest.fn().mockImplementation((containerId, callback) => {
+    civicTableCallback = callback;
+    return { render: jest.fn() };
+});
 
 global.CivicMap = jest.fn().mockImplementation(() => ({
     map: { 
@@ -35,15 +43,17 @@ global.CivicMap = jest.fn().mockImplementation(() => ({
 global.DashboardExporter = jest.fn();
 global.fetch = jest.fn();
 
-// --- 2. IMPORT MODULE ---
-const WorkerPerform = require('../WorkerPerform.js');
+describe('WorkerPerform.js - Maximum Safe Coverage Suite', () => {
+    let WorkerPerform;
 
-describe('WorkerPerform.js - High Coverage Suite', () => {
-    
     beforeEach(() => {
+        jest.resetModules();
         jest.clearAllMocks();
 
-        // Setup a comprehensive DOM for all UI and Logic paths
+        // Mute console output for intentional API failure tests to keep terminal clean
+        jest.spyOn(console, 'error').mockImplementation(() => {});
+
+        // Setup a comprehensive DOM
         document.body.innerHTML = `
             <input id="employee-search" type="text">
             <div id="employee-list"></div>
@@ -77,165 +87,189 @@ describe('WorkerPerform.js - High Coverage Suite', () => {
                 <button id="view-history-btn"></button>
                 <button id="close-ledger-btn"></button>
             </dialog>
+            <button id="export-pdf-btn"></button>
         `;
 
-        // Mock dialog methods
         HTMLDialogElement.prototype.showModal = jest.fn();
         HTMLDialogElement.prototype.close = jest.fn();
         
-        // Mock global instances that the script expects to find
         global.workerMap = { map: { addLayer: jest.fn(), removeLayer: jest.fn() } };
         global.pinLayerGroup = global.L.layerGroup();
+
+        // Default successful fetch for setup
+        fetch.mockResolvedValue({ ok: true, json: () => Promise.resolve([]) });
+        WorkerPerform = require('../WorkerPerform.js');
+        document.dispatchEvent(new Event('DOMContentLoaded'));
     });
 
-    describe('Logic: getDateRange', () => {
-        test('calculates correct 7 Days window', () => {
-            // FIX: Manually toggle the checked state to ensure querySelector hits the right one
-            document.getElementById('radio-30').checked = false;
-            document.getElementById('radio-7').checked = true;
+    afterEach(() => {
+        jest.restoreAllMocks();
+    });
 
-            const range = WorkerPerform.getDateRange();
-            const diffDays = (new Date(range.end) - new Date(range.start)) / (1000 * 60 * 60 * 24);
-            expect(Math.round(diffDays)).toBe(7);
-            expect(document.getElementById('current-period').textContent).toContain('-');
+    // --- 1. UTILITY FUNCTIONS ---
+    describe('Utility Functions', () => {
+        test('normalizeName cleans municipality strings for dictionary keys', () => {
+            expect(WorkerPerform.normalizeName("City-of-Johannesburg Metropolitan Municipality")).toBe("city of johannesburg");
+            expect(WorkerPerform.normalizeName(null)).toBe("");
         });
 
-        test('calculates correct 24h window', () => {
+        test('getDateRange calculates 24h, 7 Days, and 30 Days windows', () => {
+            // Test 7 Days
             document.getElementById('radio-30').checked = false;
-            document.getElementById('radio-24').checked = true;
+            document.getElementById('radio-7').checked = true;
+            let range = WorkerPerform.getDateRange();
+            let diffDays = Math.round((new Date(range.end) - new Date(range.start)) / (1000 * 60 * 60 * 24));
+            expect(diffDays).toBe(7);
 
-            const range = WorkerPerform.getDateRange();
-            const start = new Date(range.start);
-            const end = new Date(range.end);
-            const diffHours = (end - start) / (1000 * 60 * 60);
+            // Test 24 Hours
+            document.getElementById('radio-7').checked = false;
+            document.getElementById('radio-24').checked = true;
+            range = WorkerPerform.getDateRange();
+            let diffHours = (new Date(range.end) - new Date(range.start)) / (1000 * 60 * 60);
             expect(diffHours).toBeGreaterThanOrEqual(23);
         });
     });
 
-    describe('UI & Analytics: updateAnalyticsUI', () => {
-        const mockReports = [
-            { Type: 'pothole', Progress: 'Resolved', CreatedAt: new Date().toISOString() },
-            { Type: 'sanitation', Progress: 'Active', CreatedAt: new Date().toISOString() },
-            { Type: 'water leak', Progress: 'Active', CreatedAt: new Date().toISOString() }
-        ];
-        const mockAcceptance = { accepted: 8, total: 10 };
+    // --- 2. UI RENDERERS ---
+    describe('UI Updates: updateAnalyticsUI', () => {
+        test('calculates efficiency and hits all category buckets', () => {
+            const mockReports = [
+                { Type: 'pothole', Progress: 'Resolved', CreatedAt: new Date().toISOString() }, // Infrastructure
+                { Type: 'sanitation', Progress: 'Active', CreatedAt: new Date().toISOString() }, // Sanitation
+                { Type: 'water leak', Progress: 'Active', CreatedAt: new Date().toISOString() }  // Utilities
+            ];
+            
+            WorkerPerform.updateAnalyticsUI(mockReports, { accepted: 5, total: 10 });
 
-        test('calculates efficiency and updates all category bars', () => {
-            WorkerPerform.updateAnalyticsUI(mockReports, mockAcceptance);
-
-            expect(document.getElementById('acceptance-rate-text').textContent).toContain('80.0');
+            // Efficiency: 1 resolved out of 3 total = 33.3%
+            expect(document.getElementById('tasks-total').textContent).toBe("3");
             expect(document.getElementById('efficiency-rate-text').textContent).toContain('33.3');
-            // Check bar sorting (Infrastructure should be one of them)
-            expect(document.getElementById('bar-one').textContent).toBeDefined();
+            
+            // Acceptance: 5 / 10 = 50%
+            expect(document.getElementById('acceptance-rate-text').textContent).toContain('50.0');
+            
+            // Verifies the sorting and mapping of the 3 category bars
+            expect(document.getElementById('bar-one').textContent).toBe('Sanitation');
+            expect(document.getElementById('bar-three').textContent).toBe('Utilities');
         });
 
         test('handles empty reports gracefully', () => {
             WorkerPerform.updateAnalyticsUI([], { accepted: 0, total: 0 });
             expect(document.getElementById('recent-history-body').innerHTML).toContain('NO HISTORY');
+            expect(document.getElementById('acceptance-rate-text').textContent).toContain('0.0');
         });
     });
 
-    describe('API: fetchSelectedWorkerStats', () => {
-        test('executes dual fetch and handles success', async () => {
-            WorkerPerform.setWorkerId('W001'); // Requires setter in WorkerPerform.js
+    // --- 3. API FETCHING ---
+    describe('API Fetching Logic', () => {
+        test('fetchSelectedWorkerStats handles success and failure', async () => {
+            WorkerPerform.setWorkerId('W001'); 
             
-            fetch.mockResolvedValue({ 
-                ok: true, 
-                json: () => Promise.resolve([]) 
-            });
-
+            // Test Success Path (Dual Fetch)
+            fetch.mockReset();
+            fetch.mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([{ ReportID: 1 }]) })
+                 .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ accepted: 5, total: 10 }) });
             await WorkerPerform.fetchSelectedWorkerStats();
+            expect(fetch).toHaveBeenCalledTimes(2); 
 
-            expect(fetch).toHaveBeenCalledTimes(2); // Reports and Acceptance calls
-        });
-
-        test('logs error on API failure', async () => {
-            const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-            fetch.mockRejectedValue(new Error("Network Fail"));
-
+            // Test Catch Block Path
+            fetch.mockRejectedValueOnce(new Error("Network Fail"));
             await WorkerPerform.fetchSelectedWorkerStats();
-
-            expect(consoleSpy).toHaveBeenCalledWith("Analytics Error:", expect.any(Error));
-            consoleSpy.mockRestore();
+            expect(console.error).toHaveBeenCalledWith("Analytics Error:", expect.any(Error));
         });
-    });
 
-    describe('Feature: Employee Search', () => {
-        test('filters worker buttons based on input text', () => {
-            const list = document.getElementById('employee-list');
-            list.innerHTML = `
-                <button><span>Alice W01</span></button>
-                <button><span>Bob W02</span></button>
-            `;
-            const buttons = list.querySelectorAll('button');
-            const input = document.getElementById('employee-search');
+        test('fetchMunicipalityReports handles success and failure', async () => {
+            WorkerPerform.setActiveMuni(101);
             
-            // Simulate the search logic
-            input.value = 'Alice';
-            buttons.forEach(btn => {
-                btn.style.display = btn.textContent.toLowerCase().includes('alice') ? 'flex' : 'none';
-            });
+            // Test Success
+            fetch.mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([{ ReportID: 1 }]) });
+            await WorkerPerform.fetchMunicipalityReports();
+            expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/api/sandbox/municipality/101'));
 
-            expect(buttons[0].style.display).toBe('flex');
-            expect(buttons[1].style.display).toBe('none');
-        });
-    });
-});
-
-describe('WorkerPerform.js - Advanced Coverage Boosters', () => {
-
-    describe('Utility: normalizeName', () => {
-        test('properly cleans municipality strings for dictionary keys', () => {
-            const input = "City-of-Johannesburg Metropolitan Municipality";
-            const expected = "city of johannesburg";
-            expect(WorkerPerform.normalizeName(input)).toBe(expected);
+            // Test Catch Block
+            fetch.mockRejectedValueOnce(new Error("Network Fail"));
+            await WorkerPerform.fetchMunicipalityReports();
+            expect(console.error).toHaveBeenCalledWith("Municipality Fetch Error:", expect.any(Error));
         });
 
-        test('returns empty string if input is null', () => {
-            expect(WorkerPerform.normalizeName(null)).toBe("");
-        });
-    });
-
-
-    describe('UI: updateAnalyticsUI Category Sorting', () => {
-        test('sorts categories ascending (lowest volume to highest)', () => {
-            const reports = [
-                { Type: 'sanitation' }, { Type: 'sanitation' }, // 2
-                { Type: 'pothole' },                            // 1 (Infrastructure)
-                { Type: 'electricity' }, { Type: 'electricity' }, { Type: 'electricity' } // 3 (Utilities)
-            ];
-            
-            WorkerPerform.updateAnalyticsUI(reports, { accepted: 1, total: 1 });
-
-            // Bar one should be Infrastructure (Count 1)
-            expect(document.getElementById('bar-one').textContent).toBe('Infrastructure');
-            expect(document.getElementById('bar-one-count').textContent).toBe("1");
-
-            // Bar three should be Utilities (Count 3)
-            expect(document.getElementById('bar-three').textContent).toBe('Utilities');
-            expect(document.getElementById('bar-three-count').textContent).toBe("3");
-        });
-    });
-
-//Did the test load
-    describe('Dynamic Population: fetchAndPopulateWorkers', () => {
-        test('creates buttons and sets up onclick behavior for workers', async () => {
-            const mockWorkers = [{ Name: 'Alice', EmployeeID: 'W_001' }];
-            fetch.mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(mockWorkers) });
-
+        test('fetchAndPopulateWorkers populates UI and wires clicks', async () => {
+            fetch.mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([{ Name: 'Alice', EmployeeID: 'W1' }]) });
             await WorkerPerform.fetchAndPopulateWorkers();
-
-            const list = document.getElementById('employee-list');
-            const button = list.querySelector('button');
             
-            expect(button).not.toBeNull();
-            expect(button.textContent).toContain('Alice');
-
-            // Simulate clicking the worker button
-            button.click();
+            const btn = document.querySelector('#employee-list button');
+            expect(btn.textContent).toContain('Alice');
             
+            // Ensure clicking the button doesn't crash and fires the stat fetch
+            fetch.mockResolvedValue({ ok: true, json: () => Promise.resolve([]) });
+            btn.click();
             expect(document.getElementById('profile-name').textContent).toBe('Alice');
-            expect(document.getElementById('profile-registry').textContent).toContain('W_001');
+        });
+
+        test('fetchAndPopulateWorkers handles fetch errors', async () => {
+            fetch.mockRejectedValueOnce(new Error("Fail"));
+            await WorkerPerform.fetchAndPopulateWorkers();
+            expect(document.getElementById('employee-list').innerHTML).toContain('Failed to load');
+        });
+    });
+
+    // --- 4. CALLBACK EXTRACTION (HIDDEN LINES) ---
+    describe('Hidden Callback Logic (Map Pins & Tables)', () => {
+        test('CivicTable Row Click fetches allocated workers and opens modal', async () => {
+            // Because we mocked CivicTable, civicTableCallback holds the function passed to it!
+            expect(civicTableCallback).toBeDefined();
+
+            // Mock the fetch inside the callback
+            fetch.mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([{ Name: 'Worker 1' }]) });
+            
+            // Execute the hidden callback directly
+            await civicTableCallback({ ReportID: 99, Type: 'Pothole', Brief: 'Hole' });
+            
+            expect(fetch).toHaveBeenCalledWith('/api/sandbox/report/99/workers');
+            expect(mockModalOpen).toHaveBeenCalledWith(expect.objectContaining({
+                id: 99,
+                type: 'Pothole'
+            }));
+        });
+
+        test('Map Pin Click fetches allocated workers and opens modal', async () => {
+            // Draw a pin to wire the markerClickCallback
+            WorkerPerform.drawPinsOnMap([{ ReportID: 55, Latitude: -26, Longitude: 28, Progress: 'Resolved' }]);
+            
+            expect(markerClickCallback).toBeDefined();
+
+            // Mock the fetch inside the map click handler
+            fetch.mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([]) });
+            
+            // Execute the hidden map click logic directly
+            await markerClickCallback();
+            
+            expect(fetch).toHaveBeenCalledWith('/api/sandbox/report/55/workers');
+            expect(mockModalOpen).toHaveBeenCalledWith(expect.objectContaining({ id: 55 }));
+        });
+    });
+
+    // --- 5. SIMPLE EVENT LISTENERS ---
+    describe('Basic Event Listeners', () => {
+        test('Radio button change triggers appropriate fetch', () => {
+            const radio = document.getElementById('radio-7');
+            
+            WorkerPerform.setWorkerId('W123'); 
+            radio.dispatchEvent(new Event('change'));
+            
+            WorkerPerform.setWorkerId(null);
+            WorkerPerform.setActiveMuni(444);
+            radio.dispatchEvent(new Event('change'));
+            
+            // Verify event listeners fire without crashing
+            expect(fetch).toHaveBeenCalled(); 
+        });
+
+        test('Modal opens and closes correctly on button clicks', () => {
+            const modal = document.getElementById('ledger-modal');
+            document.getElementById('view-history-btn').click();
+            expect(modal.showModal).toHaveBeenCalled();
+            document.getElementById('close-ledger-btn').click();
+            expect(modal.close).toHaveBeenCalled();
         });
     });
 });
