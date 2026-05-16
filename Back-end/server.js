@@ -177,9 +177,10 @@ app.use('/api/public',PublicRoutes);
 const frontendPath = path.resolve(__dirname, '..', 'Front-end');
 app.use(express.static(frontendPath));
 
-// Default route to serve Login.html
+// Default route to serve the Guest Dashboard
 app.get('/', (req, res) => {
-    res.sendFile(path.join(frontendPath, 'Login', 'Login.html'));
+    // Navigates into the 'Homes' folder and serves 'GuestDashboard.html'
+    res.sendFile(path.join(frontendPath, 'Homes', 'GuestDashboard.html'));
 });
 
 // --- 5. DATABASE & START ---

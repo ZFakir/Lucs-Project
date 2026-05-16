@@ -223,6 +223,12 @@ function renderTaskCard(report, container) {
                         </div>
                     </section>
 
+                    
+                    <button onclick="openWorkerEditModal(${report.ReportID})" 
+                            class="w-full bg-surface-container-highest text-on-surface px-6 py-3 rounded-xl font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-surface-container transition-all border border-white/10 mb-2">
+                        <span class="material-symbols-outlined text-base">edit</span> Edit Details & Photos
+                    </button>
+
                     <button onclick="resolveTask(${report.ReportID})" 
                             class="w-full bg-primary/80 text-neutral-900 px-6 py-4 rounded-xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-primary transition-all shadow-lg">
                         <span class="material-symbols-outlined text-base">check_circle</span> Mark as Complete
@@ -473,6 +479,139 @@ async function uploadTaskImages(reportId) {
     }
 }
 
+// ==========================================
+// WORKER EDIT MODAL LOGIC
+// ==========================================
+let editingReportId = null;
+
+window.openWorkerEditModal = async function(reportId) {
+    editingReportId = reportId;
+    
+    try {
+        // Fetch the latest report details to populate the form
+        const response = await fetch(`/api/reports/${reportId}`);
+        const report = await response.json();
+        
+        document.getElementById('edit-task-type').value = report.Type || '';
+        document.getElementById('edit-task-brief').value = report.Brief || '';
+        document.getElementById('edit-task-priority').value = report.Priority || 1;
+        
+        const editModal = document.getElementById('worker-edit-modal');
+        editModal.showModal();
+        await fetchEditImages();
+    } catch (err) {
+        console.error("Error opening edit modal:", err);
+    }
+}
+
+window.closeEditModal = function() {
+    const editModal = document.getElementById('worker-edit-modal');
+    if (editModal) editModal.close();
+    editingReportId = null;
+}
+
+// Fetch images for the gallery using EXISTING image route
+async function fetchEditImages() {
+    const gallery = document.getElementById('edit-image-gallery');
+    gallery.innerHTML = '<p class="text-sm">Loading photos...</p>';
+
+    try {
+        const response = await fetch(`/api/reportImages/report/${editingReportId}`);
+        if (!response.ok) {
+            gallery.innerHTML = '<p class="text-xs text-zinc-500">No photos attached.</p>';
+            return;
+        }
+
+        const images = await response.json();
+        gallery.innerHTML = ''; 
+        
+        if (images && images.length > 0) {
+            images.forEach(img => {
+                gallery.innerHTML += `
+                    <div class="relative inline-block m-1">
+                        <img src="data:${img.Type};base64,${img.base64}" class="h-20 w-20 object-cover rounded shadow border border-white/10">
+                        <button type="button" onclick="deleteWorkerPhoto(${img.ImageID})" class="absolute top-0 right-0 bg-red-600 text-white rounded w-5 h-5 flex items-center justify-center text-xs hover:bg-red-800">&times;</button>
+                    </div>
+                `;
+            });
+        } else {
+            gallery.innerHTML = '<p class="text-xs text-zinc-500">No photos attached.</p>';
+        }
+    } catch (error) {
+        gallery.innerHTML = '<p class="text-xs text-red-400">Failed to load photos.</p>';
+    }
+}
+
+// Save text details
+window.saveWorkerEdits = async function() {
+    const workerId = localStorage.getItem('workerId');
+    const Type = document.getElementById('edit-task-type').value;
+    const Brief = document.getElementById('edit-task-brief').value;
+    const Priority = document.getElementById('edit-task-priority').value;
+
+    try {
+        const response = await fetch(`/api/reports/${editingReportId}/worker-edit`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ workerId, Type, Brief, Priority })
+        });
+        
+        if (response.ok) {
+            alert('Task details saved successfully.');
+            closeEditModal();
+            loadMyAssignedTasks(workerId); // Refresh the UI
+        } else {
+            alert('Failed to save details. Make sure you are authorized.');
+        }
+    } catch (error) {
+        console.error("Save error:", error);
+    }
+}
+
+// Upload a new photo dynamically using EXISTING route
+window.uploadWorkerPhoto = async function() {
+    const fileInput = document.getElementById('edit-photo-input');
+    if (fileInput.files.length === 0) return alert('Select a file first.');
+
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+    
+    reader.onload = async (e) => {
+        try {
+            const response = await fetch(`/api/reportImages/report/${editingReportId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ Image: e.target.result })
+            });
+
+            if (response.status === 201) {
+                fileInput.value = ''; 
+                await fetchEditImages(); 
+            } else {
+                alert('Upload failed.');
+            }
+        } catch (error) {
+            console.error("Upload error:", error);
+        }
+    };
+    reader.readAsDataURL(file);
+}
+
+// Delete photo using EXISTING route
+window.deleteWorkerPhoto = async function(imageId) {
+    if (!confirm('Remove this photo permanently?')) return;
+
+    try {
+        const response = await fetch(`/api/reportImages/${imageId}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) await fetchEditImages(); 
+    } catch (error) {
+        console.error("Delete error:", error);
+    }
+}
+
 
 // EXPORTS FOR JEST TESTING
 if (typeof module !== 'undefined' && module.exports) {
@@ -480,6 +619,8 @@ if (typeof module !== 'undefined' && module.exports) {
         loadMyAssignedTasks, toggleCompletedTasks, acceptTask, renderTaskCard,
         declineTask, resolveTask, showTaskDetails, closeModal, updateProgress,
         handleImageSelect, removeImage, renderPreviews, toggleProfileDropdown,
-        closeDropdownOutside, openEditProfile, logoutWorker, uploadTaskImages
+        closeDropdownOutside, openEditProfile, logoutWorker, uploadTaskImages,
+        openWorkerEditModal, closeEditModal, fetchEditImages, saveWorkerEdits,
+        uploadWorkerPhoto, deleteWorkerPhoto
     };
 }

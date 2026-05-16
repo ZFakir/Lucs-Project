@@ -756,6 +756,41 @@ router.post('/report/:reportId', async (req, res) => {
     }
 });
 
+// ==========================================
+// WORKER TASK EDITING (DETAILS ONLY)
+// ==========================================
+router.put('/:reportId/worker-edit', async (req, res) => {
+    const { reportId } = req.params;
+    const { workerId, Type, Brief, Priority } = req.body;
+
+    try {
+        // 1. Verify the worker is actually assigned to this task
+        const allocation = await Allocation.findOne({
+            where: { ReportID: reportId, EmployeeID: workerId }
+        });
+        if (!allocation) {
+            return res.status(403).json({ success: false, message: "Forbidden: You are not assigned to this task." });
+        }
+
+        // 2. Find and update the report
+        const report = await Report.findByPk(reportId);
+        if (!report) {
+            return res.status(404).json({ success: false, message: "Report not found." });
+        }
+
+        await report.update({
+            Type: Type !== undefined ? Type : report.Type,
+            Brief: Brief !== undefined ? Brief : report.Brief,
+            Priority: Priority !== undefined ? Priority : report.Priority
+        });
+
+        res.status(200).json({ success: true, message: "Task details updated." });
+    } catch (error) {
+        console.error("Worker Details Update Error:", error);
+        res.status(500).json({ success: false, message: "Server error." });
+    }
+});
+
 // GET: Fetch all images for a specific report as base64
 router.get('/report/:reportId', async (req, res) => {
     try {
