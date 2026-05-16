@@ -993,6 +993,6 @@ if (typeof module !== 'undefined' && module.exports) {
         renderSubscribedWards, manageNotifications, toggleWardMute, showModal, 
         unsubscribeWard, loadProvinces, fetchMunicipalitiesForSelect, 
         fetchWardsForSelect, getTimeAgo, renderAlerts, openReportModal, 
-        closeReportModal, getMutePrefs, saveMutePrefs, loadResidentNotifications
+        getMutePrefs, saveMutePrefs, loadResidentNotifications
     };
 }
