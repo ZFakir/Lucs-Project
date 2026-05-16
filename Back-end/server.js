@@ -17,7 +17,8 @@ const ADMIN_EMAILS = [
     '2820314@students.wits.ac.za',
     '2799656@students.wits.ac.za',
     '2805279@students.wits.ac.za',
-    'groundwork.wits@gmail.com'
+    'groundwork.wits@gmail.com',
+    '2800269@students.wits.ac.za'
 ];
 
 // --- 1. MIDDLEWARE ---
@@ -177,9 +178,10 @@ app.use('/api/public',PublicRoutes);
 const frontendPath = path.resolve(__dirname, '..', 'Front-end');
 app.use(express.static(frontendPath));
 
-// Default route to serve Login.html
+// Default route to serve the Guest Dashboard
 app.get('/', (req, res) => {
-    res.sendFile(path.join(frontendPath, 'Login', 'Login.html'));
+    // Navigates into the 'Homes' folder and serves 'GuestDashboard.html'
+    res.sendFile(path.join(frontendPath, 'Homes', 'GuestDashboard.html'));
 });
 
 // --- 5. DATABASE & START ---

@@ -57,6 +57,36 @@ describe('Allocations API Endpoints', () => {
         where: { EmployeeID: 'W123' }
       }));
     });
+    it('should return 500 if there is a server error fetching worker tasks', async () => {
+      Allocation.findAll.mockRejectedValue(new Error('Database Error'));
+      const res = await request(app).get('/allocations/worker/W123');
+      
+      expect(res.statusCode).toBe(500);
+      expect(res.body).toHaveProperty('error');
+    });
+  });
+
+  describe('GET /allocations/report/:reportId', () => {
+    it('should fetch workers assigned to a specific report', async () => {
+      const mockData = [{ AllocationID: 2, ReportID: '10', EmployeeID: 'W1' }];
+      Allocation.findAll.mockResolvedValue(mockData);
+
+      const res = await request(app).get('/allocations/report/10');
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toEqual(mockData);
+      expect(Allocation.findAll).toHaveBeenCalledWith(expect.objectContaining({
+        where: { ReportID: '10' }
+      }));
+    });
+
+    it('should return 500 if there is a server error fetching report allocations', async () => {
+      Allocation.findAll.mockRejectedValue(new Error('Database Error'));
+      const res = await request(app).get('/allocations/report/10');
+      
+      expect(res.statusCode).toBe(500);
+      expect(res.body).toHaveProperty('error');
+    });
   });
 
   describe('POST /allocations', () => {
@@ -92,6 +122,15 @@ describe('Allocations API Endpoints', () => {
 
       expect(res.statusCode).toBe(200);
       expect(res.body.message).toBe('Worker unassigned successfully');
+    });
+
+    it('should return 500 if there is a server error during deletion', async () => {
+      Allocation.destroy.mockRejectedValue(new Error('Database Error'));
+      
+      const res = await request(app).delete('/allocations/99');
+      
+      expect(res.statusCode).toBe(500);
+      expect(res.body).toHaveProperty('error');
     });
 
     it('should return 404 if allocation does not exist', async () => {

@@ -440,4 +440,141 @@ describe('Admin Dashboard Logic - Maximum Safe Coverage', () => {
             expect(localStorage.getItem('role')).toBe('admin'); // Did not log out
         });
     });
+
+    
+    // ==========================================
+    // EXTRA COVERAGE: EMPTY STATES
+    // ==========================================
+    test('loadUnassignedReports handles empty state correctly', async () => {
+        fetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
+        await adminModule.loadUnassignedReports();
+        expect(document.getElementById('unassigned-reports-body').innerHTML).toContain('Clear Ledger');
+    });
+
+    test('loadPendingWorkers handles empty state correctly', async () => {
+        fetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
+        await adminModule.loadPendingWorkers();
+        expect(document.getElementById('pending-workers-list').innerHTML).toContain('No pending registrations');
+    });
+
+    test('loadActiveWorkers handles empty state correctly', async () => {
+        fetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
+        await adminModule.loadActiveWorkers();
+        expect(document.getElementById('active-workers-list').innerHTML).toContain('No active personnel found.');
+    });
+
+    // ==========================================
+    // EXTRA COVERAGE: CANCELLATIONS & ERRORS
+    // ==========================================
+    test('handleDelete returns early if confirm is cancelled', async () => {
+        window.confirm.mockReturnValueOnce(false);
+        await adminModule.handleDelete(101);
+        expect(fetch).not.toHaveBeenCalledWith('/api/reports/101', expect.anything());
+    });
+
+    test('assignToWorker returns early if prompt is cancelled', async () => {
+        window.prompt.mockReturnValueOnce(null);
+        await adminModule.assignToWorker(101);
+        expect(fetch).not.toHaveBeenCalledWith('/api/reports/101/assign', expect.anything());
+    });
+
+    test('handleEditSubmit alerts error if API fails', async () => {
+        document.getElementById('edit-report-id').value = '101';
+        fetch.mockResolvedValueOnce({ ok: false, json: async () => ({ message: 'Invalid data' }) });
+        
+        await adminModule.handleEditSubmit({ preventDefault: jest.fn() });
+        expect(window.alert).toHaveBeenCalledWith("Failed to save: Invalid data");
+    });
+
+    test('invalidateWorker returns early if confirm is cancelled', async () => {
+        window.confirm.mockReturnValueOnce(false);
+        await adminModule.invalidateWorker(101);
+        expect(fetch).not.toHaveBeenCalledWith(expect.stringContaining('/invalidate/'), expect.anything());
+    });
+
+    // ==========================================
+    // EXTRA COVERAGE: NEW IMAGE & DELETE LOGIC
+    // ==========================================
+    test('openAssignmentDetail splits resident and worker images accurately', async () => {
+        const mockReport = { ReportID: 1, Type: 'Burst Pipe', Priority: 2, Progress: 'Assigned', Brief: 'Water leaking' };
+        const mockImages = [
+            { ImageID: 1, Type: 'image/jpeg', base64: 'abc' }, // Resident photo
+            { ImageID: 2, Type: 'image/jpeg;role=worker', base64: 'def' } // Worker photo
+        ];
+        
+        fetch.mockImplementation((url) => {
+            if (url.includes('/api/reports/1')) return Promise.resolve({ ok: true, json: async () => mockReport });
+            if (url.includes('/api/report-images')) return Promise.resolve({ ok: true, json: async () => mockImages });
+            return Promise.resolve({ ok: true, json: async () => ({}) });
+        });
+
+        await adminModule.openAssignmentDetail(1, 10);
+        
+        const grid = document.getElementById('asgn-images-grid');
+        expect(grid.innerHTML).toContain('Original Issue Photos');
+        expect(grid.innerHTML).toContain('Worker Proof of Work');
+        expect(grid.innerHTML).toContain('border-primary/50'); // Checks for the worker green border class
+    });
+
+    test('deleteReportImage confirms and triggers DELETE API', async () => {
+        window.confirm.mockReturnValueOnce(true);
+        fetch.mockResolvedValueOnce({ ok: true }); // Mock the delete
+        
+        // Mock the three fetches that happen inside openAssignmentDetail during the refresh
+        fetch.mockResolvedValueOnce({ ok: true, json: async () => ({}) })
+             .mockResolvedValueOnce({ ok: true, json: async () => [] })
+             .mockResolvedValueOnce({ ok: true, json: async () => ({}) });
+
+        await adminModule.deleteReportImage(55, 101, 10);
+        
+        expect(fetch).toHaveBeenCalledWith('/api/report-images/55', expect.objectContaining({ method: 'DELETE' }));
+    });
+
+    test('deleteReportFromDetail confirms, deletes, and refreshes ledgers', async () => {
+        // First, trick the module into setting the internal currentDetailReportId variable
+        fetch.mockResolvedValue({ ok: true, json: async () => ({}) }); // Setup blanket mocks for detail open
+        await adminModule.openAssignmentDetail(99, null);
+
+        window.confirm.mockReturnValueOnce(true);
+        fetch.mockResolvedValueOnce({ ok: true, json: async () => ({}) }); // Delete fetch
+        fetch.mockResolvedValueOnce({ ok: true, json: async () => [] }); // loadAssignedTasks fetch
+        fetch.mockResolvedValueOnce({ ok: true, json: async () => [] }); // loadUnassignedReports fetch
+
+        await adminModule.deleteReportFromDetail();
+        
+        expect(fetch).toHaveBeenCalledWith('/api/reports/99', expect.objectContaining({ method: 'DELETE' }));
+        expect(window.alert).toHaveBeenCalledWith("Report #99 deleted successfully.");
+    });
+
+    // ==========================================
+    // EXTRA COVERAGE: UI ELEMENTS & DROPDOWNS
+    // ==========================================
+    test('Admin Dropdown functions toggle visibility correctly', () => {
+        const dropdown = document.getElementById('admin-profile-dropdown');
+        
+        // Test Open
+        adminModule.toggleAdminDropdown();
+        expect(dropdown.classList.contains('hidden')).toBe(false);
+
+        // Test Close
+        adminModule.closeAdminDropdownOutside({ target: document.body });
+        expect(dropdown.classList.contains('hidden')).toBe(true);
+
+        // Test Profile Open
+        window._profileModal = { open: jest.fn() };
+        adminModule.openAdminProfile();
+        expect(dropdown.classList.contains('hidden')).toBe(true);
+        expect(window._profileModal.open).toHaveBeenCalled();
+    });
+
+    test('renderAssignmentTracker generates HTML successfully', () => {
+        const container = document.createElement('div');
+        const mockAllocations = [{
+            ReportID: 10, Report: { Type: 'Pothole', Progress: 'Active' }, MunicipalWorker: { FirstName: 'Jane', LastName: 'Doe' }
+        }];
+        
+        adminModule.renderAssignmentTracker(mockAllocations, container);
+        expect(container.innerHTML).toContain('Pothole');
+        expect(container.innerHTML).toContain('Jane Doe');
+    });
 });
