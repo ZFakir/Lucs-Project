@@ -384,7 +384,7 @@ function renderAssignmentRows(allocations) {
     tableBody.innerHTML = '';
 
     if (allocations.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="4" class="p-10 text-center text-[10px] uppercase text-neutral-600">No active field assignments.</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="5" class="p-10 text-center text-[10px] uppercase text-neutral-600">No active field assignments.</td></tr>`;
         if (noResults) noResults.classList.add('hidden');
         return;
     }
@@ -417,6 +417,11 @@ function renderAssignmentRows(allocations) {
                 <span class="px-2 py-1 rounded border text-[10px] font-black uppercase ${colorClass}">
                     ${item.Report.Progress || 'In Transit'}
                 </span>
+            </td>
+            <td class="p-4 text-right">
+                <a href="mailto:${item.MunicipalWorker.Email}" 
+                   onclick="event.stopPropagation()"
+                   class="material-symbols-outlined text-neutral-500 hover:text-primary transition-colors">mail</a>
             </td>
         </tr>`;
         tableBody.insertAdjacentHTML('beforeend', row);
@@ -630,11 +635,8 @@ async function loadActiveWorkers() {
                 <article class="flex items-center justify-between p-4 bg-surface hover:bg-surface-container-high transition-colors rounded-lg mb-1">
                     <section class="flex items-center gap-4">
                         <figure class="w-10 h-10 bg-neutral-800 rounded-sm overflow-hidden flex items-center justify-center">
-                            ${worker.ProfilePicture
-                            ? `<img src="${worker.ProfilePicture}" class="w-full h-full object-cover" alt="${worker.FirstName}">`
-                            : `<span class="material-symbols-outlined text-neutral-500">person</span>`
-                            }
-                            </figure>
+                            <span class="material-symbols-outlined text-neutral-500">person</span>
+                        </figure>
                         <section>
                             <h4 class="text-sm font-bold tracking-tight text-on-surface">${worker.FirstName} ${worker.LastName}</h4>
                             <p class="text-[10px] uppercase text-neutral-500">${worker.Email}</p>
