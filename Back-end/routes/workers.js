@@ -30,7 +30,16 @@ router.get('/active', async (req, res) => {
         const active = await MunicipalWorker.findAll({ 
             where: { Validated: true } 
         });
-        res.json(active);
+
+        const formatted = active.map(w => {
+            const worker = typeof w.toJSON === 'function' ? w.toJSON() : w;
+            if (worker.ProfilePicture && Buffer.isBuffer(worker.ProfilePicture)) {
+                worker.ProfilePicture = `data:image/jpeg;base64,${Buffer.from(worker.ProfilePicture).toString('base64')}`;
+            }
+            return worker;
+        });
+
+        res.json(formatted);
     } catch (err) {
         console.error("Error fetching active workers:", err);
         res.status(500).json({ error: err.message });
