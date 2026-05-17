@@ -1,4 +1,4 @@
-
+const customAlert = new AlertModal();
 function getAdminEmail() {
     return localStorage.getItem('adminEmail');
 }
@@ -36,7 +36,7 @@ async function handleEditSubmit(e) {
     };
 
     if (!id) {
-        alert("Error: Report ID is missing.");
+        await customAlert.show('Error',"Error: Report ID is missing.",'alert');
         return;
     }
 
@@ -48,16 +48,16 @@ async function handleEditSubmit(e) {
         });
 
         if (response.ok) {
-            alert("Report updated successfully!");
+            await customAlert.show('Success',"Report updated successfully!",'alert');
             closeEditModal();
             loadUnassignedReports(); // Refresh the table to see changes
         } else {
             const error = await response.json();
-            alert("Failed to save: " + error.message);
+            await customAlert.show('Success',"Failed to save: " + error.message,'alert');
         }
     } catch (err) {
         console.error("Save Error:", err);
-        alert("Network error. Check server console.");
+        await customAlert.show('Error',"Network error. Check server console.",'alert');
     }
 }
 
@@ -196,10 +196,10 @@ async function assignToWorker(reportId) {
         });
 
         if (response.ok) {
-            alert(`Report #${reportId} successfully assigned to Worker #${employeeId}`);
+            await customAlert.show('Success',`Report #${reportId} successfully assigned to Worker #${employeeId}`,'alert');
             loadUnassignedReports(); // Refresh table
         } else {
-            alert("Assignment failed. Check if Employee ID exists.");
+            await customAlert.show('Error',"Assignment failed. Check if Employee ID exists.",'alert');
         }
     } catch (err) {
         console.error("Assignment error:", err);
@@ -244,7 +244,7 @@ async function approveWorker(employeeId) {
         });
 
         if (response.ok) {
-            alert("Worker Approved!");
+            await customAlert.show('Success',"Worker Approved!",'alert');
             loadPendingWorkers(); // Refresh the list
         }
     } catch (err) {
@@ -256,7 +256,8 @@ async function approveWorker(employeeId) {
 const handleDelete = async (reportId) => {
 
     const adminEmail = getAdminEmail();
-    if (!window.confirm("Are you sure you want to delete this report?")) return;
+    const userAgreed = await customAlert.show('Warning', "Are you sure you want to delete this report?", 'confirm');
+    if (!userAgreed) return;
 
     try {
         const response = await fetch(`/api/reports/${reportId}`, {
@@ -268,12 +269,12 @@ const handleDelete = async (reportId) => {
         const data = await response.json();
 
         if (response.ok) {
-            alert("Report deleted successfully");
+            await customAlert.show('Success',"Report deleted successfully",'alert');
             loadUnassignedReports(); 
             // If the report was already assigned, refresh that table too
             if (typeof loadAssignedTasks === 'function') loadAssignedTasks();
         } else {
-            alert("Failed to delete: " + (data.message || "Unknown Error"));
+            await customAlert.show('Error',"Failed to delete: " + (data.message || "Unknown Error"),'alert');
         }
     } catch (error) {
         console.error("Error deleting report:", error);
@@ -282,7 +283,8 @@ const handleDelete = async (reportId) => {
 
 async function invalidateWorker(employeeId) {
     const adminEmail = getAdminEmail();
-    if (!confirm("Are you sure you want to disable this account?")) return;
+    const userAgreed = await customAlert.show('Warning', "Are you sure you want to disable this account?", 'confirm');
+    if (!userAgreed) return;
 
     try {
         const response = await fetch(`/api/workers/invalidate/${employeeId}`, {
@@ -292,7 +294,7 @@ async function invalidateWorker(employeeId) {
         });
 
         if (response.ok) {
-            alert("Account Disabled!");
+            await customAlert.show('Success',"Account Disabled!",'alert');
             location.reload(); // Refresh to update the UI
         }
     } catch (err) {
@@ -444,7 +446,8 @@ function filterAssignments() {
 }
 
 async function deleteReportImage(imageId, reportId, employeeId) {
-    if (!confirm('Delete this image? This cannot be undone.')) return;
+    const userAgreed = await customAlert.show('Warning', 'Delete this image? This cannot be undone.', 'confirm');
+    if (!userAgreed) return;
 
     try {
         const response = await fetch(`/api/report-images/${imageId}`, {
@@ -455,7 +458,7 @@ async function deleteReportImage(imageId, reportId, employeeId) {
             // Refresh the modal to show updated images
             openAssignmentDetail(reportId, employeeId);
         } else {
-            alert('Failed to delete image.');
+            await customAlert.show('Success','Failed to delete image.','alert');
         }
     } catch (err) {
         console.error('Image delete error:', err);
@@ -565,7 +568,8 @@ async function openAssignmentDetail(reportId, employeeId) {
 async function deleteReportFromDetail() {
     const adminEmail = getAdminEmail();
     if (!currentDetailReportId) return;
-    if (!confirm(`Are you sure you want to permanently delete Report #${currentDetailReportId}? This cannot be undone.`)) return;
+    const userAgreed = await customAlert.show('Warning', `Are you sure you want to permanently delete Report #${currentDetailReportId}? This cannot be undone.`, 'confirm');
+    if (!userAgreed) return;
 
     try {
         const response = await fetch(`/api/reports/${currentDetailReportId}`, {
@@ -577,16 +581,16 @@ async function deleteReportFromDetail() {
         const data = await response.json();
 
         if (response.ok) {
-            alert(`Report #${currentDetailReportId} deleted successfully.`);
+            await customAlert.show('Success',`Report #${currentDetailReportId} deleted successfully.`,'alert');
             closeAssignmentDetail();
             loadAssignedTasks();    // Refresh the ledger
             loadUnassignedReports(); // Refresh unassigned table too
         } else {
-            alert('Failed to delete: ' + (data.message || 'Unknown error'));
+            await customAlert.show('Error','Failed to delete: ' + (data.message || 'Unknown error'),'alert');
         }
     } catch (err) {
         console.error('Delete error:', err);
-        alert('Network error — could not delete report.');
+        await customAlert.show('Error','Network error — could not delete report.','alert');
     }
 }
 
@@ -616,9 +620,10 @@ function openAdminProfile() {
     if (window._profileModal) window._profileModal.open();
 }
 
-function logoutAdmin() {
+async function logoutAdmin() {
     document.getElementById('admin-profile-dropdown').classList.add('hidden');
-    if (!confirm('Are you sure you want to log out?')) return;
+    const userAgreed = await customAlert.show('Warning', 'Are you sure you want to log out?', 'confirm');
+    if (!userAgreed) return;
     localStorage.clear();
     window.location.href = '../Login/Login.html';
 }
@@ -640,7 +645,7 @@ document.getElementById('assign-task-form').addEventListener('submit', async (e)
         });
 
         if (response.ok) {
-            alert("Operative Assigned!");
+            await customAlert.show('Success',"Operative Assigned!",'alert');
             location.reload();
         }
     } catch (err) {

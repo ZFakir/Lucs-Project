@@ -1,8 +1,10 @@
+
+
 // 1. GLOBAL SCOPE: Variables at the very top
 let selectedImages = [];
 let wardGeoData = null;
 let MunicipalityMap = {}; // Will hold our name-to-integer dictionary
-
+const customAlert = new AlertModal();
 // --- IMAGE PREVIEW LOGIC ---
 const renderPreviews = () => {
     const previewContainer = document.getElementById('imagePreview');
@@ -186,7 +188,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const isTest = typeof jest !== 'undefined';
         if (!isTest && (!getVal('description') || selectedImages.length === 0)) {
-            alert("Please add a description and at least one image.");
+            await customAlert.show('Error',"Please add a description and at least one image.",'alert');
             return;
         }
 
@@ -215,7 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (response.ok) {
-                alert('Report submitted to database!');
+            await customAlert.show('Success', 'Report submitted to database!', 'alert');
                 form.reset();
                 selectedImages = [];
                 renderPreviews();
@@ -227,10 +229,10 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error('Submit failed:', error);
             if (error.message === 'Failed to log report') {
-                alert('Error submitting report');
+                await customAlert.show('Error','Error submitting report','alert');
             } else {
                 localStorage.setItem('cachedReport', JSON.stringify(finalReport));
-                alert('Offline or Error: Report saved to device and will sync later.');
+                await customAlert.show('Error','Offline or Error: Report saved to device and will sync later.','alert');
             }
         }
     });

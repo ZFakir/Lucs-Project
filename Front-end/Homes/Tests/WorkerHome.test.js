@@ -7,6 +7,14 @@ global.fetch = jest.fn();
 window.HTMLDialogElement.prototype.showModal = jest.fn();
 window.HTMLDialogElement.prototype.close = jest.fn();
 
+// MOCK THE CUSTOM ALERT MODAL
+global.mockShow = jest.fn(() => Promise.resolve(true));
+global.AlertModal = class {
+    show(title, message, type) {
+        return global.mockShow(title, message, type);
+    }
+};
+
 // Mock FileReader for Image Logic - Fix Promise Hanging (Timeout Issue)
 class MockFileReader {
     readAsDataURL(file) {
@@ -39,9 +47,7 @@ describe('Worker Dashboard Logic - Maximum Safe Coverage', () => {
         jest.spyOn(console, 'error').mockImplementation(() => {});
         jest.spyOn(console, 'log').mockImplementation(() => {});
         
-        window.alert = jest.fn();
-        window.prompt = jest.fn(() => "Missing materials");
-        window.confirm = jest.fn(() => true); 
+        window.prompt = jest.fn(() => "Missing materials"); // Still used for text input
 
         // Safely bypass JSDOM location protection
         originalLocation = window.location;
@@ -49,7 +55,6 @@ describe('Worker Dashboard Logic - Maximum Safe Coverage', () => {
         delete window.location;
         window.location = { href: 'http://localhost/', search: '', reload: mockReload };
 
-        // 2. Inject complete required DOM
         // 2. Inject complete required DOM
         document.body.innerHTML = `
             <header>
@@ -87,6 +92,7 @@ describe('Worker Dashboard Logic - Maximum Safe Coverage', () => {
         `;
 
         jest.clearAllMocks();
+        global.mockShow.mockClear();
         
         // Default fetch return for initial DOMContentLoaded
         global.fetch.mockResolvedValue({ ok: true, json: async () => [] });
@@ -179,7 +185,7 @@ describe('Worker Dashboard Logic - Maximum Safe Coverage', () => {
         test('toggleCompletedTasks catches fetch errors', async () => {
             fetch.mockRejectedValueOnce(new Error('Network Drop'));
             await workerModule.toggleCompletedTasks();
-            expect(window.alert).toHaveBeenCalledWith(expect.stringContaining('Sync Error'));
+            expect(global.mockShow).toHaveBeenCalledWith('Error', expect.stringContaining('Sync Error'), 'alert');
         });
     });
 
@@ -330,9 +336,9 @@ describe('Worker Dashboard Logic - Maximum Safe Coverage', () => {
             expect(window._profileModal.open).toHaveBeenCalled();
         });
 
-        test('logoutWorker aborts if confirm is false', () => {
-            window.confirm.mockReturnValueOnce(false);
-            workerModule.logoutWorker();
+        test('logoutWorker aborts if confirm is false', async () => {
+            global.mockShow.mockResolvedValueOnce(false);
+            await workerModule.logoutWorker();
             expect(localStorage.getItem('workerId')).toBe('W-101');
         });
     });
@@ -358,14 +364,14 @@ describe('Worker Dashboard Logic - Maximum Safe Coverage', () => {
         });
 
         test('resolveTask does nothing if user cancels confirm', async () => {
-            window.confirm.mockReturnValueOnce(false);
+            global.mockShow.mockResolvedValueOnce(false);
             await workerModule.resolveTask(99);
             expect(fetch).not.toHaveBeenCalledWith('/api/reports/99/status', expect.anything());
         });
         
-        test('logoutWorker executes localstorage clear and redirects', () => {
-            window.confirm.mockReturnValueOnce(true);
-            try { workerModule.logoutWorker(); } catch(e) {}
+        test('logoutWorker executes localstorage clear and redirects', async () => {
+            global.mockShow.mockResolvedValueOnce(true);
+            try { await workerModule.logoutWorker(); } catch(e) {}
             expect(localStorage.getItem('workerId')).toBeNull();
         });
     });
@@ -415,7 +421,7 @@ describe('Worker Dashboard Logic - Maximum Safe Coverage', () => {
         });
 
         test('deleteWorkerPhoto sends DELETE request', async () => {
-            window.confirm.mockReturnValueOnce(true);
+            global.mockShow.mockResolvedValueOnce(true);
             fetch.mockResolvedValueOnce({ ok: true }); 
             fetch.mockResolvedValueOnce({ ok: true, json: async () => [] }); 
             
@@ -428,7 +434,7 @@ describe('Worker Dashboard Logic - Maximum Safe Coverage', () => {
             
             await workerModule.uploadWorkerPhoto();
             
-            expect(window.alert).toHaveBeenCalledWith('Select a file first.');
+            expect(global.mockShow).toHaveBeenCalledWith('Error', 'Select a file first.', 'alert');
         });
 
         test('uploadWorkerPhoto successfully uploads file and refreshes gallery', async () => {

@@ -24,7 +24,14 @@ describe('Notifications UI Logic - Maximum Safe Coverage', () => {
         // Mute console warnings/errors for intentional failure tests
         jest.spyOn(console, 'warn').mockImplementation(() => {});
         jest.spyOn(console, 'error').mockImplementation(() => {});
-        window.confirm = jest.fn(() => true);
+
+        // 1. MOCK THE CUSTOM ALERT MODAL
+        global.mockShow = jest.fn(() => Promise.resolve(true));
+        global.AlertModal = class {
+            show(title, message, type) {
+                return global.mockShow(title, message, type);
+            }
+        };
 
         // Default empty fetch response
         global.fetch.mockResolvedValue({ ok: true, json: async () => [] });
@@ -35,6 +42,7 @@ describe('Notifications UI Logic - Maximum Safe Coverage', () => {
         // Advance timers to clear the 100ms setup timeout in init()
         jest.advanceTimersByTime(150);
         global.fetch.mockClear();
+        global.mockShow.mockClear();
     });
 
     afterEach(() => {
@@ -154,27 +162,6 @@ describe('Notifications UI Logic - Maximum Safe Coverage', () => {
             jest.advanceTimersByTime(30000);
             expect(fetch).toHaveBeenCalledWith('/api/notifications/123');
         });
-
-        // test('fetchAndRender shows toast for new notifications and auto-dismisses', async () => {
-        //     // First fetch (Sets baseline / isFirstFetch = false)
-        //     fetch.mockResolvedValueOnce({ ok: true, json: async () => [{ NotificationID: 1, Title: 'Old', Message: 'Old', IsRead: false }] });
-        //     await window._notifModule.refresh();
-            
-        //     // Second fetch (Introduces a new notification to trigger toast)
-        //     fetch.mockResolvedValueOnce({ ok: true, json: async () => [
-        //         { NotificationID: 1, Title: 'Old', Message: 'Old', IsRead: false }, 
-        //         { NotificationID: 2, Title: 'New Toast', Message: 'Hello', IsRead: false, Type: 'NEW_REPORT' }
-        //     ] });
-        //     await window._notifModule.refresh();
-            
-        //     const toast = document.querySelector('.notif-toast');
-        //     expect(toast).not.toBeNull();
-        //     expect(toast.innerHTML).toContain('New Toast');
-            
-        //     // Test Auto-Dismiss (6000ms timer inside showToast + 300ms exit animation)
-        //     jest.advanceTimersByTime(6500);
-        //     expect(document.querySelector('.notif-toast')).toBeNull();
-        // });
     });
 
     // ==========================================
@@ -331,7 +318,7 @@ describe('Notifications UI Logic - Maximum Safe Coverage', () => {
         });
 
         test('clearAll triggers DELETE API', async () => {
-            window.confirm.mockReturnValueOnce(true); 
+            global.mockShow.mockResolvedValueOnce(true); 
             fetch.mockResolvedValueOnce({ ok: true });
             
             await window._notifModule.clearAll();
@@ -341,7 +328,7 @@ describe('Notifications UI Logic - Maximum Safe Coverage', () => {
         });
 
         test('clearAll aborts if user cancels confirm prompt', async () => {
-            window.confirm.mockReturnValueOnce(false); 
+            global.mockShow.mockResolvedValueOnce(false); 
             await window._notifModule.clearAll();
             expect(fetch).not.toHaveBeenCalled();
         });
@@ -354,7 +341,7 @@ describe('Notifications UI Logic - Maximum Safe Coverage', () => {
             await window._notifModule.markAllRead();
             await window._notifModule.deleteOne(1);
             
-            window.confirm.mockReturnValueOnce(true);
+            global.mockShow.mockResolvedValueOnce(true);
             await window._notifModule.clearAll();
             
             expect(console.warn).toHaveBeenCalledTimes(5);

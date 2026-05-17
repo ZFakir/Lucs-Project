@@ -9,8 +9,15 @@ describe('Admin Dashboard Logic - Maximum Safe Coverage', () => {
         jest.resetModules();
         localStorage.clear();
 
-        window.alert = jest.fn();
-        window.confirm = jest.fn(() => true);
+        // 1. MOCK THE CUSTOM ALERT MODAL
+        global.mockShow = jest.fn(() => Promise.resolve(true));
+        global.AlertModal = class {
+            show(title, message, type) {
+                return global.mockShow(title, message, type);
+            }
+        };
+
+        // Note: AlertModal doesn't do text input, so prompts stay native
         window.prompt = jest.fn(() => "5"); 
         
         // Mute console output for clean logs and to safely hide the intentional JSDOM crashes
@@ -96,6 +103,7 @@ describe('Admin Dashboard Logic - Maximum Safe Coverage', () => {
         await new Promise(resolve => setTimeout(resolve, 50)); 
         
         fetch.mockClear(); 
+        global.mockShow.mockClear();
     });
 
     afterEach(() => {
@@ -165,14 +173,14 @@ describe('Admin Dashboard Logic - Maximum Safe Coverage', () => {
         test('handleEditSubmit handles missing ID gracefully', async () => {
             document.getElementById('edit-report-id').value = '';
             await adminModule.handleEditSubmit({ preventDefault: jest.fn() });
-            expect(window.alert).toHaveBeenCalledWith("Error: Report ID is missing.");
+            expect(global.mockShow).toHaveBeenCalledWith('Error', "Error: Report ID is missing.", 'alert');
         });
 
         test('handleEditSubmit handles server rejection', async () => {
             document.getElementById('edit-report-id').value = '1';
             global.fetch = jest.fn(() => Promise.resolve({ ok: false, json: () => Promise.resolve({ message: 'Bad Data' }) }));
             await adminModule.handleEditSubmit({ preventDefault: jest.fn() });
-            expect(window.alert).toHaveBeenCalledWith("Failed to save: Bad Data");
+            expect(global.mockShow).toHaveBeenCalledWith('Success', "Failed to save: Bad Data", 'alert');
         });
 
         test('assignToWorker handles empty prompt or server failure', async () => {
@@ -183,7 +191,7 @@ describe('Admin Dashboard Logic - Maximum Safe Coverage', () => {
             window.prompt.mockReturnValueOnce("5");
             global.fetch = jest.fn(() => Promise.resolve({ ok: false }));
             await adminModule.assignToWorker(101);
-            expect(window.alert).toHaveBeenCalledWith("Assignment failed. Check if Employee ID exists.");
+            expect(global.mockShow).toHaveBeenCalledWith('Error', "Assignment failed. Check if Employee ID exists.", 'alert');
         });
         
         test('assign-task-form triggers POST and catches fetch error', async () => {
@@ -236,30 +244,14 @@ describe('Admin Dashboard Logic - Maximum Safe Coverage', () => {
 
             global.fetch = jest.fn(() => Promise.resolve({ ok: false, json: () => Promise.resolve({ message: 'Forbidden' }) }));
             await adminModule.handleDelete(102);
-            expect(window.alert).toHaveBeenCalledWith("Failed to delete: Forbidden");
+            expect(global.mockShow).toHaveBeenCalledWith('Error', "Failed to delete: Forbidden", 'alert');
         });
 
         test('handleDelete aborts if confirm is false', async () => {
-            window.confirm.mockReturnValueOnce(false);
+            global.mockShow.mockResolvedValueOnce(false);
             await adminModule.handleDelete(101);
             expect(fetch).not.toHaveBeenCalled();
         });
-
-        // test('invalidateWorker triggers PUT and reloads safely', async () => {
-        //     // Mocking location reload carefully
-        //     const originalLocation = window.location;
-        //     delete window.location;
-        //     window.location = { ...originalLocation, reload: jest.fn() };
-            
-        //     localStorage.setItem('adminEmail', 'test@admin.com');
-        //     await adminModule.invalidateWorker(99);
-            
-        //     expect(fetch).toHaveBeenCalledWith('/api/workers/invalidate/99', expect.objectContaining({ method: 'PUT', body: JSON.stringify({ adminEmail: 'test@admin.com' })}));
-        //     expect(window.alert).toHaveBeenCalledWith("Account Disabled!");
-        //     expect(window.location.reload).toHaveBeenCalled();
-
-        //     window.location = originalLocation; // Clean up
-        // });
 
         test('invalidateWorker handles server rejection', async () => {
             global.fetch = jest.fn(() => Promise.reject(new Error('Network Down')));
@@ -268,7 +260,7 @@ describe('Admin Dashboard Logic - Maximum Safe Coverage', () => {
         });
 
         test('invalidateWorker aborts if confirm is false', async () => {
-            window.confirm.mockReturnValueOnce(false);
+            global.mockShow.mockResolvedValueOnce(false);
             await adminModule.invalidateWorker(99);
             expect(fetch).not.toHaveBeenCalled();
         });
@@ -388,16 +380,18 @@ describe('Admin Dashboard Logic - Maximum Safe Coverage', () => {
         });
 
         test('deleteReportImage fires DELETE request', async () => {
+            global.mockShow.mockResolvedValueOnce(true); // Approve modal confirmation
             await adminModule.deleteReportImage(99, 1, 5);
             expect(fetch).toHaveBeenCalledWith('/api/report-images/99', expect.objectContaining({ method: 'DELETE' }));
 
             // Test server failure
+            global.mockShow.mockResolvedValueOnce(true); // Approve modal confirmation
             global.fetch = jest.fn(() => Promise.resolve({ ok: false }));
             await adminModule.deleteReportImage(99, 1, 5);
-            expect(window.alert).toHaveBeenCalledWith("Failed to delete image.");
+            expect(global.mockShow).toHaveBeenCalledWith('Success', "Failed to delete image.", 'alert');
 
             // Test abort
-            window.confirm.mockReturnValueOnce(false);
+            global.mockShow.mockResolvedValueOnce(false); // Reject modal confirmation
             fetch.mockClear();
             await adminModule.deleteReportImage(99, 1, 5);
             expect(fetch).not.toHaveBeenCalled();
@@ -433,10 +427,10 @@ describe('Admin Dashboard Logic - Maximum Safe Coverage', () => {
             expect(document.getElementById('admin-profile-dropdown').classList.contains('hidden')).toBe(true);
         });
 
-        test('logoutAdmin aborts if confirm is false', () => {
-            window.confirm.mockReturnValueOnce(false);
+        test('logoutAdmin aborts if confirm is false', async () => {
+            global.mockShow.mockResolvedValueOnce(false);
             localStorage.setItem('role', 'admin');
-            adminModule.logoutAdmin();
+            await adminModule.logoutAdmin(); // Needs await since AlertModal resolves a promise
             expect(localStorage.getItem('role')).toBe('admin'); // Did not log out
         });
     });
@@ -467,7 +461,7 @@ describe('Admin Dashboard Logic - Maximum Safe Coverage', () => {
     // EXTRA COVERAGE: CANCELLATIONS & ERRORS
     // ==========================================
     test('handleDelete returns early if confirm is cancelled', async () => {
-        window.confirm.mockReturnValueOnce(false);
+        global.mockShow.mockResolvedValueOnce(false);
         await adminModule.handleDelete(101);
         expect(fetch).not.toHaveBeenCalledWith('/api/reports/101', expect.anything());
     });
@@ -483,11 +477,11 @@ describe('Admin Dashboard Logic - Maximum Safe Coverage', () => {
         fetch.mockResolvedValueOnce({ ok: false, json: async () => ({ message: 'Invalid data' }) });
         
         await adminModule.handleEditSubmit({ preventDefault: jest.fn() });
-        expect(window.alert).toHaveBeenCalledWith("Failed to save: Invalid data");
+        expect(global.mockShow).toHaveBeenCalledWith('Success', "Failed to save: Invalid data", 'alert');
     });
 
     test('invalidateWorker returns early if confirm is cancelled', async () => {
-        window.confirm.mockReturnValueOnce(false);
+        global.mockShow.mockResolvedValueOnce(false);
         await adminModule.invalidateWorker(101);
         expect(fetch).not.toHaveBeenCalledWith(expect.stringContaining('/invalidate/'), expect.anything());
     });
@@ -517,7 +511,7 @@ describe('Admin Dashboard Logic - Maximum Safe Coverage', () => {
     });
 
     test('deleteReportImage confirms and triggers DELETE API', async () => {
-        window.confirm.mockReturnValueOnce(true);
+        global.mockShow.mockResolvedValueOnce(true);
         fetch.mockResolvedValueOnce({ ok: true }); // Mock the delete
         
         // Mock the three fetches that happen inside openAssignmentDetail during the refresh
@@ -535,7 +529,7 @@ describe('Admin Dashboard Logic - Maximum Safe Coverage', () => {
         fetch.mockResolvedValue({ ok: true, json: async () => ({}) }); // Setup blanket mocks for detail open
         await adminModule.openAssignmentDetail(99, null);
 
-        window.confirm.mockReturnValueOnce(true);
+        global.mockShow.mockResolvedValueOnce(true);
         fetch.mockResolvedValueOnce({ ok: true, json: async () => ({}) }); // Delete fetch
         fetch.mockResolvedValueOnce({ ok: true, json: async () => [] }); // loadAssignedTasks fetch
         fetch.mockResolvedValueOnce({ ok: true, json: async () => [] }); // loadUnassignedReports fetch
@@ -543,7 +537,7 @@ describe('Admin Dashboard Logic - Maximum Safe Coverage', () => {
         await adminModule.deleteReportFromDetail();
         
         expect(fetch).toHaveBeenCalledWith('/api/reports/99', expect.objectContaining({ method: 'DELETE' }));
-        expect(window.alert).toHaveBeenCalledWith("Report #99 deleted successfully.");
+        expect(global.mockShow).toHaveBeenCalledWith('Success', "Report #99 deleted successfully.", 'alert');
     });
 
     // ==========================================

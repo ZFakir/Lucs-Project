@@ -1,182 +1,261 @@
 /**
  * @jest-environment jsdom
  */
+const fs = require('fs');
+const path = require('path');
 
+describe('ReportPage Logic - Maximum Safe Coverage', () => {
+    let reportPageCode;
 
+    beforeAll(() => {
+        // 1. Load the actual JavaScript file
+        const filePath = path.resolve(__dirname, './ReportPage.js');
+        reportPageCode = fs.readFileSync(filePath, 'utf8');
 
- /* 
- * * DESCRIPTION:
- * This test suite validates the frontend logic of the ReportPage.html interface.
- * Because ReportPage.js does not export standalone functions and relies heavily on 
- * DOM manipulation and event listeners, we test it by simulating real user interactions 
- * (like selecting files and clicking submit) in a virtual DOM environment provided by Jest.
- */
+        // 2. MOCK LEAFLET (L) globally
+        const mockMarker = {
+            addTo: jest.fn().mockReturnThis(),
+            on: jest.fn(),
+            getLatLng: jest.fn().mockReturnValue({ lat: -26.2041, lng: 28.0473 }),
+            setLatLng: jest.fn()
+        };
+        global.L = {
+            map: jest.fn(() => ({
+                setView: jest.fn().mockReturnThis(),
+                on: jest.fn(),
+                locate: jest.fn()
+            })),
+            tileLayer: jest.fn(() => ({ addTo: jest.fn() })),
+            marker: jest.fn(() => mockMarker)
+        };
 
+        // 3. MOCK TURF.JS (turf) globally
+        global.turf = {
+            point: jest.fn(),
+            featureEach: jest.fn((data, callback) => {
+                // Simulate finding a valid polygon for testing
+                callback({
+                    properties: { WardNo: '7', MAP_TITLE: 'Joburg', adm1_name: 'Gauteng' }
+                });
+            }),
+            booleanPointInPolygon: jest.fn().mockReturnValue(true)
+        };
 
-
-describe('ReportPage.js Code Coverage Suite', () => {
-
-    // By adding .skip, Jest will instantly ignore everything inside this block
-describe.skip('My Component Tests', () => {
-    
-    test('does something', () => {
-        expect(1).toBe(1);
+        // 4. MOCK FILEREADER (Prevents async hanging)
+        class MockFileReader {
+            readAsDataURL() {
+                setTimeout(() => {
+                    this.result = 'data:image/png;base64,mocked_base64_data';
+                    if (this.onload) this.onload({ target: this });
+                }, 5);
+            }
+        }
+        global.FileReader = MockFileReader;
     });
 
+    beforeEach(async () => {
+        jest.clearAllMocks();
+        localStorage.clear();
+        localStorage.setItem('residentId', '123');
+
+        // Reset global coordinates
+        window.mapLat = -26.2041;
+        window.mapLng = 28.0473;
+
+        // Mute expected console errors
+        jest.spyOn(console, 'error').mockImplementation(() => {});
+        jest.spyOn(console, 'log').mockImplementation(() => {});
+
+        // 5. MOCK CUSTOM ALERT MODAL
+        global.mockShow = jest.fn(() => Promise.resolve(true));
+        window.AlertModal = class {
+            show(title, message, type) {
+                return global.mockShow(title, message, type);
+            }
+        };
+
+        // Default mock fetch for map dependencies (run on DOMContentLoaded)
+        global.fetch = jest.fn().mockResolvedValue({ 
+            ok: true, 
+            json: async () => ({}) 
+        });
+
+        // 6. SETUP THE DOM
+        document.body.innerHTML = `
+            <div id="map"></div>
+            <form id="pothole_report_form">
+                <input type="hidden" id="detected-ward-id" value="7" />
+                <input type="hidden" id="detected-muni-id" value="10" />
+                <textarea id="description"></textarea>
+                <select id="pothole-type">
+                    <option value="Pothole" selected>Pothole</option>
+                </select>
+                <input type="file" id="imageInput" multiple />
+                <div id="imagePreview"></div>
+                <p id="location-text-display"></p>
+                <span id="current-date"></span>
+                <button type="submit" id="submit-btn">Submit</button>
+            </form>
+        `;
+
+        // 7. INJECT SCRIPT SAFELY
+        // Wrapping the code in an IIFE (() => { ... })() prevents the 
+        // "Identifier 'selectedImages' has already been declared" SyntaxError.
+        const script = document.createElement('script');
+        script.textContent = `
+            (() => {
+                ${reportPageCode}
+            })();
+        `;
+        document.body.appendChild(script);
+
+        // Fire DOMContentLoaded and allow async map logic to settle
+        document.dispatchEvent(new Event('DOMContentLoaded'));
+        await new Promise(r => setTimeout(r, 20));
+    });
+
+    // ==========================================
+    // 1. INITIALIZATION & UI LOGIC
+    // ==========================================
+    test('Initializes map and sets current date on load', () => {
+        expect(global.L.map).toHaveBeenCalled();
+        const dateElement = document.getElementById('current-date');
+        expect(dateElement.textContent.length).toBeGreaterThan(0);
+    });
+
+    test('Renders image preview and allows removal', async () => {
+        const imageInput = document.getElementById('imageInput');
+        const preview = document.getElementById('imagePreview');
+
+        // Simulate selecting a file
+        const mockFile = new File([''], 'test.png', { type: 'image/png' });
+        Object.defineProperty(imageInput, 'files', { value: [mockFile] });
+        
+        imageInput.dispatchEvent(new Event('change'));
+        await new Promise(r => setTimeout(r, 20)); // Wait for FileReader
+
+        expect(preview.innerHTML).toContain('<img');
+
+        // Trigger removal via the globally exposed window.removeImage
+        window.removeImage(0);
+        expect(preview.innerHTML).toBe('');
+    });
+
+    // ==========================================
+    // 2. FORM SUBMISSION VALIDATION
+    // ==========================================
+    test('Blocks submission if missing description or images', async () => {
+        const form = document.querySelector('form');
+        document.getElementById('description').value = ''; // Empty
+
+        form.dispatchEvent(new Event('submit', { cancelable: true }));
+        await new Promise(r => setTimeout(r, 20));
+
+        expect(global.mockShow).toHaveBeenCalledWith(
+            'Error', 
+            'Please add a description and at least one image.', 
+            'alert'
+        );
+        // Ensure no POST fetch was made
+        const postFetches = global.fetch.mock.calls.filter(call => call[1] && call[1].method === 'POST');
+        expect(postFetches.length).toBe(0);
+    });
+
+    // ==========================================
+    // 3. FORM SUBMISSION SUCCESS
+    // ==========================================
+    test('Successfully submits payload and resets UI', async () => {
+        // Prepare valid form state
+        document.getElementById('description').value = 'Test Issue';
+        const mockFile = new File([''], 'test.png', { type: 'image/png' });
+        Object.defineProperty(document.getElementById('imageInput'), 'files', { value: [mockFile] });
+        document.getElementById('imageInput').dispatchEvent(new Event('change'));
+        
+        await new Promise(r => setTimeout(r, 20));
+
+        // Mock successful POST fetch
+        global.fetch.mockImplementation((url, options) => {
+            if (options && options.method === 'POST') {
+                return Promise.resolve({ ok: true });
+            }
+            return Promise.resolve({ ok: true, json: async () => ({}) });
+        });
+
+        const form = document.querySelector('form');
+        form.dispatchEvent(new Event('submit', { cancelable: true }));
+        await new Promise(r => setTimeout(r, 50));
+
+        // Verify API was called with correct structure
+        expect(fetch).toHaveBeenCalledWith('/api/reports', expect.objectContaining({
+            method: 'POST',
+            body: expect.stringContaining('"Brief":"Test Issue"')
+        }));
+
+        // Verify Success Alert
+        expect(global.mockShow).toHaveBeenCalledWith('Success', 'Report submitted to database!', 'alert');
+
+        // Verify UI cleared
+        expect(document.getElementById('description').value).toBe('');
+    });
+
+    // ==========================================
+    // 4. FORM SUBMISSION API REJECTION
+    // ==========================================
+    test('Alerts the user if the server rejects the report (500/400 Error)', async () => {
+        document.getElementById('description').value = 'Test Issue';
+        const mockFile = new File([''], 'test.png', { type: 'image/png' });
+        Object.defineProperty(document.getElementById('imageInput'), 'files', { value: [mockFile] });
+        document.getElementById('imageInput').dispatchEvent(new Event('change'));
+        await new Promise(r => setTimeout(r, 20));
+
+        // Mock Failed POST fetch
+        global.fetch.mockImplementation((url, options) => {
+            if (options && options.method === 'POST') {
+                return Promise.resolve({ ok: false }); // Fails here
+            }
+            return Promise.resolve({ ok: true, json: async () => ({}) });
+        });
+
+        const form = document.querySelector('form');
+        form.dispatchEvent(new Event('submit', { cancelable: true }));
+        await new Promise(r => setTimeout(r, 50));
+
+        expect(global.mockShow).toHaveBeenCalledWith('Error', 'Error submitting report', 'alert');
+    });
+
+    // ==========================================
+    // 5. FORM SUBMISSION OFFLINE/CRASH
+    // ==========================================
+    test('Caches report to localStorage if network is completely offline', async () => {
+        document.getElementById('description').value = 'Test Issue';
+        const mockFile = new File([''], 'test.png', { type: 'image/png' });
+        Object.defineProperty(document.getElementById('imageInput'), 'files', { value: [mockFile] });
+        document.getElementById('imageInput').dispatchEvent(new Event('change'));
+        await new Promise(r => setTimeout(r, 20));
+
+        // Mock Network Crash
+        global.fetch.mockImplementation((url, options) => {
+            if (options && options.method === 'POST') {
+                return Promise.reject(new Error('Network Offline'));
+            }
+            return Promise.resolve({ ok: true, json: async () => ({}) });
+        });
+
+        const form = document.querySelector('form');
+        form.dispatchEvent(new Event('submit', { cancelable: true }));
+        await new Promise(r => setTimeout(r, 50));
+
+        // Verify offline alert
+        expect(global.mockShow).toHaveBeenCalledWith(
+            'Error', 
+            'Offline or Error: Report saved to device and will sync later.', 
+            'alert'
+        );
+
+        // Verify caching logic
+        const cached = JSON.parse(localStorage.getItem('cachedReport'));
+        expect(cached).toBeDefined();
+        expect(cached.Brief).toBe('Test Issue');
+        expect(cached.WardID).toBe(7);
+    });
 });
-});///remove this to make it all run
-    // let form, imageInput, preview;
-    // let domContentLoadedCallbacks = [];
-    // let mockFiles = [];
-
-    // beforeAll(() => {
-    //     const originalAddEventListener = document.addEventListener;
-    //     document.addEventListener = function(event, callback) {
-    //         if (event === 'DOMContentLoaded') {
-    //             domContentLoadedCallbacks.push(callback);
-    //         } else {
-    //             originalAddEventListener.apply(this, arguments);
-    //         }
-    //     };
-    // });
-
-    // beforeEach(() => {
-    //     // FIXED: IDs matched to ReportPage.js expectations
-    //     global.L = {
-    //     map: jest.fn().mockReturnValue({
-    //         setView: jest.fn().mockReturnThis(),
-    //         on: jest.fn()
-    //     }),
-    //     tileLayer: jest.fn().mockReturnValue({ addTo: jest.fn() }),
-    //     marker: jest.fn().mockReturnValue({ addTo: jest.fn(), setLatLng: jest.fn() })
-    // };
-    //     document.body.innerHTML = `
-    //         <form>
-    //             <select id="province-select"><option value="Gauteng">Gauteng</option></select>
-    //             <select id="municipality-select"><option value="Joburg">Joburg</option></select>
-    //             <select id="ward-select"><option value="7">7</option></select>
-    //             <select id="pothole-type"><option value="Pothole">Pothole</option></select>
-    //             <select id="frequency"><option value="First time observed">First time observed</option></select>
-    //             <textarea id="description">Deep pothole reported</textarea>
-    //             <input type="file" id="imageInput" multiple />
-    //             <div id="imagePreview"></div>
-    //             <button type="submit">Submit</button>
-    //         </form>
-    //     `;
-
-    //     global.fetch = jest.fn();
-    //     global.alert = jest.fn();
-    //     global.localStorage = {
-    //         getItem: jest.fn().mockReturnValue('mock-resident-id'),
-    //         setItem: jest.fn()
-    //     };
-
-    //     delete window.mapLat;
-    //     delete window.mapLng;
-    //     mockFiles = [];
-
-    //     global.FileReader = jest.fn(function() {
-    //         this.readAsDataURL = jest.fn(function() {
-    //             this.result = 'data:image/png;base64,mockBase64String';
-    //             setTimeout(() => {
-    //                 if (this.onload) this.onload({ target: { result: this.result } });
-    //             }, 0);
-    //         });
-    //     });
-
-    //     domContentLoadedCallbacks = [];
-    //     jest.isolateModules(() => {
-    //         require('./ReportPage.js');
-    //     });
-    //     domContentLoadedCallbacks.forEach(cb => cb());
-
-    //     form = document.querySelector('form');
-    //     imageInput = document.getElementById('imageInput');
-    //     preview = document.getElementById('imagePreview');
-
-    //     Object.defineProperty(imageInput, 'files', { get: () => mockFiles, configurable: true });
-    // });
-
-    // afterEach(() => {
-    //     jest.clearAllMocks();
-    // });
-
-    // test('renders image previews when files are selected', async () => {
-    //     mockFiles = [new File(['dummy'], 'test.png', { type: 'image/png' })];
-    //     imageInput.dispatchEvent(new Event('change'));
-
-    //     await new Promise(r => setTimeout(r, 20));
-
-    //     const figures = preview.querySelectorAll('figure');
-    //     expect(figures.length).toBe(1);
-    // });
-
-    // test('removes image from preview when close button is clicked', async () => {
-    //     mockFiles = [new File(['dummy'], 'test.png', { type: 'image/png' })];
-    //     imageInput.dispatchEvent(new Event('change'));
-    //     await new Promise(r => setTimeout(r, 20)); 
-        
-    //     window.removeImage(0);
-
-    //     expect(preview.querySelectorAll('figure').length).toBe(0);
-    // });
-
-    // test('submits report and images to the API successfully', async () => {
-    //     window.mapLat = -30.5;
-    //     window.mapLng = 22.9;
-
-    //     // FIXED: Only one fetch call needed now as images are bundled in JSON
-    //     global.fetch.mockResolvedValueOnce({
-    //         ok: true,
-    //         json: async () => ({ message: "Report logged successfully" })
-    //     });
-
-    //     mockFiles = [new File(['dummy'], 'test.png', { type: 'image/png' })];
-    //     imageInput.dispatchEvent(new Event('change'));
-    //     await new Promise(r => setTimeout(r, 20));
-
-    //     form.dispatchEvent(new Event('submit', { cancelable: true }));
-    //     await new Promise(r => setTimeout(r, 20));
-
-    //     // ASSERT 1: Images + Data bundled in ONE call
-    //     expect(global.fetch).toHaveBeenCalledTimes(1);
-        
-    //     const payload = JSON.parse(global.fetch.mock.calls[0][1].body);
-    //     //expect(payload.Description).toBe('Deep pothole reported');
-    //     expect(payload.Images[0]).toContain('mockBase64String');
-
-    //     // ASSERT 2: Fixed alert string match
-    //     expect(global.alert).toHaveBeenCalledWith('Report submitted to database!');
-    // });
-
-    // test('submits with fallback coordinates of 0 if map is not clicked', async () => {
-    //     global.fetch.mockResolvedValueOnce({
-    //         ok: true,
-    //         json: async () => ({})
-    //     });
-
-    //     form.dispatchEvent(new Event('submit', { cancelable: true }));
-    //     await new Promise(r => setTimeout(r, 20));
-
-    //     const payload = JSON.parse(global.fetch.mock.calls[0][1].body);
-    //     expect(payload.Latitude).toBe(0);
-    //     expect(payload.Longitude).toBe(0);
-    // });
-
-    // test('alerts the user if the API submission fails', async () => {
-    //     const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-        
-    //     // Simulate a manual error thrown by the code when response is not ok
-    //     global.fetch.mockResolvedValueOnce({
-    //         ok: false,
-    //         json: async () => ({ error: "Server Error" })
-    //     });
-
-    //     form.dispatchEvent(new Event('submit', { cancelable: true }));
-    //     await new Promise(r => setTimeout(r, 20));
-
-    //     // FIXED: Catch block alert logic
-    //     expect(global.alert).toHaveBeenCalledWith('Error submitting report');
-        
-    //     consoleSpy.mockRestore();
-    // });

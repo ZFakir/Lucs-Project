@@ -1,3 +1,6 @@
+
+const customAlert = new AlertModal();
+
 // --- START GLOBAL STATE ---
 let currentReports = []; 
 let activeReportId = null;
@@ -98,39 +101,36 @@ async function openMyReportModal(reportId) {
 
     activeReportId = reportId;
 
-    // Optional: Fetch images if your backend supports it, otherwise leave empty array
-    let fetchedImages = [];
-    try {
-        // Tripwire 3: Is the server hanging on the image fetch?
-        console.log("3. Fetching images from server...");
-        const response = await fetch(`/api/reports/report/${reportId}`);
-        if (response.ok) {
-            const imgData = await response.json();
-            fetchedImages = imgData; // The modal handles the BLOB conversion
-            console.log("4. Images fetched successfully!");
-        } else {
-            console.log("4. Server returned an error for images, continuing anyway.");
+    let muniName = 'Unknown Municipality';
+    if (report.MunicipalityID) {
+        try {
+            const muniRes = await fetch(`/api/geography/municipalities/${report.MunicipalityID}`);
+            if (muniRes.ok) {
+                const muniData = await muniRes.json();
+                // Format it nicely in uppercase to match the Ward page
+                muniName = muniData.MunicipalityName ? muniData.MunicipalityName.toUpperCase() : `Muni ID: ${report.MunicipalityID}`;
+            }
+        } catch (error) {
+            console.error("Failed to fetch municipality name:", error);
         }
-    } catch (error) {
-        console.error('No images found');
     }
 
-    console.log("5. About to open the modal UI...");
+    console.log("3. About to open the modal UI...");
 
-    //const muniName = report.Ward?.Municipality?.MunicipalityName || "UNKNOWN MUNICIPALITY";
     // Map data to match CivicModal expectations
     const modalData = {
+        id: report.ReportID, // 🚨 THE FIX: Added the missing ID!
         type: report.Type,
-        description: report.Brief || 'No description provided.',
+        description: report.Brief || report.Description || 'No description provided.',
         date: report.CreatedAt,
         status: report.Progress || report.Status,
         ward: report.WardID,
-        municipality: report.MunicipalityID, 
-        images: fetchedImages
+        municipality: muniName
     };
 
-    // Open the modal
+    // Open the modal (CivicModal handles fetching the images using the ID)
     issueModal.open(modalData);
+    console.log(report);
 
     const wardElement = document.getElementById(`${issueModal.modalId}-ward`);
     const muniElement = document.getElementById(`${issueModal.modalId}-muni`);
@@ -178,7 +178,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (submitBtn) {
         submitBtn.addEventListener('click', async () => {
             if (currentRating === 0) {
-                alert("Please select a rating before submitting.");
+                await customAlert.show('Error',"Please select a rating before submitting.",'alert');
                 return;
             }
             
@@ -201,7 +201,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         submittedFeedback.push(String(activeReportId));
                         localStorage.setItem('submittedFeedback', JSON.stringify(submittedFeedback));
                     }
-                    alert("Thank you for your feedback!");
+                    await customAlert.show('Success',"Thank you for your feedback!",'alert');
                     modal.close();
                     // Optional: You could reload the page or update the UI to hide the feedback button
                     location.reload(); 
@@ -210,7 +210,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             } catch (err) {
                 console.error("Submit Error:", err);
-                alert("Error submitting feedback. Please try again.");
+                await customAlert.show('Error',"Error submitting feedback. Please try again.",'alert');
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.innerText = "Submit Feedback";

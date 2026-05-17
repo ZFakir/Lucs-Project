@@ -1,4 +1,4 @@
-
+const customAlert = new AlertModal();
 const taskImages = {}; 
 
 const toBase64 = file => new Promise((resolve, reject) => {
@@ -98,7 +98,6 @@ async function toggleCompletedTasks() {
                     <p class="text-[10px] uppercase tracking-widest text-neutral-600 font-black">No completed operations found.</p>
                 </div>`;
         } else {
-            // ✅ REPLACE the old container.innerHTML with this:
             container.innerHTML = completed.map(report => `
                 <div class="flex justify-between items-center p-4 bg-surface-container-high/20 border border-outline/10 rounded-xl mb-3 cursor-pointer hover:bg-surface-container-high/40 transition-colors"
                      onclick="showTaskDetails(${report.ReportID})">
@@ -121,11 +120,9 @@ async function toggleCompletedTasks() {
 
     } catch (err) {
         console.error("Failed to fetch archive:", err);
-        alert("Sync Error: Could not load archive.");
+        await customAlert.show('Error', "Sync Error: Could not load archive.", 'alert');
     }
 }
-
-
 
 //workers can accept tasks 
 async function acceptTask(reportId) {
@@ -136,7 +133,7 @@ async function acceptTask(reportId) {
         });
 
         if (response.ok) {
-            alert("Task accepted! Starting work...");
+            await customAlert.show('Success', "Task accepted! Starting work", 'alert');
             location.reload(); 
         }
     } catch (err) {
@@ -145,9 +142,7 @@ async function acceptTask(reportId) {
 }
 
 //Renders an individual task card for the worker ledger.
-
 function renderTaskCard(report, container) {
-    // Map Priority numbers to visual labels for clear UI feedback
     const priorityLabels = {
         1: { text: 'Critical', class: 'bg-red-500/20 text-red-400 border-red-500/30' },
         2: { text: 'High', class: 'bg-orange-500/20 text-orange-400 border-orange-500/30' },
@@ -156,11 +151,7 @@ function renderTaskCard(report, container) {
     
     const priority = priorityLabels[report.Priority] || priorityLabels[3];
 
-    // Determine the Task State (New vs In-Progress)
-    // We check if the Progress string contains "Assigned" or "Pending" to toggle UI controls
     const isNewTask = report.Progress.toLowerCase().includes('assigned') || report.Progress.toLowerCase().includes('pending');
-    
-    // UI Logic: Yellow accent for new tasks, Primary theme color for active tasks
     const accentColor = isNewTask ? 'border-yellow-600/50' : 'border-primary/50';
 
     const html = `
@@ -247,6 +238,7 @@ function renderTaskCard(report, container) {
 
 //workers can decline tasks
 async function declineTask(reportId) {
+    // Note: AlertModal does not support text input (prompts), so this remains a native prompt
     const reason = prompt("Please provide a reason for declining this task:");
     if (reason === null) return;
 
@@ -264,7 +256,7 @@ async function declineTask(reportId) {
         });
 
         if (response.ok) {
-            alert("Task returned to central command. Admin has been notified.");
+            await customAlert.show('Success', "Task returned to central command. Admin has been notified.", 'alert');
             location.reload();
         }
     } catch (err) {
@@ -273,31 +265,23 @@ async function declineTask(reportId) {
 }
 
 
-//Moves task to final 'Resolved' state.Sends 'Fixed' status to trigger the backend logic for DateFulfilled.
+//Moves task to final 'Resolved' state.
 async function resolveTask(reportId) {
-    if(!confirm("Are you sure this job is finished?")) return;
+    const userAgreed = await customAlert.show('Warning', "Are you sure this job is finished?", 'confirm');
+    if (!userAgreed) return;
 
     // 1. Upload the images properly first
     await uploadTaskImages(reportId);
-
-    
-    
-    
-    /*let base64Images = [];
-    if (taskImages[reportId] && taskImages[reportId].length > 0) {
-        base64Images = await Promise.all(taskImages[reportId].map(file => toBase64(file)));
-    }*/
 
     try {
         const response = await fetch(`/api/reports/${reportId}/status`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            // Using 'Fixed' status to satisfy both DB logic and Jest tests
             body: JSON.stringify({ Status: 'Fixed', Progress: 'Resolved'}) 
         });
 
         if (response.ok) {
-            alert("Job Marked as Resolved!");
+            await customAlert.show('Success', "Job Marked as Resolved!", 'alert');
             location.reload(); 
         }
     } catch (err) {
@@ -320,7 +304,7 @@ async function showTaskDetails(reportId) {
         const modal = document.getElementById('task-detail-modal');
         
         // NATIVE DIALOG TRIGGER
-        modal.style.display = 'flex'; // Ensure the flex centering works
+        modal.style.display = 'flex'; 
         modal.showModal(); 
         
     } catch (err) {
@@ -331,13 +315,8 @@ async function showTaskDetails(reportId) {
 function closeModal() {
     const modal = document.getElementById('task-detail-modal');
     if (modal) {
-        // Native dialog close
         modal.close(); 
-        
-        // Tailwind/CSS reset to ensure the flex overlay disappears
         modal.style.display = 'none'; 
-        
-        // Clean up classes just in case
         modal.classList.add('hidden');
     }
 }
@@ -349,8 +328,6 @@ if (modal) {
         modal.style.display = 'none';
     });
 }
-
-//This updates the 'Progress' field in the DB so Admins/Residents can see live status.
 
 async function updateProgress(reportId, progressText) {
     try {
@@ -365,8 +342,6 @@ async function updateProgress(reportId, progressText) {
 
         if (response.ok) {
             console.log("Progress updated: " + progressText);
-            // We don't reload the page here to keep the worker's scroll position,
-            // but we update the UI label manually.
             const label = document.querySelector(`#progress-${reportId}`).previousElementSibling.querySelector('output');
             if (label) label.textContent = progressText;
         }
@@ -374,9 +349,9 @@ async function updateProgress(reportId, progressText) {
         console.error("Failed to update progress:", err);
     }
 }
+
 // IMAGE LOGIC
 window.handleImageSelect = (event, reportId) => {
-    // Initialize array if it doesn't exist for this task
     if (!taskImages[reportId]) {
         taskImages[reportId] = [];
     }
@@ -384,7 +359,6 @@ window.handleImageSelect = (event, reportId) => {
     const newFiles = Array.from(event.target.files);
     taskImages[reportId] = taskImages[reportId].concat(newFiles);
     
-    // Clear the input so you can select the same file again if needed
     event.target.value = ''; 
     
     renderPreviews(reportId);
@@ -417,12 +391,12 @@ function renderPreviews(reportId) {
         reader.readAsDataURL(file);
     });
 }
+
 // ── Profile dropdown ──────────────────────────────────────────────────────────
 function toggleProfileDropdown() {
     const dropdown = document.getElementById('profile-dropdown');
     dropdown.classList.toggle('hidden');
 
-    // Close when clicking outside
     if (!dropdown.classList.contains('hidden')) {
         setTimeout(() => {
             document.addEventListener('click', closeDropdownOutside, { once: true });
@@ -444,9 +418,12 @@ function openEditProfile() {
     }
 }
 
-function logoutWorker() {
+async function logoutWorker() {
     document.getElementById('profile-dropdown').classList.add('hidden');
-    if (!confirm('Are you sure you want to log out?')) return;
+    
+    const userAgreed = await customAlert.show('Warning', 'Are you sure you want to log out?', 'confirm');
+    if (!userAgreed) return;
+    
     localStorage.clear();
     window.location.href = '../Login/Login.html';
 }
@@ -466,7 +443,6 @@ async function uploadTaskImages(reportId) {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    // IMPORTANT: Change to actual DB column name for image uploading
                     Image: base64String 
                 })
             });
@@ -477,7 +453,7 @@ async function uploadTaskImages(reportId) {
         }
 
         taskImages[reportId] = [];
-        renderPreviews(reportId);//clear previews after upload
+        renderPreviews(reportId);
         console.log("All images uploaded successfully!");
 
     } catch (err) {
@@ -494,7 +470,6 @@ window.openWorkerEditModal = async function(reportId) {
     editingReportId = reportId;
     
     try {
-        // Fetch the latest report details to populate the form
         const response = await fetch(`/api/reports/${reportId}`);
         const report = await response.json();
         
@@ -516,7 +491,6 @@ window.closeEditModal = function() {
     editingReportId = null;
 }
 
-// Fetch images for the gallery using EXISTING image route
 async function fetchEditImages() {
     const gallery = document.getElementById('edit-image-gallery');
     gallery.innerHTML = '<p class="text-sm">Loading photos...</p>';
@@ -548,7 +522,6 @@ async function fetchEditImages() {
     }
 }
 
-// Save text details
 window.saveWorkerEdits = async function() {
     const workerId = localStorage.getItem('workerId');
     const Type = document.getElementById('edit-task-type').value;
@@ -563,21 +536,23 @@ window.saveWorkerEdits = async function() {
         });
         
         if (response.ok) {
-            alert('Task details saved successfully.');
+            await customAlert.show('Success', 'Task details saved successfully.', 'alert');
             closeEditModal();
-            loadMyAssignedTasks(workerId); // Refresh the UI
+            loadMyAssignedTasks(workerId);
         } else {
-            alert('Failed to save details. Make sure you are authorized.');
+            await customAlert.show('Error', 'Failed to save details. Make sure you are authorized.', 'alert');
         }
     } catch (error) {
         console.error("Save error:", error);
     }
 }
 
-// Upload a new photo dynamically using EXISTING route
 window.uploadWorkerPhoto = async function() {
     const fileInput = document.getElementById('edit-photo-input');
-    if (fileInput.files.length === 0) return alert('Select a file first.');
+    if (fileInput.files.length === 0) {
+        await customAlert.show('Error', 'Select a file first.', 'alert');
+        return;
+    }
 
     const file = fileInput.files[0];
     const reader = new FileReader();
@@ -594,7 +569,7 @@ window.uploadWorkerPhoto = async function() {
                 fileInput.value = ''; 
                 await fetchEditImages(); 
             } else {
-                alert('Upload failed.');
+                await customAlert.show('Error', 'Upload failed.', 'alert');
             }
         } catch (error) {
             console.error("Upload error:", error);
@@ -603,9 +578,9 @@ window.uploadWorkerPhoto = async function() {
     reader.readAsDataURL(file);
 }
 
-// Delete photo using EXISTING route
 window.deleteWorkerPhoto = async function(imageId) {
-    if (!confirm('Remove this photo permanently?')) return;
+    const userAgreed = await customAlert.show('Warning', 'Remove this photo permanently?', 'confirm');
+    if (!userAgreed) return;
 
     try {
         const response = await fetch(`/api/report-images/${imageId}`, {

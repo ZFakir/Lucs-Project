@@ -1,3 +1,6 @@
+
+const customAlert = new AlertModal();
+
 // ==========================================
 // 1. GLOBAL STATE
 // ==========================================
@@ -354,11 +357,11 @@ if (muteForm) {
 
         try {
             // Simulated API Call
-            alert("Alert preferences saved successfully!");
+            await customAlert.show('Success',"Alert preferences saved successfully!",'alert');
             closeMuteModal();
         } catch (error) {
             console.error("Error saving notification settings:", error);
-            alert("Failed to save settings. Please try again.");
+            await customAlert.show('Error',"Failed to save settings. Please try again.",'alert');
         }
     });
 }
