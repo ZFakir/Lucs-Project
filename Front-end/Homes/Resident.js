@@ -1,8 +1,7 @@
-
 import { LocationPicker } from '../ModalUtilities/LocationPicker.js';
 
-
 const civicModal = new CivicModal();
+const customAlert = new AlertModal();
 
 document.addEventListener('DOMContentLoaded', () => {
     // For testing, replace '1' with your actual logic to get the logged-in user's ID
@@ -99,7 +98,7 @@ async function renderSubscribedWards(residentId) {
             const municipalityData = (muniResponse && muniResponse.ok) ? await muniResponse.json() : {};
             const wardData = (wardResponse && wardResponse.ok) ? await wardResponse.json() : {};
             
-            const MunicipalityName = municipalityData.MunicipalityName.toUpperCase();
+            const MunicipalityName = municipalityData.MunicipalityName ? municipalityData.MunicipalityName.toUpperCase() : '';
             const councillorName = (wardData && wardData.WardCouncillor) 
                            ? wardData.WardCouncillor 
                            : 'Unassigned';
@@ -282,7 +281,7 @@ async function toggleWardMute(wardId) {
         renderMutedWardsList(currentWardsForMute, prefs);
     }
 
-    showModal(
+    await customAlert.show(
         isNowMuted ? 'Alerts Muted' : 'Alerts Restored', 
         `Notifications for Ward ${wardId} have been ${isNowMuted ? 'muted' : 'unmuted'}.`, 
         'alert'
@@ -292,60 +291,9 @@ async function toggleWardMute(wardId) {
 // ==========================================
 // MENU ACTIONS
 // ==========================================
-// ==========================================
-// CUSTOM MODAL CONTROLLER
-// ==========================================
-function showModal(title, message, type = 'alert') {
-    return new Promise((resolve) => {
-        const dialog = document.getElementById('custom-modal');
-        const titleEl = document.getElementById('modal-title');
-        const messageEl = document.getElementById('modal-message');
-        const actionsEl = document.getElementById('modal-actions');
-
-        // Set the text
-        titleEl.textContent = title;
-        messageEl.textContent = message;
-        
-        // Reset styling and content
-        actionsEl.innerHTML = ''; 
-        titleEl.className = 'text-xl font-black tracking-widest mb-2 uppercase ';
-
-        if (type === 'confirm') {
-            titleEl.className += 'text-red-400'; // Make confirm titles red for warnings
-            actionsEl.innerHTML = `
-                <button id="modal-cancel" class="px-5 py-2 rounded-md text-on-surface-variant hover:text-on-background hover:bg-white/5 transition-colors font-bold text-sm">Cancel</button>
-                <button id="modal-confirm" class="px-5 py-2 rounded-md bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 transition-colors font-bold text-sm">Remove Ward</button>
-            `;
-
-            // Handle Clicks
-            document.getElementById('modal-cancel').onclick = () => {
-                dialog.close();
-                resolve(false); // Returns false, just like clicking 'Cancel' on a native confirm
-            };
-            document.getElementById('modal-confirm').onclick = () => {
-                dialog.close();
-                resolve(true); // Returns true, just like clicking 'OK' on a native confirm
-            };
-        } else {
-            // Default Alert Styling
-            titleEl.className += title.toLowerCase() === 'error' ? 'text-red-500' : 'text-primary';
-            actionsEl.innerHTML = `
-                <button id="modal-ok" class="px-5 py-2 rounded-md bg-primary-container/10 text-primary hover:bg-primary-container/20 border border-primary/20 transition-colors font-bold text-sm">Got it</button>
-            `;
-            
-            document.getElementById('modal-ok').onclick = () => {
-                dialog.close();
-                resolve(true); //resolves the promise
-            };
-        }
-
-        // Show the modal
-        dialog.showModal();
-    });
-}
 
 async function unsubscribeWard(wardId, municipalityId) { // 🚨 Accept both IDs
-    const confirmDelete = await showModal(
+    const confirmDelete = await customAlert.show(
         'Remove Ward', 
         `Are you sure you want to stop tracking Ward ${wardId}?`, 
         'confirm'
@@ -366,7 +314,7 @@ async function unsubscribeWard(wardId, municipalityId) { // 🚨 Accept both IDs
             });
 
             if (response.ok) {
-                await showModal('Success', `Ward ${wardId} removed.`, 'alert');
+                await customAlert.show('Success', `Ward ${wardId} removed.`, 'alert');
                 await renderSubscribedWards(residentId); // Refresh the UI
             }
         } catch (error) {
@@ -441,13 +389,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                 } else {
                     // This catches your 400 (duplicate subscription) and 404 errors
-                    await showModal('Notice', data.message || data.error, 'alert');
+                    await customAlert.show('Notice', data.message || data.error, 'alert');
                 }
 
             } catch (error) {
                 // This catches network drops or server crashes
                 console.error('Failed to subscribe:', error);
-                await showModal('Network Error', 'Could not connect to the server to add the ward.', 'alert');
+                await customAlert.show('Network Error', 'Could not connect to the server to add the ward.', 'alert');
             }
         });
     }
@@ -803,7 +751,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const clearAllBtn = document.getElementById('clear-alerts-btn');
     if (clearAllBtn) {
         clearAllBtn.addEventListener('click', async () => {
-            if (!confirm('Are you sure you want to clear all alerts? This action cannot be undone.')) return;
+            const userAgreed = await customAlert.show('Warning', 'Are you sure you want to clear all alerts? This action cannot be undone.', 'confirm');
+            if (!userAgreed) return;
             if (!loadedReports || loadedReports.length === 0) return;
             // use delete method to clear all notifications for this resident
             //from backend and clears ui
@@ -990,7 +939,7 @@ window.unsubscribeWard = unsubscribeWard;
 // EXPORTS FOR JEST TESTING
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
-        renderSubscribedWards, manageNotifications, toggleWardMute, showModal, 
+        renderSubscribedWards, manageNotifications, toggleWardMute,
         unsubscribeWard, loadProvinces, fetchMunicipalitiesForSelect, 
         fetchWardsForSelect, getTimeAgo, renderAlerts, openReportModal, 
         getMutePrefs, saveMutePrefs, loadResidentNotifications
