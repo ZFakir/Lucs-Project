@@ -108,7 +108,7 @@ getBadgeHTML(statusStr) {
     //Modals must fetch their own images
     async fetchImagesForReport(reportId) {
         try {
-            const response = await fetch(`/api/reports/report/${reportId}`);
+            const response = await fetch(`/api/report-images/report/${reportId}`);
             if (response.ok) {
                 return await response.json();
             }
@@ -149,26 +149,45 @@ getBadgeHTML(statusStr) {
         carousel.innerHTML = ''; 
 
         if (fetchedImages.length > 0) {
-            fetchedImages.forEach((img, i) => {
-                let imgSrc = '';
+            const residentImages = fetchedImages.filter(img => !img.Type.includes('role=worker'));
+            const workerImages = fetchedImages.filter(img => img.Type.includes('role=worker'));
 
-                // Handle the clean base64 format returned by reports.js
+            // Helper function to handle both normal Base64 and the Buffer fallback securely
+            const getImgSrc = (img) => {
+                const cleanType = (img.Type || 'image/jpeg').replace(';role=worker', '');
                 if (img.base64) {
-                    imgSrc = `data:${img.Type};base64,${img.base64}`;
-                } 
-                // Fallback for raw Sequelize Buffers
-                else if (img.Image && img.Image.type === 'Buffer' && img.Image.data) {
-                    const uint8Array = new Uint8Array(img.Image.data);
-                    const blob = new Blob([uint8Array], { type: img.Type || 'image/jpeg' });
-                    imgSrc = URL.createObjectURL(blob);
-                } else if (typeof img === 'string') {
-                    imgSrc = img;
+                    return `data:${cleanType};base64,${img.base64}`;
+                } else if (img.Image && img.Image.type === 'Buffer' && img.Image.data) {
+                    const blob = new Blob([new Uint8Array(img.Image.data)], { type: cleanType });
+                    return URL.createObjectURL(blob);
                 }
+                return typeof img === 'string' ? img : '';
+            };
 
+            // 1. Render Resident's Original Photos
+            residentImages.forEach((img, i) => {
                 carousel.innerHTML += `
                     <li class="snap-center shrink-0 w-full h-full relative p-0 m-0 list-none">
-                        <img src="${imgSrc}" 
+                        <span class="absolute top-4 left-4 bg-black/70 text-white/70 px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-full backdrop-blur-md border border-white/10 z-10">
+                            Original Issue
+                        </span>
+                        <img src="${getImgSrc(img)}" 
                             alt="Issue Photo ${i+1}" 
+                            class="w-full h-full object-cover hover:opacity-90 transition-opacity"
+                            onerror="this.src='https://placehold.co/800x600?text=Image+Unavailable'" />
+                    </li>
+                `;
+            });
+
+            // 2. Render Worker's Proof of Resolution (With green borders and verified badge)
+            workerImages.forEach((img, i) => {
+                carousel.innerHTML += `
+                    <li class="snap-center shrink-0 w-full h-full relative p-0 m-0 list-none box-border border-[6px] border-green-500/40">
+                        <div class="absolute top-4 left-4 bg-green-500/20 text-green-400 px-4 py-2 text-xs font-black uppercase tracking-widest rounded-full backdrop-blur-md border border-green-500/30 z-10 flex items-center gap-2 shadow-xl">
+                            <span class="material-symbols-outlined text-sm">verified</span> Verified Resolution
+                        </div>
+                        <img src="${getImgSrc(img)}" 
+                            alt="Proof Photo ${i+1}" 
                             class="w-full h-full object-cover hover:opacity-90 transition-opacity"
                             onerror="this.src='https://placehold.co/800x600?text=Image+Unavailable'" />
                     </li>
