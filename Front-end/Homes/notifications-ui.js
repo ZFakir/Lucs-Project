@@ -813,27 +813,60 @@
         const priority = priorityMap[report.Priority] || priorityMap[3];
 
         // Semantic Gallery using <figure> and <section>
-        const galleryHtml = images.length > 0 ? `
-            <section aria-label="Attached Evidence" style="margin-top:24px;">
-                <header>
-                    <p style="font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:0.15em;color:#737373;margin-bottom:12px;">
-                        Attached Evidence (${images.length} photo${images.length > 1 ? 's' : ''})
-                    </p>
-                </header>
-                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;">
-                    ${images.map(img => `
-                        <figure style="margin:0;border-radius:10px;overflow:hidden;aspect-ratio:1;background:#111;border:1px solid rgba(255,255,255,0.06);cursor:pointer;" 
-                                onclick="window._notifModule.openImageFullscreen('data:${img.Type};base64,${img.base64}')">
-                            <img src="data:${img.Type};base64,${img.base64}" 
-                                 style="width:100%;height:100%;object-fit:cover;" 
-                                 alt="Evidence for report #${report.ReportID}" />
-                        </figure>
-                    `).join('')}
-                </div>
-            </section>` : `
+        let galleryHtml = '';
+        if (images && images.length > 0) {
+            const residentImages = images.filter(img => !img.Type.includes('role=worker'));
+            const workerImages = images.filter(img => img.Type.includes('role=worker'));
+
+            galleryHtml += `<section aria-label="Attached Evidence" style="margin-top:24px;">`;
+
+            if (residentImages.length > 0) {
+                galleryHtml += `
+                    <header>
+                        <p style="font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:0.15em;color:#737373;margin-bottom:12px;">
+                            Original Issue Photos
+                        </p>
+                    </header>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:20px;">
+                        ${residentImages.map(img => `
+                            <figure style="margin:0;border-radius:10px;overflow:hidden;aspect-ratio:1;background:#111;border:1px solid rgba(255,255,255,0.06);cursor:pointer;" 
+                                    onclick="window._notifModule.openImageFullscreen('data:${img.Type.replace(';role=worker', '')};base64,${img.base64}')">
+                                <img src="data:${img.Type.replace(';role=worker', '')};base64,${img.base64}" 
+                                     style="width:100%;height:100%;object-fit:cover;" 
+                                     alt="Original Issue" />
+                            </figure>
+                        `).join('')}
+                    </div>`;
+            }
+
+            if (workerImages.length > 0) {
+                galleryHtml += `
+                    <div style="padding:16px;background:rgba(74,222,128,0.05);border:1px solid rgba(74,222,128,0.2);border-radius:12px;">
+                        <header style="display:flex;align-items:center;gap:6px;margin-bottom:12px;">
+                            <span class="material-symbols-outlined" style="color:#4ade80;font-size:16px;">verified</span>
+                            <p style="font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:0.15em;color:#4ade80;margin:0;">
+                                Verified Resolution
+                            </p>
+                        </header>
+                        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;">
+                            ${workerImages.map(img => `
+                                <figure style="margin:0;border-radius:10px;overflow:hidden;aspect-ratio:1;background:#111;border:2px solid rgba(74,222,128,0.4);cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.5);" 
+                                        onclick="window._notifModule.openImageFullscreen('data:${img.Type.replace(';role=worker', '')};base64,${img.base64}')">
+                                    <img src="data:${img.Type.replace(';role=worker', '')};base64,${img.base64}" 
+                                         style="width:100%;height:100%;object-fit:cover;" 
+                                         alt="Proof of work" />
+                                </figure>
+                            `).join('')}
+                        </div>
+                    </div>`;
+            }
+            galleryHtml += `</section>`;
+        } else {
+            galleryHtml = `
             <aside style="margin-top:24px;padding:20px;border:1px dashed rgba(255,255,255,0.08);border-radius:10px;text-align:center;">
                 <p style="font-size:10px;color:#4b5563;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;">No photos attached</p>
             </aside>`;
+        }
 
         dialog.innerHTML = `
             <section style="position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.92);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:24px;">
