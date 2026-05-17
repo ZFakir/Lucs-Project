@@ -12,7 +12,6 @@ global.L = {
     circleMarker: jest.fn().mockReturnValue({
         addTo: jest.fn().mockReturnThis(),
         bindTooltip: jest.fn().mockReturnThis(),
-        // 🚨 Capture the click event to test hidden modal logic
         on: jest.fn((event, cb) => {
             if (event === 'click') markerClickCallback = cb;
         }),
@@ -24,10 +23,15 @@ global.CivicModal = jest.fn().mockImplementation(() => ({
     open: mockModalOpen,
 }));
 
+const mockAlertShow = jest.fn().mockResolvedValue(true);
+global.AlertModal = jest.fn().mockImplementation(() => ({
+    show: mockAlertShow
+}));
+
 let civicMapCallback = null;
 const mockLoadNewLayer = jest.fn();
 global.CivicMap = jest.fn().mockImplementation((id, path, cb) => {
-    civicMapCallback = cb; // 🚨 Capture initialization callback
+    civicMapCallback = cb; 
     return {
         map: { removeLayer: jest.fn(), addLayer: jest.fn() },
         loadNewLayer: mockLoadNewLayer,
@@ -44,11 +48,9 @@ describe('AgeReport.js - Maximum Safe Coverage Suite', () => {
         jest.resetModules();
         jest.clearAllMocks();
 
-        // Mute console output for intentional API failure tests
         jest.spyOn(console, 'error').mockImplementation(() => {});
         jest.spyOn(console, 'log').mockImplementation(() => {});
 
-        // Setup a comprehensive DOM for all UI and Logic paths
         document.body.innerHTML = `
             <div id="map"></div>
             
@@ -74,9 +76,6 @@ describe('AgeReport.js - Maximum Safe Coverage Suite', () => {
             <button id="export-pdf-btn"></button>
         `;
 
-        // 🚨 BULLETPROOF FETCH MOCK: Solves the JSDOM event listener leak issue!
-        // No matter how many times DOMContentLoaded fires across test instances,
-        // the internal MunicipalityMap will ALWAYS get correctly populated.
         fetch.mockImplementation((url) => {
             if (url && typeof url === 'string' && url.includes('municipality-map')) {
                 return Promise.resolve({ ok: true, json: () => Promise.resolve({ "test muni": 99 }) });
@@ -86,15 +85,16 @@ describe('AgeReport.js - Maximum Safe Coverage Suite', () => {
         
         AgeReport = require('../AgeReport.js');
         
-        // Safely trigger initialization for each test
         document.dispatchEvent(new Event('DOMContentLoaded'));
-        await new Promise(r => setTimeout(r, 20)); // Flush microtasks safely
+        await new Promise(r => setTimeout(r, 20)); 
     });
 
     afterEach(() => {
         jest.restoreAllMocks();
     });
 
+    // ... [Utility Functions, API, UI Renderers, and Callback Extraction remain exactly the same] ...
+    
     // --- 1. UTILITY FUNCTIONS ---
     describe('Utility Functions', () => {
         test('normalizeName cleans municipality strings', () => {
@@ -104,19 +104,16 @@ describe('AgeReport.js - Maximum Safe Coverage Suite', () => {
         });
 
         test('getDateRange calculates 24H, 7 DAYS, and 30 DAYS windows', () => {
-            // Test 30 Days (Default selected in mock DOM)
             let range = AgeReport.getDateRange();
             let diffDays = Math.round((new Date(range.end) - new Date(range.start)) / (1000 * 60 * 60 * 24));
             expect(diffDays).toBe(30);
 
-            // Test 7 Days
             document.getElementById('btn-30d').className = 'bg-surface-container-highest';
             document.getElementById('btn-7d').className = 'bg-primary-container text-on-primary';
             range = AgeReport.getDateRange();
             diffDays = Math.round((new Date(range.end) - new Date(range.start)) / (1000 * 60 * 60 * 24));
             expect(diffDays).toBe(7);
 
-            // Test 24 Hours
             document.getElementById('btn-7d').className = 'bg-surface-container-highest';
             document.getElementById('btn-24h').className = 'bg-primary-container text-on-primary';
             range = AgeReport.getDateRange();
@@ -128,7 +125,6 @@ describe('AgeReport.js - Maximum Safe Coverage Suite', () => {
     // --- 2. API & INITIALIZATION ---
     describe('API & Initialization Logic', () => {
         test('buildMunicipalityMap successfully fetches dictionary', async () => {
-            // fetch implementation already set in beforeEach handles this natively
             const dict = await AgeReport.buildMunicipalityMap();
             expect(dict).toEqual({ "test muni": 99 });
         });
@@ -143,17 +139,14 @@ describe('AgeReport.js - Maximum Safe Coverage Suite', () => {
         test('fetchAgingData correctly formats URLs for Ward, Muni, and Province', async () => {
             fetch.mockClear();
 
-            // Province
             AgeReport.setSelection({ type: 'province', ids: { provinceId: 1 } });
             await AgeReport.fetchAgingData();
             expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/api/sandbox/province/1'));
 
-            // Municipality
             AgeReport.setSelection({ type: 'municipality', ids: { municipalityId: 44 } });
             await AgeReport.fetchAgingData();
             expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/api/sandbox/municipality/44'));
 
-            // Ward
             AgeReport.setSelection({ type: 'ward', ids: { municipalityId: 44, wardId: 5 } });
             await AgeReport.fetchAgingData();
             expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/api/sandbox/ward/44/5'));
@@ -171,8 +164,7 @@ describe('AgeReport.js - Maximum Safe Coverage Suite', () => {
         test('calculateBottleneckMetrics averages correctly', () => {
             const now = new Date();
             const reports = [
-                { CreatedAt: new Date(now - 10 * 3600000).toISOString(), AssignedAt: null }, // Unassigned 10h
-                // 🚨 FIX: Explicitly set AssignedAt so it doesn't fall into the Unassigned block and skew the math!
+                { CreatedAt: new Date(now - 10 * 3600000).toISOString(), AssignedAt: null }, 
                 { CreatedAt: new Date(now - 20 * 3600000).toISOString(), AssignedAt: new Date(now - 15 * 3600000).toISOString(), DateFulfilled: new Date(now - 10 * 3600000).toISOString() } 
             ];
 
@@ -191,7 +183,7 @@ describe('AgeReport.js - Maximum Safe Coverage Suite', () => {
                 { Type: 'Power Light', CreatedAt: new Date(Date.now() - 100000).toISOString(), AssignedAt: new Date().toISOString() },
                 { Type: 'Pothole', CreatedAt: new Date(Date.now() - 100000).toISOString(), AssignedAt: new Date().toISOString(), DateFulfilled: new Date().toISOString() },
                 { Type: 'Sewage', CreatedAt: new Date().toISOString(), AssignedAt: null },
-                { Type: 'UnknownCategory', CreatedAt: new Date().toISOString() } // Should skip safely
+                { Type: 'UnknownCategory', CreatedAt: new Date().toISOString() } 
             ];
 
             AgeReport.updateAssignmentDurationLedger(reports);
@@ -201,16 +193,14 @@ describe('AgeReport.js - Maximum Safe Coverage Suite', () => {
         });
 
         test('renderUnassignedTable maps urgency colors and handles empty states', () => {
-            // Test Empty State
             AgeReport.renderUnassignedTable([]);
             expect(document.getElementById('unassigned-table-body').innerHTML).toContain('No unassigned tasks found');
 
-            // Test Populated State
             const now = new Date();
             const reports = [
-                { Type: 'Critical', CreatedAt: new Date(now - 72 * 3600000).toISOString(), AssignedAt: null }, // > 48h (Error)
-                { Type: 'Urgent', CreatedAt: new Date(now - 30 * 3600000).toISOString(), AssignedAt: null },   // > 24h (Primary)
-                { Type: 'New', CreatedAt: new Date().toISOString(), AssignedAt: null }                      // < 24h (Variant)
+                { Type: 'Critical', CreatedAt: new Date(now - 72 * 3600000).toISOString(), AssignedAt: null },
+                { Type: 'Urgent', CreatedAt: new Date(now - 30 * 3600000).toISOString(), AssignedAt: null },   
+                { Type: 'New', CreatedAt: new Date().toISOString(), AssignedAt: null }                      
             ];
 
             AgeReport.renderUnassignedTable(reports);
@@ -228,11 +218,11 @@ describe('AgeReport.js - Maximum Safe Coverage Suite', () => {
             AgeReport.renderUnassignedTable(reports);
 
             const row = document.querySelector('#unassigned-table-body tr');
-            row.click(); // Trigger the hidden onclick
+            row.click(); 
 
             expect(mockModalOpen).toHaveBeenCalledWith(expect.objectContaining({
                 id: 10,
-                municipality: 'Test Muni' // Now correctly capitalized via the dictionary!
+                municipality: 'Test Muni' 
             }));
         });
 
@@ -246,7 +236,7 @@ describe('AgeReport.js - Maximum Safe Coverage Suite', () => {
             AgeReport.drawPinsOnMap(reports);
             
             expect(markerClickCallback).toBeDefined();
-            markerClickCallback(); // Trigger the hidden leaflet marker click
+            markerClickCallback(); 
 
             expect(mockModalOpen).toHaveBeenCalledWith(expect.objectContaining({
                 id: 20,
@@ -256,33 +246,41 @@ describe('AgeReport.js - Maximum Safe Coverage Suite', () => {
         });
     });
 
-    // --- 5. DOM EVENTS ---
-    describe('Event Listeners', () => {
-        test('DOMContentLoaded sets up map routing and UI interactions', () => {
-            // 1. Verify CivicMap callback routing logic
-            expect(civicMapCallback).toBeDefined();
+    // --- 5. DOM EVENTS & VALIDATION ---
+    describe('Event Listeners & Map Validation', () => {
+        test('CivicMap callback triggers AlertModal if selection is missing', async () => {
+            // Uncheck any granularity selections
+            document.querySelectorAll('input[name="granularity"]').forEach(r => r.checked = false);
             
-            // Route Ward
-            civicMapCallback({ wardId: 5, muniId: 'test muni' });
-            expect(AgeReport.getSelection().type).toBe('ward');
+            await civicMapCallback({ name: 'Gauteng' });
             
-            // Route Muni
-            civicMapCallback({ muniId: 'test muni' });
+            expect(mockAlertShow).toHaveBeenCalledWith(
+                'Selection Required', 
+                expect.any(String), 
+                'alert'
+            );
+        });
+
+        test('CivicMap callback proceeds to map routing when selections exist', async () => {
+            // Ensure granularity is checked (Timeframe button is already mocked with the active class)
+            document.querySelector('input[value="province"]').checked = true;
+
+            await civicMapCallback({ name: 'Gauteng' });
+            expect(AgeReport.getSelection().type).toBe('province');
+            
+            await civicMapCallback({ muniId: 'test muni' });
             expect(AgeReport.getSelection().type).toBe('municipality');
             
-            // Route Province
-            civicMapCallback({ name: 'Gauteng' });
-            expect(AgeReport.getSelection().type).toBe('province');
+            await civicMapCallback({ wardId: 5, muniId: 'test muni' });
+            expect(AgeReport.getSelection().type).toBe('ward');
+        });
 
-            // 2. Verify Timeframe Button formatting
+        test('UI interactions work correctly', () => {
             const timeButton = document.getElementById('btn-24h');
             timeButton.click();
-            expect(timeButton.className).toContain('bg-primary-container'); // Updates class on click
+            expect(timeButton.className).toContain('bg-primary-container');
 
-            // 3. Verify Granularity Radio Buttons
             const radio = document.querySelector('input[value="ward"]');
-            
-            // Setup DOM tree exactly how the script expects (radio -> label wrapper)
             const wrapper = document.createElement('div');
             wrapper.appendChild(radio);
             const label = document.createElement('span');

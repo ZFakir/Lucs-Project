@@ -7,6 +7,7 @@ let MunicipalityMap = {};
 let currentActiveMuniId = null;
 let currentWorkerReports = [];
 let currentWorkerId = '';
+const alertModal = new AlertModal();
 
 
 
@@ -108,25 +109,40 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error("Failed to load map dictionary", e);
     }
 
-    // 2. Initialize Map explicitly forcing only municipal data
-    workerMap = new CivicMap('map', 'data/sa_municipal.json', (data) => {
-        if (data.muniId) {
-            const cleanName = normalizeName(data.muniId);
-            currentActiveMuniId = MunicipalityMap[cleanName];
-            currentWorkerId = null;
+    // 2. Initialize Map explicitly forcing only municipal data// Add to global scope or at the top of DOMContentLoaded
+const alertModal = new AlertModal();
 
+// Update the CivicMap initialization
+workerMap = new CivicMap('map', 'data/sa_municipal.json', async (data) => {
+    
+    // Check if timeframe is selected
+    const timeframeSelected = document.querySelector('input[name="timeframe"]:checked');
 
-            console.log(`Clicked: ${data.muniId} -> ID: ${currentActiveMuniId}`);
+    if (!timeframeSelected) {
+        await alertModal.show(
+            'Selection Required', 
+            'Please select a timeframe before interacting with the map.', 
+            'alert'
+        );
+        return;
+    }
 
-            // If your CivicMap passes the Leaflet layer, force it to zoom in!
-            if (data.layer && workerMap.map) {
-                workerMap.map.fitBounds(data.layer.getBounds(), { padding: [50, 50] });
-            }
+    if (data.muniId) {
+        const cleanName = normalizeName(data.muniId);
+        currentActiveMuniId = MunicipalityMap[cleanName];
+        currentWorkerId = null;
 
-            // Fetch the reports for this specific area
-            fetchMunicipalityReports();
+        console.log(`Clicked: ${data.muniId} -> ID: ${currentActiveMuniId}`);
+
+        // If your CivicMap passes the Leaflet layer, force it to zoom in
+        if (data.layer && workerMap.map) {
+            workerMap.map.fitBounds(data.layer.getBounds(), { padding: [50, 50] });
         }
-    });
+
+        // Fetch the reports for this specific area
+        fetchMunicipalityReports();
+    }
+});
 
 
     // 3.5 Timeframe Listeners (Updates the map AND the active worker automatically!)

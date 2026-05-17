@@ -4,6 +4,7 @@ let MunicipalityMap = {};
 let dashboardMap = null;
 const issueViewer = new CivicModal();
 let pinLayerGroup = null;
+const alertModal = new AlertModal();
 
 const provinceFullNameToId = {
     'Gauteng': 1, 
@@ -241,15 +242,30 @@ document.addEventListener('DOMContentLoaded', async () => {
     MunicipalityMap = await buildMunicipalityMap();
 
     //Initialize Map
-    dashboardMap = new CivicMap('map', 'data/sa_provincial.json', (data) => {
-        if (data.wardId) {
-            onMapClick('ward', { wardId: data.wardId, municipalityId: MunicipalityMap[normalizeName(data.muniId)]});
-        } else if (data.muniId) {
-            onMapClick('municipality', { municipalityId: MunicipalityMap[normalizeName(data.muniId)] });
-        } else {
-            onMapClick('province', { provinceId: provinceFullNameToId[data.name] });
-        }
-    });
+
+
+// Update the CivicMap initialization in DOMContentLoaded
+dashboardMap = new CivicMap('map', 'data/sa_provincial.json', async (data) => {
+    const timeframeSelected = document.querySelector('button.bg-primary-container');
+    const granularitySelected = document.querySelector('input[name="granularity"]:checked');
+
+    if (!timeframeSelected || !granularitySelected) {
+        await alertModal.show(
+            'Selection Required', 
+            'Please select a timeframe and demarcation level before interacting with the map.', 
+            'alert'
+        );
+        return;
+    }
+
+    if (data.wardId) {
+        onMapClick('ward', { wardId: data.wardId, municipalityId: MunicipalityMap[normalizeName(data.muniId)]});
+    } else if (data.muniId) {
+        onMapClick('municipality', { municipalityId: MunicipalityMap[normalizeName(data.muniId)] });
+    } else {
+        onMapClick('province', { provinceId: provinceFullNameToId[data.name] });
+    }
+});
 
     //Date radiobuttons
     const granularityRadios = document.querySelectorAll('input[name="granularity"]');

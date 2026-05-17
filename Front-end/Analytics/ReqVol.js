@@ -9,6 +9,7 @@ let currentFilteredReports = []; // Stores the reports currently matching the da
 let MunicipalityMap={};
 let dashboardMap = null;  
 let pinLayerGroup = null;  
+const alertModal = new AlertModal();
 
 
 
@@ -262,24 +263,34 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
    // 2. Instantiate the modular map (Starting with Provinces!)
-    dashboardMap = new CivicMap(
-        'map', 
-        'data/sa_provincial.json',
-        (data) => {
-            if (data.wardId) {
-                //Municipality Require mapping
-                console.log(data);
-                onMapClick('ward', { wardId: data.wardId, municipalityId: MunicipalityMap[normalizeName(data.muniId)]});
-            } else if (data.muniId) {
-                console.log(MunicipalityMap);//GivesBackName, needs mapping
-                onMapClick('municipality', { municipalityId: MunicipalityMap[normalizeName(data.muniId)] });
-            } else {
-                console.log(data.name);
-                console.log(provinceFullNameToId[data.name]);
-                onMapClick('province', { provinceId: provinceFullNameToId[data.name] });
-            }
+
+
+// Update the CivicMap initialization in DOMContentLoaded
+dashboardMap = new CivicMap(
+    'map', 
+    'data/sa_provincial.json',
+    async (data) => {
+        const timeframeSelected = document.querySelector('input[name="timeframe"]:checked');
+        const granularitySelected = document.querySelector('input[name="granularity"]:checked');
+
+        if (!timeframeSelected || !granularitySelected) {
+            await alertModal.show(
+                'Selection Required', 
+                'Please select a timeframe and demarcation level before interacting with the map.', 
+                'alert'
+            );
+            return;
         }
-    );
+
+        if (data.wardId) {
+            onMapClick('ward', { wardId: data.wardId, municipalityId: MunicipalityMap[normalizeName(data.muniId)]});
+        } else if (data.muniId) {
+            onMapClick('municipality', { municipalityId: MunicipalityMap[normalizeName(data.muniId)] });
+        } else {
+            onMapClick('province', { provinceId: provinceFullNameToId[data.name] });
+        }
+    }
+);
 
     // 3. Connect the Granularity Radio Buttons
     const granularityRadios = document.querySelectorAll('input[name="granularity"]');
