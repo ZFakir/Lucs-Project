@@ -4,7 +4,7 @@ import { LocationPicker } from '../ModalUtilities/LocationPicker.js';
 
 const civicModal = new CivicModal();
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     // For testing, replace '1' with your actual logic to get the logged-in user's ID
     const residentId = localStorage.getItem('residentId');
     if (!residentId) {
@@ -12,6 +12,29 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = '/'; 
         return; // Stop running any more code
     }
+
+    // For showing resident's name ==========
+    try {
+        const profileRes = await fetch(`/api/residents/${residentId}/profile`);
+        if (profileRes.ok) {
+            const profile = await profileRes.json();
+
+            console.log("Here is the profile data from the database:", profile);
+                
+            // Since your route returns 'Username', we map it directly
+            const actualName = profile.Username || 'Resident';
+                
+            // Inject it into the HTML element
+            const nameElement = document.getElementById('dropdown-resident-name');
+            if (nameElement) {
+                    nameElement.textContent = actualName;
+            }
+        }
+    } catch (error) {
+        console.error("Failed to load resident name:", error);
+    }
+    // ======================================
+
     renderSubscribedWards(residentId);
 });
 
@@ -418,6 +441,7 @@ document.addEventListener('DOMContentLoaded', () => {
         //capture the MunicipalityID from the dropdown!
         const selectedMuniId = formData.get('municipality'); 
         const residentId = localStorage.getItem('residentId') || '1';
+
 
         try {
             const response = await fetch('/api/residents/subscribe', {
