@@ -13,6 +13,14 @@ global.CivicModal = class {
     open = mockCivicModalOpen;
 };
 
+// MOCK THE CUSTOM ALERT MODAL
+global.mockShow = jest.fn(() => Promise.resolve(true));
+global.AlertModal = class {
+    show(title, message, type) {
+        return global.mockShow(title, message, type);
+    }
+};
+
 // Mock LocationPicker safely using an ES6 class we can spy on later
 jest.mock('../ModalUtilities/LocationPicker.js', () => {
     class LocationPicker {
@@ -34,6 +42,7 @@ describe('Resident Dashboard Logic - Maximum Safe Coverage', () => {
         mockCivicModalOpen.mockClear();
         window.HTMLDialogElement.prototype.showModal.mockClear();
         window.HTMLDialogElement.prototype.close.mockClear();
+        global.mockShow.mockClear();
 
         // Mute console output for intentional error paths
         jest.spyOn(console, 'error').mockImplementation(() => {});
@@ -182,7 +191,7 @@ describe('Resident Dashboard Logic - Maximum Safe Coverage', () => {
         });
 
         test('clear-alerts-btn triggers delete API and clears UI', async () => {
-            window.confirm = jest.fn(() => true);
+            global.mockShow.mockResolvedValueOnce(true);
             fetch.mockResolvedValueOnce({ ok: true }); 
             
             residentModule.renderAlerts([{ ReportID: 1, Title: 'Test Alert' }]); 
@@ -298,26 +307,19 @@ describe('Resident Dashboard Logic - Maximum Safe Coverage', () => {
         });
 
         test('unsubscribeWard handles cancel flow', async () => {
-            const promise = residentModule.unsubscribeWard(5, 10);
-            await new Promise(r => setTimeout(r, 20)); 
+            global.mockShow.mockResolvedValueOnce(false); 
             
-            document.getElementById('modal-cancel').click();
-            await promise;
+            await residentModule.unsubscribeWard(5, 10);
             
             expect(fetch).not.toHaveBeenCalledWith('/api/residents/unsubscribe', expect.any(Object));
         });
 
         test('unsubscribeWard handles success flow', async () => {
+            global.mockShow.mockResolvedValueOnce(true); 
             fetch.mockResolvedValueOnce({ ok: true }); 
+            global.mockShow.mockResolvedValueOnce(true); 
             
-            const promise = residentModule.unsubscribeWard(5, 10);
-            await new Promise(r => setTimeout(r, 50)); 
-            
-            document.getElementById('modal-confirm').click(); 
-            await new Promise(r => setTimeout(r, 50)); 
-            
-            document.getElementById('modal-ok').click();
-            await promise;
+            await residentModule.unsubscribeWard(5, 10);
             
             expect(fetch).toHaveBeenCalledWith('/api/residents/unsubscribe', expect.objectContaining({
                 method: 'DELETE',
@@ -371,8 +373,7 @@ describe('Resident Dashboard Logic - Maximum Safe Coverage', () => {
             document.getElementById('add-ward-form').dispatchEvent(new Event('submit'));
             await new Promise(r => setTimeout(r, 20));
 
-            expect(document.getElementById('modal-title').textContent).toBe('Notice');
-            expect(document.getElementById('modal-message').textContent).toBe('Already subscribed to this ward.');
+            expect(global.mockShow).toHaveBeenCalledWith('Notice', 'Already subscribed to this ward.', 'alert');
         });
 
         test('Handles Network Error Exception', async () => {
@@ -381,7 +382,7 @@ describe('Resident Dashboard Logic - Maximum Safe Coverage', () => {
             document.getElementById('add-ward-form').dispatchEvent(new Event('submit'));
             await new Promise(r => setTimeout(r, 20));
 
-            expect(document.getElementById('modal-title').textContent).toBe('Network Error');
+            expect(global.mockShow).toHaveBeenCalledWith('Network Error', 'Could not connect to the server to add the ward.', 'alert');
         });
 
         test('Form success fetches profile picture and renders ward', async () => {

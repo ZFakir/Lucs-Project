@@ -16,7 +16,14 @@ describe('MyReports Logic Tests - High Coverage', () => {
         jest.spyOn(console, 'log').mockImplementation(() => {});
         jest.spyOn(console, 'error').mockImplementation(() => {});
         jest.spyOn(console, 'warn').mockImplementation(() => {});
-        window.alert = jest.fn();
+
+        // 1. MOCK THE CUSTOM ALERT MODAL
+        global.mockShow = jest.fn(() => Promise.resolve(true));
+        global.AlertModal = class {
+            show(title, message, type) {
+                return global.mockShow(title, message, type);
+            }
+        };
 
         // Bypass JSDOM location protection to test location.reload()
         originalLocation = window.location;
@@ -45,7 +52,7 @@ describe('MyReports Logic Tests - High Coverage', () => {
                     }] 
                 });
             }
-            // 🚨 NEW: Mock the Municipality fetch instead of the Image fetch
+            // Mock the Municipality fetch
             if (url.includes('/api/geography/municipalities/')) {
                 return Promise.resolve({ ok: true, json: async () => ({ MunicipalityName: 'Testville' }) });
             }
@@ -74,6 +81,7 @@ describe('MyReports Logic Tests - High Coverage', () => {
         `;
         
         jest.clearAllMocks();
+        global.mockShow.mockClear();
         
         myReports = require('../MyReports.js');
         document.dispatchEvent(new Event('DOMContentLoaded'));
@@ -132,7 +140,7 @@ describe('MyReports Logic Tests - High Coverage', () => {
             expect(row).not.toBeNull();
             row.click();
             
-            // 🚨 NEW: Wait for the async municipality fetch to finish
+            // Wait for the async municipality fetch to finish
             await new Promise(r => setTimeout(r, 10));
             
             // Verify the modal opened with the fetched Municipality Name
@@ -149,7 +157,6 @@ describe('MyReports Logic Tests - High Coverage', () => {
             expect(mockModal.open).not.toHaveBeenCalled();
         });
 
-        // 🚨 NEW: Replaced Image failure test with Municipality failure test
         test('openMyReportModal handles municipality fetch failure gracefully', async () => {
             global.fetch = jest.fn().mockRejectedValue(new Error('Muni fetch failed'));
             await myReports.openMyReportModal(101);
@@ -224,10 +231,14 @@ describe('MyReports Logic Tests - High Coverage', () => {
             expect(starSpans[3].style.color).toBe('rgba(255, 255, 255, 0.2)');     
         });
 
-        test('Submit Button warns if no rating is selected', () => {
+        test('Submit Button warns if no rating is selected', async () => {
             myReports.resetStars(); 
             document.getElementById('submit-feedback').click();
-            expect(window.alert).toHaveBeenCalledWith("Please select a rating before submitting.");
+            
+            // Allow the async click handler to execute
+            await new Promise(r => setTimeout(r, 10));
+
+            expect(global.mockShow).toHaveBeenCalledWith('Error', "Please select a rating before submitting.", 'alert');
         });
 
         test('Submit Button handles API rejection and restores button state', async () => {
@@ -241,9 +252,9 @@ describe('MyReports Logic Tests - High Coverage', () => {
             const submitBtn = document.getElementById('submit-feedback');
             submitBtn.click();
             
-            await new Promise(r => setTimeout(r, 10));
+            await new Promise(r => setTimeout(r, 20)); // wait for fetch and alert
             
-            expect(window.alert).toHaveBeenCalledWith("Error submitting feedback. Please try again.");
+            expect(global.mockShow).toHaveBeenCalledWith('Error', "Error submitting feedback. Please try again.", 'alert');
             expect(submitBtn.disabled).toBe(false); 
             expect(submitBtn.innerText).toBe("Submit Feedback"); 
         });
