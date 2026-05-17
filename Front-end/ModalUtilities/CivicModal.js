@@ -108,7 +108,7 @@ getBadgeHTML(statusStr) {
     //Modals must fetch their own images
     async fetchImagesForReport(reportId) {
         try {
-            const response = await fetch(`/api/reports/report/${reportId}`);
+            const response = await fetch(`/api/report-images/report/${reportId}`);
             if (response.ok) {
                 return await response.json();
             }
