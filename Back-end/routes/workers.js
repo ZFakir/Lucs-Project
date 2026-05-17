@@ -7,7 +7,8 @@ const ADMIN_EMAILS = [
     '2799656@students.wits.ac.za',
     '2805279@students.wits.ac.za',
     'groundwork.wits@gmail.com',
-    '2800269@students.wits.ac.za'
+    '2800269@students.wits.ac.za',
+    'groundwork.admin@gmail.com'
 ];
 
 

@@ -45,8 +45,9 @@ describe('MyReports Logic Tests - High Coverage', () => {
                     }] 
                 });
             }
-            if (url.includes('/api/reports/report/')) {
-                return Promise.resolve({ ok: true, json: async () => ['base64image_data'] });
+            // 🚨 NEW: Mock the Municipality fetch instead of the Image fetch
+            if (url.includes('/api/geography/municipalities/')) {
+                return Promise.resolve({ ok: true, json: async () => ({ MunicipalityName: 'Testville' }) });
             }
             if (url.includes('/rating')) {
                 return Promise.resolve({ ok: true, json: async () => ({ success: true }) });
@@ -110,7 +111,6 @@ describe('MyReports Logic Tests - High Coverage', () => {
         });
 
         test('Renders rows and applies fallbacks for missing data', async () => {
-            // Testing the fallback branches: missing Type, missing CreatedAt, Status instead of Progress, data.reports structure
             global.fetch = jest.fn().mockResolvedValueOnce({ 
                 ok: true, 
                 json: async () => ({ 
@@ -121,19 +121,22 @@ describe('MyReports Logic Tests - High Coverage', () => {
             await new Promise(r => setTimeout(r, 10));
             
             const grid = document.getElementById('reports-grid');
-            expect(grid.innerHTML).toContain('ISSUE'); // Fallback type
-            expect(grid.innerHTML).toContain('Fixed'); // Status fallback
-            expect(grid.innerHTML).toContain('RECENT'); // CreatedAt fallback
-            expect(grid.innerHTML).toContain('text-green-500'); // Fixed color
+            expect(grid.innerHTML).toContain('ISSUE'); 
+            expect(grid.innerHTML).toContain('Fixed'); 
+            expect(grid.innerHTML).toContain('RECENT'); 
+            expect(grid.innerHTML).toContain('text-green-500'); 
         });
 
-        test('Row click opens modal', () => {
-            // The beforeEach already loaded Report 101 successfully into the DOM
+        test('Row click opens modal', async () => {
             const row = document.querySelector('#reports-grid > div');
             expect(row).not.toBeNull();
             row.click();
-            // Modal open should trigger the image fetch
-            expect(fetch).toHaveBeenCalledWith('/api/reports/report/101');
+            
+            // 🚨 NEW: Wait for the async municipality fetch to finish
+            await new Promise(r => setTimeout(r, 10));
+            
+            // Verify the modal opened with the fetched Municipality Name
+            expect(mockModal.open).toHaveBeenCalledWith(expect.objectContaining({ municipality: 'TESTVILLE' }));
         });
     });
 
@@ -146,12 +149,13 @@ describe('MyReports Logic Tests - High Coverage', () => {
             expect(mockModal.open).not.toHaveBeenCalled();
         });
 
-        test('openMyReportModal handles image fetch failure gracefully', async () => {
-            global.fetch = jest.fn().mockRejectedValue(new Error('Images failed'));
+        // 🚨 NEW: Replaced Image failure test with Municipality failure test
+        test('openMyReportModal handles municipality fetch failure gracefully', async () => {
+            global.fetch = jest.fn().mockRejectedValue(new Error('Muni fetch failed'));
             await myReports.openMyReportModal(101);
             
-            // Modal still opens, just with empty images
-            expect(mockModal.open).toHaveBeenCalledWith(expect.objectContaining({ images: [] }));
+            // Modal still opens, just with the fallback municipality name
+            expect(mockModal.open).toHaveBeenCalledWith(expect.objectContaining({ municipality: 'Unknown Municipality' }));
         });
 
         test('openMyReportModal toggles text classes for ward and muni', async () => {
@@ -166,7 +170,7 @@ describe('MyReports Logic Tests - High Coverage', () => {
         });
 
         test('injectFeedbackAction disables button if report was already rated via DB', () => {
-            const report = { ReportID: 13, Progress: 'Resolved', Rating: 4 }; // Rating > 0 triggers hasGivenFeedback
+            const report = { ReportID: 13, Progress: 'Resolved', Rating: 4 }; 
             myReports.injectFeedbackAction(report);
             const btn = document.querySelector('#dynamic-feedback-container button');
             expect(btn.disabled).toBe(true);
@@ -195,15 +199,12 @@ describe('MyReports Logic Tests - High Coverage', () => {
     // ==========================================
     describe('Rating System & Form Submission', () => {
         test('window.openFeedbackModal resets stars and opens dialog', () => {
-            // Set some dirty state first
             myReports.updateStarUI(5);
-            
             window.openFeedbackModal(101);
             
             const dialog = document.getElementById('feedback-modal');
             expect(dialog.showModal).toHaveBeenCalled();
             
-            // Stars should be reset to 0
             const stars = document.querySelectorAll('.star-btn span');
             expect(stars[0].style.color).toBe('rgba(255, 255, 255, 0.2)');
         });
@@ -215,16 +216,16 @@ describe('MyReports Logic Tests - High Coverage', () => {
 
         test('Star clicks update UI and set internal rating', () => {
             const stars = document.querySelectorAll('.star-btn');
-            stars[2].click(); // Click the 3rd star (value: 3)
+            stars[2].click(); 
             
             const starSpans = document.querySelectorAll('.star-btn span');
-            expect(starSpans[0].style.color).not.toBe('rgba(255, 255, 255, 0.2)'); // Highlighted
-            expect(starSpans[2].style.color).not.toBe('rgba(255, 255, 255, 0.2)'); // Highlighted
-            expect(starSpans[3].style.color).toBe('rgba(255, 255, 255, 0.2)');     // Dim
+            expect(starSpans[0].style.color).not.toBe('rgba(255, 255, 255, 0.2)'); 
+            expect(starSpans[2].style.color).not.toBe('rgba(255, 255, 255, 0.2)'); 
+            expect(starSpans[3].style.color).toBe('rgba(255, 255, 255, 0.2)');     
         });
 
         test('Submit Button warns if no rating is selected', () => {
-            myReports.resetStars(); // Ensure 0
+            myReports.resetStars(); 
             document.getElementById('submit-feedback').click();
             expect(window.alert).toHaveBeenCalledWith("Please select a rating before submitting.");
         });
@@ -233,7 +234,6 @@ describe('MyReports Logic Tests - High Coverage', () => {
             window.openFeedbackModal(101);
             document.querySelectorAll('.star-btn')[4].click();
             
-            // Force rejection
             global.fetch = jest.fn().mockResolvedValueOnce({ 
                 ok: false, json: async () => ({ error: 'Database locked' }) 
             });
@@ -244,8 +244,8 @@ describe('MyReports Logic Tests - High Coverage', () => {
             await new Promise(r => setTimeout(r, 10));
             
             expect(window.alert).toHaveBeenCalledWith("Error submitting feedback. Please try again.");
-            expect(submitBtn.disabled).toBe(false); // Should re-enable
-            expect(submitBtn.innerText).toBe("Submit Feedback"); // Should restore text
+            expect(submitBtn.disabled).toBe(false); 
+            expect(submitBtn.innerText).toBe("Submit Feedback"); 
         });
     });
 });
