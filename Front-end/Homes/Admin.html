@@ -89,17 +89,13 @@
 <!-- TopNavBar Shell -->
 <header class="fixed top-0 w-full z-50 bg-neutral-900/60 backdrop-blur-xl shadow-2xl shadow-black/40 h-16 flex justify-between items-center px-8">
 <section class="flex items-center gap-8">
-<h1 class="text-2xl font-black uppercase tracking-tighter text-orange-500" style="">Civic Ledger Admin</h1>
+<h1 class="text-2xl font-black uppercase tracking-tighter text-orange-500" style="">GroundWork.</h1>
 <!-- analytics-->
 <nav class="hidden md:flex gap-6">
-    <a class="text-orange-400 border-b-2 border-orange-500 pb-1 font-bold transition-colors duration-200 uppercase text-xs tracking-widest" href="#">Analytics</a>
+    <a class="text-orange-400 border-b-2 border-orange-500 pb-1 font-bold transition-colors duration-200 uppercase text-xs tracking-widest" href="#">Dashboard</a>
     <a class="text-neutral-400 font-medium hover:text-orange-300 transition-colors duration-200 uppercase text-xs tracking-widest" 
        href="../Analytics/AnalyticsHome.html?auth=admin">
         Analytics Dashboard
-    </a>
-    <a class="text-neutral-400 font-medium hover:text-orange-300 transition-colors duration-200 uppercase text-xs tracking-widest" 
-       href="../Analytics/WorkerPerform.html">
-        Worker Performance
     </a>
 </nav>
 </section>
@@ -127,14 +123,6 @@
             </div>
 
             <ul class="py-1 list-none m-0 p-0">
-                <li>
-                    <button onclick="openAdminProfile()"
-                            class="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold uppercase tracking-widest text-neutral-400 hover:text-orange-400 hover:bg-white/4 transition-all text-left"
-                            style="background:none; border:none; cursor:pointer;">
-                        <span class="material-symbols-outlined text-base">manage_accounts</span>
-                        Edit Profile
-                    </button>
-                </li>
                 <li class="border-t" style="border-color: rgba(255,255,255,0.06);">
                     <button onclick="logoutAdmin()"
                             class="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold uppercase tracking-widest text-red-400 hover:text-red-300 hover:bg-red-900/10 transition-all text-left"
@@ -155,8 +143,8 @@
 <!-- Dashboard Header -->
 <header class="mb-12 flex flex-col md:flex-row justify-between items-baseline gap-4">
 <section>
-<h2 class="text-5xl font-black tracking-tighter text-on-surface mb-2" style="">Central Oversight</h2>
-<p class="text-neutral-500 uppercase tracking-widest text-xs font-medium" style="">Real-time ledger of municipal operation and resolution efficiency.</p>
+<h2 class="text-5xl font-black tracking-tighter text-on-surface mb-2" style="">Central Administrator Oversight</h2>
+<p class="text-neutral-500 uppercase tracking-widest text-xs font-medium" style="">Ledger of municipal operations and resolution efficiency.</p>
 </header>
 <!-- Bento Grid Layout -->
 <section class="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
@@ -289,12 +277,10 @@
             <option value="all">All Progress</option>
             <option value="assigned">Assigned</option>
             <option value="in progress">In Progress</option>
-            <option value="25%">25% — Excavation</option>
-            <option value="50%">50% — Active Repairs</option>
-            <option value="75%">75% — Quality Testing</option>
+            <option value="25%">25%</option>
+            <option value="50%">50%</option>
+            <option value="75%">75%</option>
             <option value="resolved">Resolved</option>
-            <option value="fixed">Fixed</option>
-            <option value="declined">Declined</option>
         </select>
     </header>
     
@@ -306,7 +292,6 @@
                     <th class="p-4">Operative</th>
                     <th class="p-4">Task Type</th>
                     <th class="p-4">Current Progress</th>
-                    <th class="p-4 text-right">Actions</th>
                 </tr>
             </thead>
             <tbody id="assigned-tasks-body"></tbody>
@@ -355,15 +340,11 @@
         </section>
 
         <section id="asgn-images-section" class="mb-8 hidden">
-            <p class="text-[9px] font-black uppercase tracking-widest text-neutral-500 mb-3">Proof of Work</p>
+            <p class="text-[9px] font-black uppercase tracking-widest text-neutral-500 mb-3">Attached Images</p>
             <div id="asgn-images-grid" class="grid grid-cols-3 gap-3"></div>
         </section>
 
         <footer class="flex gap-3 pt-6 border-t border-outline/20">
-    <a id="asgn-email-btn" href="#" 
-       class="flex-1 bg-surface-container-high text-on-surface px-4 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 hover:bg-surface-container-highest transition-all">
-        <span class="material-symbols-outlined text-sm">mail</span> Email Operative
-    </a>
     <button id="asgn-delete-btn" onclick="deleteReportFromDetail()"
             class="flex-1 bg-red-900/20 text-red-400 border border-red-500/30 px-4 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-red-600 hover:text-white transition-all">
         <span class="material-symbols-outlined text-sm">delete</span> Delete Report
@@ -381,4 +362,8 @@
 <script src="notifications-ui.js" defer></script>
 <script src="profile-modal.js" defer></script>
 <script type = "module" src="AdminHome.js"></script>
+<script src="../ModalUtilities/AlertModal.js"></script>
+<script src="notifications-ui.js" defer></script>
+<script src="profile-modal.js" defer></script>
+
 </body></html>

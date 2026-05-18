@@ -1,4 +1,5 @@
 import {withHammerLoader} from './loaderUtils'
+const customAlert = new AlertModal();
 function getAdminEmail() {
     return localStorage.getItem('adminEmail');
 }
@@ -32,11 +33,11 @@ async function handleEditSubmit(e) {
     const id = document.getElementById('edit-report-id').value; //finds which report is being changed
     const updatedData = {
         Type: document.getElementById('edit-type').value,
-        Progress: document.getElementById('edit-description').value
+        Brief: document.getElementById('edit-description').value
     };
 
     if (!id) {
-        alert("Error: Report ID is missing.");
+        await customAlert.show('Error',"Error: Report ID is missing.",'alert');
         return;
     }
 
@@ -48,16 +49,16 @@ async function handleEditSubmit(e) {
         });
 
         if (response.ok) {
-            alert("Report updated successfully!");
+            await customAlert.show('Success',"Report updated successfully!",'alert');
             closeEditModal();
             loadUnassignedReports(); // Refresh the table to see changes
         } else {
             const error = await response.json();
-            alert("Failed to save: " + error.message);
+            await customAlert.show('Success',"Failed to save: " + error.message,'alert');
         }
     } catch (err) {
         console.error("Save Error:", err);
-        alert("Network error. Check server console.");
+        await customAlert.show('Error',"Network error. Check server console.",'alert');
     }
 }
 
@@ -69,7 +70,7 @@ async function openEditModal(reportId) {
 
         document.getElementById('edit-report-id').value = report.ReportID;
         document.getElementById('edit-type').value = report.Type;
-        document.getElementById('edit-description').value = report.Progress || '';
+        document.getElementById('edit-description').value = report.Brief || '';
         
         document.getElementById('edit-report-modal').classList.remove('hidden');
     } catch (err) {
@@ -123,11 +124,12 @@ const declinedBadge = isDeclined
     : '';
 
 const row = `
-<tr class="border-b border-surface-variant hover:bg-surface-container-high transition-colors group ${isDeclined ? 'border-l-2 border-red-500/50' : ''}">
+<tr class="border-b border-surface-variant hover:bg-surface-container-high transition-colors group cursor-pointer ${isDeclined ? 'border-l-2 border-red-500/50' : ''}"
+    onclick="openAssignmentDetail(${report.ReportID}, null)">
     <td class="p-4 font-mono text-primary-container text-xs">#${report.ReportID}</td>
     <td class="p-4 font-bold text-sm tracking-tight">${report.Type} ${declinedBadge}</td>
     <td class="p-4 text-[10px] font-black uppercase text-neutral-500">Ward ${report.WardID || 'N/A'}</td>
-    <td class="p-4">
+    <td class="p-4" onclick="event.stopPropagation()">
         <select onchange="updatePriority(${report.ReportID}, this.value)" 
                 class="bg-surface-container-lowest text-[10px] border border-outline/20 rounded-lg px-3 py-1.5 text-on-surface uppercase font-black cursor-pointer">
             <option value="1" ${report.Priority == 1 ? 'selected' : ''}>1 - Critical</option>
@@ -135,7 +137,7 @@ const row = `
             <option value="3" ${report.Priority == 3 ? 'selected' : ''}>3 - Routine</option>
         </select>
     </td>
-    <td class="p-4 text-right flex gap-3 justify-end">
+    <td class="p-4 text-right flex gap-3 justify-end" onclick="event.stopPropagation()">
         <button onclick="openAssignModal(${report.ReportID})" 
                 class="bg-primary-container text-black px-4 py-2 rounded-lg text-[10px] font-black uppercase hover:bg-white transition-all">
             ${isDeclined ? 'Re-assign' : 'Assign'}
@@ -202,6 +204,12 @@ async function assignToWorker(reportId) {
                 alert("Assignment failed. Check if Employee ID exists.");
             }
         });
+        if (response.ok) {
+            await customAlert.show('Success',`Report #${reportId} successfully assigned to Worker #${employeeId}`,'alert');
+            loadUnassignedReports(); // Refresh table
+        } else {
+            await customAlert.show('Error',"Assignment failed. Check if Employee ID exists.",'alert');
+        }
     } catch (err) {
         console.error("Assignment error:", err);
     }
@@ -245,7 +253,7 @@ async function approveWorker(employeeId) {
         });
 
         if (response.ok) {
-            alert("Worker Approved!");
+            await customAlert.show('Success',"Worker Approved!",'alert');
             loadPendingWorkers(); // Refresh the list
         }
     } catch (err) {
@@ -257,7 +265,8 @@ async function approveWorker(employeeId) {
 const handleDelete = async (reportId) => {
 
     const adminEmail = getAdminEmail();
-    if (!window.confirm("Are you sure you want to delete this report?")) return;
+    const userAgreed = await customAlert.show('Warning', "Are you sure you want to delete this report?", 'confirm');
+    if (!userAgreed) return;
 
     try {
         const response = await fetch(`/api/reports/${reportId}`, {
@@ -269,12 +278,12 @@ const handleDelete = async (reportId) => {
         const data = await response.json();
 
         if (response.ok) {
-            alert("Report deleted successfully");
+            await customAlert.show('Success',"Report deleted successfully",'alert');
             loadUnassignedReports(); 
             // If the report was already assigned, refresh that table too
             if (typeof loadAssignedTasks === 'function') loadAssignedTasks();
         } else {
-            alert("Failed to delete: " + (data.message || "Unknown Error"));
+            await customAlert.show('Error',"Failed to delete: " + (data.message || "Unknown Error"),'alert');
         }
     } catch (error) {
         console.error("Error deleting report:", error);
@@ -283,7 +292,8 @@ const handleDelete = async (reportId) => {
 
 async function invalidateWorker(employeeId) {
     const adminEmail = getAdminEmail();
-    if (!confirm("Are you sure you want to disable this account?")) return;
+    const userAgreed = await customAlert.show('Warning', "Are you sure you want to disable this account?", 'confirm');
+    if (!userAgreed) return;
 
     try {
         const response = await fetch(`/api/workers/invalidate/${employeeId}`, {
@@ -293,7 +303,7 @@ async function invalidateWorker(employeeId) {
         });
 
         if (response.ok) {
-            alert("Account Disabled!");
+            await customAlert.show('Success',"Account Disabled!",'alert');
             location.reload(); // Refresh to update the UI
         }
     } catch (err) {
@@ -385,7 +395,7 @@ function renderAssignmentRows(allocations) {
     tableBody.innerHTML = '';
 
     if (allocations.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="5" class="p-10 text-center text-[10px] uppercase text-neutral-600">No active field assignments.</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="4" class="p-10 text-center text-[10px] uppercase text-neutral-600">No active field assignments.</td></tr>`;
         if (noResults) noResults.classList.add('hidden');
         return;
     }
@@ -419,11 +429,6 @@ function renderAssignmentRows(allocations) {
                     ${item.Report.Progress || 'In Transit'}
                 </span>
             </td>
-            <td class="p-4 text-right">
-                <a href="mailto:${item.MunicipalWorker.Email}" 
-                   onclick="event.stopPropagation()"
-                   class="material-symbols-outlined text-neutral-500 hover:text-primary transition-colors">mail</a>
-            </td>
         </tr>`;
         tableBody.insertAdjacentHTML('beforeend', row);
     });
@@ -449,53 +454,117 @@ function filterAssignments() {
     }
 }
 
+async function deleteReportImage(imageId, reportId, employeeId) {
+    const userAgreed = await customAlert.show('Warning', 'Delete this image? This cannot be undone.', 'confirm');
+    if (!userAgreed) return;
+
+    try {
+        const response = await fetch(`/api/report-images/${imageId}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            // Refresh the modal to show updated images
+            openAssignmentDetail(reportId, employeeId);
+        } else {
+            await customAlert.show('Success','Failed to delete image.','alert');
+        }
+    } catch (err) {
+        console.error('Image delete error:', err);
+    }
+}
+
 async function openAssignmentDetail(reportId, employeeId) {
     currentDetailReportId = reportId;
     document.getElementById('assignment-detail-modal').classList.remove('hidden');
-
-    // Set loading state
     document.getElementById('asgn-type').textContent = 'Loading...';
     document.getElementById('asgn-description').textContent = '—';
 
     try {
-        // Fetch report details and images in parallel
+        const fetchWorker = employeeId 
+            ? fetch(`/api/workers/${employeeId}/profile`) 
+            : Promise.resolve(null);
+
         const [reportRes, imagesRes, workerRes] = await Promise.all([
             fetch(`/api/reports/${reportId}`),
             fetch(`/api/report-images/report/${reportId}`),
-            fetch(`/api/workers/${employeeId}/profile`)
+            fetchWorker
         ]);
 
         const report = await reportRes.json();
         const images = await imagesRes.json();
-        const worker = await workerRes.json();
+        const worker = workerRes ? await workerRes.json() : null;
 
         const priorityMap = { 1: '🔴 Critical', 2: '🟠 High', 3: '🔵 Routine' };
 
-        // Populate fields
         document.getElementById('asgn-report-id').textContent = `Report #${report.ReportID}`;
         document.getElementById('asgn-type').textContent = report.Type;
-        document.getElementById('asgn-worker').textContent = `${worker.FirstName} ${worker.LastName}`;
-        document.getElementById('asgn-worker-id').textContent = `Employee ID: ${employeeId}`;
+        document.getElementById('asgn-worker').textContent = worker ? `${worker.FirstName} ${worker.LastName}` : 'Unassigned';
+        document.getElementById('asgn-worker-id').textContent = worker ? `Employee ID: ${employeeId}` : '—';
         document.getElementById('asgn-progress').textContent = report.Progress || 'Pending';
         document.getElementById('asgn-ward').textContent = `Ward ${report.WardID || 'N/A'}`;
         document.getElementById('asgn-priority').textContent = priorityMap[report.Priority] || '🔵 Routine';
         document.getElementById('asgn-description').textContent = report.Brief || 'No description provided.';
-        document.getElementById('asgn-email-btn').href = `mailto:${worker.Email}`;
 
-        // Images
+        // Images with delete buttons
         const imagesSection = document.getElementById('asgn-images-section');
         const imagesGrid = document.getElementById('asgn-images-grid');
         if (images.length > 0) {
             imagesSection.classList.remove('hidden');
-            imagesGrid.innerHTML = images.map(img => `
-                <figure class="aspect-square rounded-lg overflow-hidden border border-outline/20 cursor-pointer m-0"
-                        onclick="window._notifModule && window._notifModule.openImageFullscreen('data:${img.Type};base64,${img.base64}')">
-                    <img src="data:${img.Type};base64,${img.base64}" 
-                         class="w-full h-full object-cover hover:scale-105 transition-transform" 
-                         alt="Proof of work"/>
-                </figure>`).join('');
+            
+            // 1. Split the images using the secret MIME tag
+            const residentImages = images.filter(img => !img.Type.includes('role=worker'));
+            const workerImages = images.filter(img => img.Type.includes('role=worker'));
+            
+            let combinedHtml = '';
+
+            // 2. Render Resident Images (The Problem)
+            if (residentImages.length > 0) {
+                // col-span-full ensures the title stretches across the whole grid row
+                combinedHtml += `
+                    <div class="col-span-full mt-2">
+                        <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mb-1">Original Issue Photos</p>
+                    </div>`;
+                    
+                combinedHtml += residentImages.map(img => `
+                    <figure class="aspect-square rounded-lg overflow-hidden border border-outline/20 relative m-0 group">
+                        <img src="data:${img.Type};base64,${img.base64}" 
+                             class="w-full h-full object-cover" 
+                             alt="Original Issue"/>
+                        <button onclick="deleteReportImage(${img.ImageID}, ${reportId}, ${employeeId})"
+                                class="absolute top-1 right-1 bg-red-600/80 hover:bg-red-600 p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                            <span class="material-symbols-outlined text-white text-sm">delete</span>
+                        </button>
+                    </figure>`).join('');
+            }
+
+            // 3. Render Worker Images (The Solution/Proof of Work)
+            if (workerImages.length > 0) {
+                combinedHtml += `
+                    <div class="col-span-full mt-4">
+                        <p class="text-[10px] text-primary font-bold uppercase tracking-widest mb-1">Worker Proof of Work</p>
+                    </div>`;
+                    
+                combinedHtml += workerImages.map(img => {
+                    // Strip the secret tag before passing it to the src attribute
+                    const cleanType = img.Type.replace(';role=worker', '');
+                    return `
+                    <figure class="aspect-square rounded-lg overflow-hidden border-2 border-primary/50 relative m-0 group shadow-lg">
+                        <img src="data:${cleanType};base64,${img.base64}" 
+                             class="w-full h-full object-cover" 
+                             alt="Proof of work"/>
+                        <button onclick="deleteReportImage(${img.ImageID}, ${reportId}, ${employeeId})"
+                                class="absolute top-1 right-1 bg-red-600/80 hover:bg-red-600 p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                            <span class="material-symbols-outlined text-white text-sm">delete</span>
+                        </button>
+                    </figure>`;
+                }).join('');
+            }
+
+            imagesGrid.innerHTML = combinedHtml;
         } else {
             imagesSection.classList.add('hidden');
+            imagesGrid.innerHTML = '';
         }
 
     } catch (err) {
@@ -508,7 +577,8 @@ async function openAssignmentDetail(reportId, employeeId) {
 async function deleteReportFromDetail() {
     const adminEmail = getAdminEmail();
     if (!currentDetailReportId) return;
-    if (!confirm(`Are you sure you want to permanently delete Report #${currentDetailReportId}? This cannot be undone.`)) return;
+    const userAgreed = await customAlert.show('Warning', `Are you sure you want to permanently delete Report #${currentDetailReportId}? This cannot be undone.`, 'confirm');
+    if (!userAgreed) return;
 
     try {
         const response = await fetch(`/api/reports/${currentDetailReportId}`, {
@@ -520,16 +590,16 @@ async function deleteReportFromDetail() {
         const data = await response.json();
 
         if (response.ok) {
-            alert(`Report #${currentDetailReportId} deleted successfully.`);
+            await customAlert.show('Success',`Report #${currentDetailReportId} deleted successfully.`,'alert');
             closeAssignmentDetail();
             loadAssignedTasks();    // Refresh the ledger
             loadUnassignedReports(); // Refresh unassigned table too
         } else {
-            alert('Failed to delete: ' + (data.message || 'Unknown error'));
+            await customAlert.show('Error','Failed to delete: ' + (data.message || 'Unknown error'),'alert');
         }
     } catch (err) {
         console.error('Delete error:', err);
-        alert('Network error — could not delete report.');
+        await customAlert.show('Error','Network error — could not delete report.','alert');
     }
 }
 
@@ -559,9 +629,10 @@ function openAdminProfile() {
     if (window._profileModal) window._profileModal.open();
 }
 
-function logoutAdmin() {
+async function logoutAdmin() {
     document.getElementById('admin-profile-dropdown').classList.add('hidden');
-    if (!confirm('Are you sure you want to log out?')) return;
+    const userAgreed = await customAlert.show('Warning', 'Are you sure you want to log out?', 'confirm');
+    if (!userAgreed) return;
     localStorage.clear();
     window.location.href = '../Login/Login.html';
 }
@@ -583,7 +654,7 @@ document.getElementById('assign-task-form').addEventListener('submit', async (e)
         });
 
         if (response.ok) {
-            alert("Operative Assigned!");
+            await customAlert.show('Success',"Operative Assigned!",'alert');
             location.reload();
         }
     } catch (err) {
@@ -614,8 +685,11 @@ async function loadActiveWorkers() {
                 <article class="flex items-center justify-between p-4 bg-surface hover:bg-surface-container-high transition-colors rounded-lg mb-1">
                     <section class="flex items-center gap-4">
                         <figure class="w-10 h-10 bg-neutral-800 rounded-sm overflow-hidden flex items-center justify-center">
-                            <span class="material-symbols-outlined text-neutral-500">person</span>
-                        </figure>
+                            ${worker.ProfilePicture
+                            ? `<img src="${worker.ProfilePicture}" class="w-full h-full object-cover" alt="${worker.FirstName}">`
+                            : `<span class="material-symbols-outlined text-neutral-500">person</span>`
+                            }
+                            </figure>
                         <section>
                             <h4 class="text-sm font-bold tracking-tight text-on-surface">${worker.FirstName} ${worker.LastName}</h4>
                             <p class="text-[10px] uppercase text-neutral-500">${worker.Email}</p>
@@ -636,3 +710,15 @@ async function loadActiveWorkers() {
     }
 }
 
+// EXPORTS FOR JEST TESTING
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        handleEditSubmit, openEditModal, closeEditModal, loadUnassignedReports, 
+        updatePriority, assignToWorker, loadPendingWorkers, approveWorker, 
+        handleDelete, invalidateWorker, renderAssignmentTracker, openAssignModal, 
+        closeAssignModal, loadWorkerDropdown, loadAssignedTasks, renderAssignmentRows, 
+        filterAssignments, openAssignmentDetail, closeAssignmentDetail, 
+        toggleAdminDropdown, closeAdminDropdownOutside, openAdminProfile, 
+        logoutAdmin, loadActiveWorkers,deleteReportImage,deleteReportFromDetail
+    };
+}
