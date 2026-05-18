@@ -119,7 +119,7 @@ async function openMyReportModal(reportId) {
 
     // Map data to match CivicModal expectations
     const modalData = {
-        id: report.ReportID, // 🚨 THE FIX: Added the missing ID!
+        id: report.ReportID, // Added the missing ID
         type: report.Type,
         description: report.Brief || report.Description || 'No description provided.',
         date: report.CreatedAt,

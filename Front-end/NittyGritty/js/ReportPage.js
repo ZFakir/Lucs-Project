@@ -114,7 +114,7 @@ if (foundFeature) {
 
         displayEl.textContent = `Ward ${wardNo}, ${muniNameRaw}, ${provName}`;
         
-        // 🚨 THE FIX: Force it to use the simple ward number, not the 8-digit National ID
+        // Force it to use the simple ward number, not the 8-digit National ID
         wardInput.value = parseInt(wardNo); 
         muniInput.value = integerMuniId; 
     }else {
@@ -149,7 +149,7 @@ function initMap() {
         updateLocationData(position.lat, position.lng);
     });
 
-    // 3. 🚨 NEW EVENT: When the user CLICKS anywhere on the map
+    // 3. NEW EVENT: When the user CLICKS anywhere on the map
     map.on('click', function (e) {
         // Move the pin to the exact click coordinates
         reportPin.setLatLng(e.latlng);
@@ -158,6 +158,48 @@ function initMap() {
         updateLocationData(e.latlng.lat, e.latlng.lng);
     });
 }
+
+// --- UI FEEDBACK HELPERS ---
+function toggleLoader(show) {
+    const loader = document.getElementById('submit-loader');
+    if (loader) {
+        if (show) {
+            loader.classList.remove('hidden');
+        } else {
+            loader.classList.add('hidden');
+        }
+    }
+}
+
+function showToast(title, message, type = 'success') {
+    const toast = document.createElement('div');
+    const colorClass = type === 'success' ? 'border-green-500/30 text-green-400 bg-green-900/20' : 'border-red-500/30 text-red-400 bg-red-900/20';
+    const icon = type === 'success' ? 'check_circle' : 'error';
+    
+    // Tailwind classes for the toast container with slide-up animation
+    toast.className = `fixed bottom-6 left-1/2 -translate-x-1/2 z-[1000] flex items-center gap-3 px-6 py-4 rounded-xl border ${colorClass} shadow-2xl transition-all duration-300 transform translate-y-20 opacity-0 backdrop-blur-md`;
+    toast.innerHTML = `
+        <span class="material-symbols-outlined">${icon}</span>
+        <div class="flex flex-col">
+            <span class="text-xs font-black uppercase tracking-widest">${title}</span>
+            <span class="text-[10px] opacity-80">${message}</span>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    // Trigger animation slightly after appending
+    requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-20', 'opacity-0');
+    });
+    
+    // Auto-remove after 3.5 seconds
+    setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+        setTimeout(() => toast.remove(), 300); // Wait for transition to finish
+    }, 3000);
+}
+// ------ END UI FEEDBACK HELPERS ---------
 
 // --- DOM READY EXECUTION ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -188,28 +230,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const isTest = typeof jest !== 'undefined';
         if (!isTest && (!getVal('description') || selectedImages.length === 0)) {
-            await customAlert.show('Error',"Please add a description and at least one image.",'alert');
+            showToast('Missing Info', 'Please add a description and at least one image.', 'error');
             return;
         }
 
-        const imagePromises = selectedImages.map(file => toBase64(file));
-        const base64Array = await Promise.all(imagePromises);
-
-        // 🚨 Final payload mapping
-        const finalReport = {
-            WardID: parseInt(getVal('detected-ward-id')) || 0, 
-            MunicipalityID: parseInt(getVal('detected-muni-id')) || 0, // Integer required!
-            ResidentID: parseInt(localStorage.getItem('residentId')),
-            Latitude: window.mapLat || 0,
-            Longitude: window.mapLng || 0,
-            Status: 'Pending',
-            CreatedAt: new Date().toISOString().split('T')[0],
-            Brief: getVal('description'),
-            Type: getVal('pothole-type'),
-            Images: base64Array 
-        };
+        // SHOW LOADER (Locks screen, preventing double clicks)
+        toggleLoader(true);
 
         try {
+            // Process images while loader is showing
+            const imagePromises = selectedImages.map(file => toBase64(file));
+            const base64Array = await Promise.all(imagePromises);
+
+            const finalReport = {
+                WardID: parseInt(getVal('detected-ward-id')) || 0, 
+                MunicipalityID: parseInt(getVal('detected-muni-id')) || 0, 
+                ResidentID: parseInt(localStorage.getItem('residentId')),
+                Latitude: window.mapLat || 0,
+                Longitude: window.mapLng || 0,
+                Status: 'Pending',
+                CreatedAt: new Date().toISOString().split('T')[0],
+                Brief: getVal('description'),
+                Type: getVal('pothole-type'),
+                Images: base64Array 
+            };
+
             const response = await fetch('/api/reports', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -217,7 +262,8 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (response.ok) {
-            await customAlert.show('Success', 'Report submitted to database!', 'alert');
+                // SHOW SUCCESS TOAST & RESET
+                showToast('Success', 'Report successfully submitted to the ledger.', 'success');
                 form.reset();
                 selectedImages = [];
                 renderPreviews();
@@ -229,11 +275,57 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error('Submit failed:', error);
             if (error.message === 'Failed to log report') {
-                await customAlert.show('Error','Error submitting report','alert');
+                showToast('Submission Failed', 'There was an error communicating with the server.', 'error');
             } else {
-                localStorage.setItem('cachedReport', JSON.stringify(finalReport));
-                await customAlert.show('Error','Offline or Error: Report saved to device and will sync later.','alert');
+                showToast('Offline Mode', 'Report saved to device. Will sync when online.', 'error');
             }
+        } finally {
+            // HIDE LOADER (Runs no matter what happens, success or fail)
+            toggleLoader(false);
         }
+
+        // const imagePromises = selectedImages.map(file => toBase64(file));
+        // const base64Array = await Promise.all(imagePromises);
+
+        // // 🚨 Final payload mapping
+        // const finalReport = {
+        //     WardID: parseInt(getVal('detected-ward-id')) || 0, 
+        //     MunicipalityID: parseInt(getVal('detected-muni-id')) || 0, // Integer required!
+        //     ResidentID: parseInt(localStorage.getItem('residentId')),
+        //     Latitude: window.mapLat || 0,
+        //     Longitude: window.mapLng || 0,
+        //     Status: 'Pending',
+        //     CreatedAt: new Date().toISOString().split('T')[0],
+        //     Brief: getVal('description'),
+        //     Type: getVal('pothole-type'),
+        //     Images: base64Array 
+        // };
+
+        // try {
+        //     const response = await fetch('/api/reports', {
+        //         method: 'POST',
+        //         headers: { 'Content-Type': 'application/json' },
+        //         body: JSON.stringify(finalReport)
+        //     });
+
+        //     if (response.ok) {
+        //     await customAlert.show('Success', 'Report submitted to database!', 'alert');
+        //         form.reset();
+        //         selectedImages = [];
+        //         renderPreviews();
+        //         document.getElementById('location-text-display').textContent = "Drop the pin on the map to detect location...";
+        //     } else {
+        //         throw new Error('Failed to log report');
+        //     }
+            
+        // } catch (error) {
+        //     console.error('Submit failed:', error);
+        //     if (error.message === 'Failed to log report') {
+        //         await customAlert.show('Error','Error submitting report','alert');
+        //     } else {
+        //         localStorage.setItem('cachedReport', JSON.stringify(finalReport));
+        //         await customAlert.show('Error','Offline or Error: Report saved to device and will sync later.','alert');
+        //     }
+        // }
     });
 });
