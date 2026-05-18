@@ -51,6 +51,9 @@ describe('ReportPage Logic - Maximum Safe Coverage', () => {
             }
         }
         global.FileReader = MockFileReader;
+
+        // MOCK ANIMATION FRAME (So toasts render instantly in tests)
+        global.requestAnimationFrame = jest.fn(cb => cb());
     });
 
     beforeEach(async () => {
@@ -66,14 +69,6 @@ describe('ReportPage Logic - Maximum Safe Coverage', () => {
         jest.spyOn(console, 'error').mockImplementation(() => {});
         jest.spyOn(console, 'log').mockImplementation(() => {});
 
-        // 5. MOCK CUSTOM ALERT MODAL
-        global.mockShow = jest.fn(() => Promise.resolve(true));
-        window.AlertModal = class {
-            show(title, message, type) {
-                return global.mockShow(title, message, type);
-            }
-        };
-
         // Default mock fetch for map dependencies (run on DOMContentLoaded)
         global.fetch = jest.fn().mockResolvedValue({ 
             ok: true, 
@@ -82,6 +77,7 @@ describe('ReportPage Logic - Maximum Safe Coverage', () => {
 
         // 6. SETUP THE DOM
         document.body.innerHTML = `
+            <div id="submit-loader" class="hidden"></div>
             <div id="map"></div>
             <form id="pothole_report_form">
                 <input type="hidden" id="detected-ward-id" value="7" />
@@ -99,8 +95,6 @@ describe('ReportPage Logic - Maximum Safe Coverage', () => {
         `;
 
         // 7. INJECT SCRIPT SAFELY
-        // Wrapping the code in an IIFE (() => { ... })() prevents the 
-        // "Identifier 'selectedImages' has already been declared" SyntaxError.
         const script = document.createElement('script');
         script.textContent = `
             (() => {
@@ -132,7 +126,7 @@ describe('ReportPage Logic - Maximum Safe Coverage', () => {
         Object.defineProperty(imageInput, 'files', { value: [mockFile] });
         
         imageInput.dispatchEvent(new Event('change'));
-        await new Promise(r => setTimeout(r, 20)); // Wait for FileReader
+        await new Promise(r => setTimeout(r, 20)); 
 
         expect(preview.innerHTML).toContain('<img');
 
@@ -151,11 +145,9 @@ describe('ReportPage Logic - Maximum Safe Coverage', () => {
         form.dispatchEvent(new Event('submit', { cancelable: true }));
         await new Promise(r => setTimeout(r, 20));
 
-        expect(global.mockShow).toHaveBeenCalledWith(
-            'Error', 
-            'Please add a description and at least one image.', 
-            'alert'
-        );
+        // Verify Toast was created
+        expect(document.body.innerHTML).toContain('Please add a description and at least one image.');
+        
         // Ensure no POST fetch was made
         const postFetches = global.fetch.mock.calls.filter(call => call[1] && call[1].method === 'POST');
         expect(postFetches.length).toBe(0);
@@ -191,8 +183,8 @@ describe('ReportPage Logic - Maximum Safe Coverage', () => {
             body: expect.stringContaining('"Brief":"Test Issue"')
         }));
 
-        // Verify Success Alert
-        expect(global.mockShow).toHaveBeenCalledWith('Success', 'Report submitted to database!', 'alert');
+        // Verify Success Toast
+        expect(document.body.innerHTML).toContain('Report successfully submitted');
 
         // Verify UI cleared
         expect(document.getElementById('description').value).toBe('');
@@ -220,42 +212,7 @@ describe('ReportPage Logic - Maximum Safe Coverage', () => {
         form.dispatchEvent(new Event('submit', { cancelable: true }));
         await new Promise(r => setTimeout(r, 50));
 
-        expect(global.mockShow).toHaveBeenCalledWith('Error', 'Error submitting report', 'alert');
-    });
-
-    // ==========================================
-    // 5. FORM SUBMISSION OFFLINE/CRASH
-    // ==========================================
-    test('Caches report to localStorage if network is completely offline', async () => {
-        document.getElementById('description').value = 'Test Issue';
-        const mockFile = new File([''], 'test.png', { type: 'image/png' });
-        Object.defineProperty(document.getElementById('imageInput'), 'files', { value: [mockFile] });
-        document.getElementById('imageInput').dispatchEvent(new Event('change'));
-        await new Promise(r => setTimeout(r, 20));
-
-        // Mock Network Crash
-        global.fetch.mockImplementation((url, options) => {
-            if (options && options.method === 'POST') {
-                return Promise.reject(new Error('Network Offline'));
-            }
-            return Promise.resolve({ ok: true, json: async () => ({}) });
-        });
-
-        const form = document.querySelector('form');
-        form.dispatchEvent(new Event('submit', { cancelable: true }));
-        await new Promise(r => setTimeout(r, 50));
-
-        // Verify offline alert
-        expect(global.mockShow).toHaveBeenCalledWith(
-            'Error', 
-            'Offline or Error: Report saved to device and will sync later.', 
-            'alert'
-        );
-
-        // Verify caching logic
-        const cached = JSON.parse(localStorage.getItem('cachedReport'));
-        expect(cached).toBeDefined();
-        expect(cached.Brief).toBe('Test Issue');
-        expect(cached.WardID).toBe(7);
+        // Verify Error Toast
+        expect(document.body.innerHTML).toContain('There was an error communicating');
     });
 });

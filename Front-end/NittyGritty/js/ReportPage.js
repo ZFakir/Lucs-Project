@@ -4,7 +4,7 @@
 let selectedImages = [];
 let wardGeoData = null;
 let MunicipalityMap = {}; // Will hold our name-to-integer dictionary
-const customAlert = new AlertModal();
+//const customAlert = new AlertModal();
 // --- IMAGE PREVIEW LOGIC ---
 const renderPreviews = () => {
     const previewContainer = document.getElementById('imagePreview');
@@ -277,6 +277,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (error.message === 'Failed to log report') {
                 showToast('Submission Failed', 'There was an error communicating with the server.', 'error');
             } else {
+                localStorage.setItem('cachedReport', JSON.stringify(finalReport));
                 showToast('Offline Mode', 'Report saved to device. Will sync when online.', 'error');
             }
         } finally {
