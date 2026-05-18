@@ -710,46 +710,58 @@ function saveMutePrefs(residentId, prefs) {
 //gets notifications for resident and then filters by muted prefernces
 async function loadResidentNotifications(residentId) {
     try {
-        // Fetch subscriptions so we know which wards this resident tracks
-        const subRes = await fetch(`/api/residents/${residentId}/subscriptions`);
-        if (!subRes.ok) throw new Error('Failed to fetch subscriptions');
-        const subscribedWards = await subRes.json();
+        //Fetch notification records for this resident FIRST
+        const notifRes = await fetch(`/api/notifications/${residentId}`);
+        if (!notifRes.ok) throw new Error('Failed to fetch notifications');
+        let notifications = await notifRes.json();
 
-        if (subscribedWards.length === 0) {
+        // If there are no notifications at all, clear UI and exit safely
+        if (notifications.length === 0) {
             loadedReports = [];
             renderAlerts([]);
             return;
         }
 
-        // fetch notification records for this resident
-        const notifRes = await fetch(`/api/notifications/${residentId}`);
-        if (!notifRes.ok) throw new Error('Failed to fetch notifications');
-        let notifications = await notifRes.json();
+        //Fetch subscriptions AND the user's personal reports concurrently
+        const [subRes, myReportsRes] = await Promise.all([
+            fetch(`/api/residents/${residentId}/subscriptions`),
+            fetch(`/api/reports/resident/${residentId}`)
+        ]);
 
-        // looks for reports for each subscribed ward and creates a map of reportId > wardId
-        //This lets us filter notifications by ward for muting
+        const subscribedWards = subRes.ok ? await subRes.json() : [];
+        const myReportsData = myReportsRes.ok ? await myReportsRes.json() : { reports: [] };
+        const myReports = myReportsData.reports || myReportsData; 
+
+        //Create mapping dictionary to link ReportIDs to WardIDs for the UI
         const reportWardMap = {};
+
+        //Map the user's personal reports
+        if (Array.isArray(myReports)) {
+            myReports.forEach(r => {
+                const id = r.ReportID ?? r.reportId ?? r.ReportId ?? r.id;
+                if (id != null) reportWardMap[String(id)] = String(r.WardID);
+            });
+        }
+
+        //Map reports from subscribed wards
         const reportFetches = subscribedWards.map(ward => {
             const wardId = ward.WardID || ward.WardId || ward.wardId || (ward.Ward && ward.Ward.WardID);
             const muniId = ward.MunicipalityID;
             if (!wardId || !muniId) return Promise.resolve();
+            
             return fetch(`/api/reports/ward/${wardId}/${muniId}`)
                 .then(r => r.ok ? r.json() : [])
                 .then(reports => {
                     reports.forEach(r => {
-                        // Guard against ReportID being named differently (ReportID, reportId, id, etc.)
                         const id = r.ReportID ?? r.reportId ?? r.ReportId ?? r.id;
                         if (id != null) reportWardMap[String(id)] = String(wardId);
                     });
                 })
-                .catch(err => {
-                    console.error(`Could not load reports for ward ${wardId}:`, err);
-                });
+                .catch(err => console.error(`Could not load reports for ward ${wardId}:`, err));
         });
         await Promise.all(reportFetches);
 
-        //add a _wardId field to every notification so they render
-        //and filter functions can reference it without extra lookups.
+        // Add the _wardId field to every notification for UI rendering
         notifications = notifications.map(notif => ({
             ...notif,
             _wardId: (() => {
@@ -758,22 +770,16 @@ async function loadResidentNotifications(residentId) {
             })()
         }));
 
-        // apply mute filters
+        // Apply mute filters
         const mutePrefs = getMutePrefs(residentId);
         notifications = notifications.filter(notif => {
-            // hide everything when the resident has muted all wards
             if (mutePrefs.muteAll) return false;
 
             const wardId = notif._wardId;
-            if (!wardId) return true; //filter using ward id
+            if (!wardId) return true; // Keep personal reports if ward map fails
 
-            // hide if the ward is currently muted
             if (mutePrefs.mutedWards.includes(wardId)) return false;
 
-            // hide notifications that arrived WHILE the ward was muted
-            // when a ward is unmuted we record the timestamp in unmutedAt[wardId]
-            // any notification created between the mute and unmute
-            //are hidden permanently
             const unmutedAt = mutePrefs.unmutedAt[wardId];
             if (unmutedAt) {
                 const notifCreated = new Date(notif.CreatedAt || notif.createdAt);
@@ -784,7 +790,7 @@ async function loadResidentNotifications(residentId) {
             return true;
         });
 
-        // ascending sort
+        // Sort and Render
         notifications.sort((a, b) => {
             return new Date(b.CreatedAt || b.createdAt) - new Date(a.CreatedAt || a.createdAt);
         });
