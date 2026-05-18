@@ -1,4 +1,5 @@
 // profile-modal.js
+import { withHammerLoader } from "./loaderUtils";
 
 (() => {
     // Inject styles
@@ -170,16 +171,18 @@
 
     //  Save profile 
     async function saveProfile(identity, data) {
-        const url = identity.type === 'worker'
-            ? `/api/workers/${identity.id}/profile`
-            : `/api/residents/${identity.id}/profile`;
-        const res = await fetch(url, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
+        await withHammerLoader(async () => {
+            const url = identity.type === 'worker'
+                ? `/api/workers/${identity.id}/profile`
+                : `/api/residents/${identity.id}/profile`;
+            const res = await fetch(url, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (!res.ok) throw new Error('Failed to save profile');
+            return res.json();
         });
-        if (!res.ok) throw new Error('Failed to save profile');
-        return res.json();
     }
 
     // Show toast 
@@ -323,6 +326,7 @@
 
     // Save 
     async function saveChanges() {
+        await withHammerLoader (async () => {
         const identity = getIdentity();
         const saveBtn = document.getElementById('pm-save-btn');
         saveBtn.disabled = true;
@@ -371,7 +375,9 @@
             saveBtn.disabled = false;
             saveBtn.textContent = 'Save Changes';
         }
-    }
+        
+    });
+}
 
     // Close 
     function closeModal() {

@@ -1,4 +1,4 @@
-
+import {withHammerLoader} from '../Utils/HammerLoader.js';
 const taskImages = {}; 
 
 const toBase64 = file => new Promise((resolve, reject) => {
@@ -128,15 +128,17 @@ async function toggleCompletedTasks() {
 //workers can accept tasks 
 async function acceptTask(reportId) {
     try {
-        const response = await fetch(`/api/reports/${reportId}/accept`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' }
-        });
+        await withHammerLoader(async () => {
+            const response = await fetch(`/api/reports/${reportId}/accept`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' }
+            });
 
-        if (response.ok) {
-            alert("Task accepted! Starting work...");
-            location.reload(); 
-        }
+            if (response.ok) {
+                alert("Task accepted! Starting work...");
+                location.reload(); 
+            }
+        });
     } catch (err) {
         console.error("Error accepting task:", err);
     }
@@ -243,22 +245,24 @@ async function declineTask(reportId) {
     if (reason === null) return;
 
     try {
-        const response = await fetch(`/api/reports/${reportId}/decline`, {
-            method: 'PUT',
-            headers: { 
-                'Content-Type': 'application/json',
-                'x-notif-paused': localStorage.getItem('notifPaused') || 'false'
-            },
-            body: JSON.stringify({ 
-                reason, 
-                workerName: localStorage.getItem('workerName') || "A worker" 
-            })
-        });
+        await withHammerLoader(async () => {
+            const response = await fetch(`/api/reports/${reportId}/decline`, {
+                method: 'PUT',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'x-notif-paused': localStorage.getItem('notifPaused') || 'false'
+                },
+                body: JSON.stringify({ 
+                    reason, 
+                    workerName: localStorage.getItem('workerName') || "A worker" 
+                })
+            });
 
-        if (response.ok) {
-            alert("Task returned to central command. Admin has been notified.");
-            location.reload();
-        }
+            if (response.ok) {
+                alert("Task returned to central command. Admin has been notified.");
+                location.reload();
+            }
+        });
     } catch (err) {
         console.error("Error declining task:", err);
     }
@@ -275,11 +279,13 @@ async function resolveTask(reportId) {
     }
 
     try {
-        const response = await fetch(`/api/reports/${reportId}/status`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            // Using 'Fixed' status to satisfy both DB logic and Jest tests
-            body: JSON.stringify({ Status: 'Fixed', Progress: 'Resolved', images: base64Images }) 
+        await withHammerLoader(async () => {
+            const response = await fetch(`/api/reports/${reportId}/status`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                // Using 'Fixed' status to satisfy both DB logic and Jest tests
+                body: JSON.stringify({ Status: 'Fixed', Progress: 'Resolved', images: base64Images }) 
+            });
         });
 
         if (response.ok) {
@@ -340,22 +346,24 @@ if (modal) {
 
 async function updateProgress(reportId, progressText) {
     try {
-        const response = await fetch(`/api/reports/${reportId}/status`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                Progress: progressText,
-                Status: 'In Progress' 
-            })
-        });
+        await withHammerLoader(async () => {
+            const response = await fetch(`/api/reports/${reportId}/status`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    Progress: progressText,
+                    Status: 'In Progress' 
+                })
+            });
 
-        if (response.ok) {
-            console.log("Progress updated: " + progressText);
-            // We don't reload the page here to keep the worker's scroll position,
-            // but we update the UI label manually.
-            const label = document.querySelector(`#progress-${reportId}`).previousElementSibling.querySelector('output');
-            if (label) label.textContent = progressText;
-        }
+            if (response.ok) {
+                console.log("Progress updated: " + progressText);
+                // We don't reload the page here to keep the worker's scroll position,
+                // but we update the UI label manually.
+                const label = document.querySelector(`#progress-${reportId}`).previousElementSibling.querySelector('output');
+                if (label) label.textContent = progressText;
+            }
+        });
     } catch (err) {
         console.error("Failed to update progress:", err);
     }
@@ -445,26 +453,28 @@ async function uploadTaskImages(reportId) {
     }
 
     try {
-        for (const file of filesToUpload) {
-            const base64String = await toBase64(file);
+        await withHammerLoader(async () => {
+            for (const file of filesToUpload) {
+                const base64String = await toBase64(file);
 
-            const response = await fetch(`/api/reportImages/report/${reportId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    // IMPORTANT: Change to actual DB column name for image uploading
-                    ImageColumnName: base64String 
-                })
-            });
+                const response = await fetch(`/api/reportImages/report/${reportId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        // IMPORTANT: Change to actual DB column name for image uploading
+                        ImageColumnName: base64String 
+                    })
+                });
 
-            if (!response.ok) {
-                console.error(`Failed to upload an image for report ${reportId}`);
+                if (!response.ok) {
+                    console.error(`Failed to upload an image for report ${reportId}`);
+                }
             }
-        }
 
-        taskImages[reportId] = [];
-        renderPreviews(reportId);//clear previews after upload
-        console.log("All images uploaded successfully!");
+            taskImages[reportId] = [];
+            renderPreviews(reportId);//clear previews after upload
+            console.log("All images uploaded successfully!");
+        });
 
     } catch (err) {
         console.error("Error during image upload process:", err);

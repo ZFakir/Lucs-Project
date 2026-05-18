@@ -1,5 +1,6 @@
 
 import { LocationPicker } from '../ModalUtilities/LocationPicker.js';
+import { withHammerLoader } from './loaderUtils.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     // For testing, replace '1' with your actual logic to get the logged-in user's ID
@@ -17,124 +18,127 @@ async function renderSubscribedWards(residentId) {
     const addButton = wardsGrid.lastElementChild; // Keep the "Track New Ward" button
 
     try {
-        const response = await fetch(`/api/residents/${residentId}/subscriptions`);
-        
-        if (!response.ok) throw new Error('Failed to fetch wards');
 
-        const wards = await response.json();
-
-        // 1. Clear everything EXCEPT the last element (the "Add" button)
-        while (wardsGrid.children.length > 1) {
-            wardsGrid.removeChild(wardsGrid.firstChild);
-        }
-
-        // 2. Map through the array and create cards
-        for (const ward of wards) {
-            try{
-            const wardId = ward.WardID || ward.WardId || ward.wardId || (ward.Ward && ward.Ward.WardID);
-            const municipalityId = ward.MunicipalityID || ward.MunicipalityId || (ward.Municipality && ward.Municipality.MunicipalityID);
+        await withHammerLoader(async () => {
+            const response = await fetch(`/api/residents/${residentId}/subscriptions`);
             
-            if(!wardId || !municipalityId) {
-                console.warn('Skipping ward with missing IDs:', ward);
-                continue;
+            if (!response.ok) throw new Error('Failed to fetch wards');
+
+            const wards = await response.json();
+
+            // 1. Clear everything EXCEPT the last element (the "Add" button)
+            while (wardsGrid.children.length > 1) {
+                wardsGrid.removeChild(wardsGrid.firstChild);
             }
-            let totalIssues=0;
-            // Array of municipal-themed Material Symbols
-            const wardIcons = [
-                'location_city', 
-                'domain', 
-                'holiday_village', 
-                'apartment', 
-                'account_balance', 
-                'corporate_fare', 
-                'foundation', 
-                'gite', 
-                'villa',
-                'cottage'
-            ];
 
-            function getRandomIcon() {
-                const randomIndex = Math.floor(Math.random() * wardIcons.length);
-                return wardIcons[randomIndex];
-            }
-            const card = document.createElement('article');
-            //card.className = "group bg-surface-container-low p-8 relative overflow-hidden transition-all duration-300 hover:bg-surface-container-high cursor-pointer";
-            card.className = "group bg-surface-container-low p-8 relative transition-all duration-300 hover:bg-surface-container-high cursor-pointer";
-            
-            // Fetch both municipality and ward data in parallel
-            const [muniResponse, wardResponse] = await Promise.all([
-                fetch(`/api/geography/municipalities/${municipalityId}`),
-                fetch(`/api/geography/wards/${wardId}`)
-            ]);
-            
-            const municipalityData = (muniResponse && muniResponse.ok) ? await muniResponse.json() : {};
-            const wardData = (wardResponse && wardResponse.ok) ? await wardResponse.json() : {};
-            
-            const MunicipalityName = municipalityData.MunicipalityName.toUpperCase();
-            const councillorName = (wardData && wardData.WardCouncillor) 
-                           ? wardData.WardCouncillor 
-                           : 'Unassigned';
-            card.innerHTML = `
-            <nav aria-label="Ward management options" class="absolute top-6 right-6 z-20">
-                <button aria-haspopup="menu" aria-expanded="false" aria-controls="menu-${wardId}" class="menu-btn text-on-surface-variant hover:text-primary transition-colors" data-ward="${wardId}">
-                    <i aria-hidden="true" class="material-symbols-outlined pointer-events-none">more_vert</i>
-                    <span class="sr-only">Open options for Ward ${wardId}</span> 
-                </button>
+            // 2. Map through the array and create cards
+            for (const ward of wards) {
+                try{
+                const wardId = ward.WardID || ward.WardId || ward.wardId || (ward.Ward && ward.Ward.WardID);
+                const municipalityId = ward.MunicipalityID || ward.MunicipalityId || (ward.Municipality && ward.Municipality.MunicipalityID);
                 
-                <menu id="menu-${wardId}" role="menu" class="dropdown-menu hidden absolute right-0 mt-2 w-48 bg-surface-container-high border border-outline-variant rounded-md shadow-2xl z-50 overflow-hidden p-0 m-0">
-                    <li role="none">
-                        <button role="menuitem" onclick="manageNotifications(${wardId})" class="w-full text-left px-4 py-3 hover:bg-primary/10 text-on-background transition-colors flex items-center gap-3 font-bold text-sm">
-                            <i aria-hidden="true" class="material-symbols-outlined text-[18px]">notifications</i>
-                            Manage Alerts
-                        </button>
-                    </li>
-                    <li role="none">
-                        <button role="menuitem" onclick="unsubscribeWard(${wardId}, ${municipalityId})" class="w-full text-left px-4 py-3 hover:bg-red-500/10 text-red-400 transition-colors flex items-center gap-3 border-t border-outline-variant font-bold text-sm">
-                            <i aria-hidden="true" class="material-symbols-outlined text-[18px]">delete</i>
-                            Remove Ward
-                        </button>
-                    </li>
-                </menu>
-            </nav>
+                if(!wardId || !municipalityId) {
+                    console.warn('Skipping ward with missing IDs:', ward);
+                    continue;
+                }
+                let totalIssues=0;
+                // Array of municipal-themed Material Symbols
+                const wardIcons = [
+                    'location_city', 
+                    'domain', 
+                    'holiday_village', 
+                    'apartment', 
+                    'account_balance', 
+                    'corporate_fare', 
+                    'foundation', 
+                    'gite', 
+                    'villa',
+                    'cottage'
+                ];
 
-            <header>
-                <p class="label-md block text-orange-500 font-black tracking-[0.2em] mb-4">${(MunicipalityName || 'Yoh FUck').toUpperCase()}</p>
-                <h3 class="text-4xl font-black mb-8">WARD ${wardId}</h3>
-            </header>
+                function getRandomIcon() {
+                    const randomIndex = Math.floor(Math.random() * wardIcons.length);
+                    return wardIcons[randomIndex];
+                }
+                const card = document.createElement('article');
+                //card.className = "group bg-surface-container-low p-8 relative overflow-hidden transition-all duration-300 hover:bg-surface-container-high cursor-pointer";
+                card.className = "group bg-surface-container-low p-8 relative transition-all duration-300 hover:bg-surface-container-high cursor-pointer";
+                
+                // Fetch both municipality and ward data in parallel
+                const [muniResponse, wardResponse] = await Promise.all([
+                    fetch(`/api/geography/municipalities/${municipalityId}`),
+                    fetch(`/api/geography/wards/${wardId}`)
+                ]);
+                
+                const municipalityData = (muniResponse && muniResponse.ok) ? await muniResponse.json() : {};
+                const wardData = (wardResponse && wardResponse.ok) ? await wardResponse.json() : {};
+                
+                const MunicipalityName = municipalityData.MunicipalityName.toUpperCase();
+                const councillorName = (wardData && wardData.WardCouncillor) 
+                            ? wardData.WardCouncillor 
+                            : 'Unassigned';
+                card.innerHTML = `
+                <nav aria-label="Ward management options" class="absolute top-6 right-6 z-20">
+                    <button aria-haspopup="menu" aria-expanded="false" aria-controls="menu-${wardId}" class="menu-btn text-on-surface-variant hover:text-primary transition-colors" data-ward="${wardId}">
+                        <i aria-hidden="true" class="material-symbols-outlined pointer-events-none">more_vert</i>
+                        <span class="sr-only">Open options for Ward ${wardId}</span> 
+                    </button>
+                    
+                    <menu id="menu-${wardId}" role="menu" class="dropdown-menu hidden absolute right-0 mt-2 w-48 bg-surface-container-high border border-outline-variant rounded-md shadow-2xl z-50 overflow-hidden p-0 m-0">
+                        <li role="none">
+                            <button role="menuitem" onclick="manageNotifications(${wardId})" class="w-full text-left px-4 py-3 hover:bg-primary/10 text-on-background transition-colors flex items-center gap-3 font-bold text-sm">
+                                <i aria-hidden="true" class="material-symbols-outlined text-[18px]">notifications</i>
+                                Manage Alerts
+                            </button>
+                        </li>
+                        <li role="none">
+                            <button role="menuitem" onclick="unsubscribeWard(${wardId}, ${municipalityId})" class="w-full text-left px-4 py-3 hover:bg-red-500/10 text-red-400 transition-colors flex items-center gap-3 border-t border-outline-variant font-bold text-sm">
+                                <i aria-hidden="true" class="material-symbols-outlined text-[18px]">delete</i>
+                                Remove Ward
+                            </button>
+                        </li>
+                    </menu>
+                </nav>
 
-            <dl class="flex items-end justify-between m-0">
-                <div class="flex flex-col">
-                    <dt class="text-[10px] uppercase tracking-widest text-on-surface-variant mb-1">Councillor</dt>
-                    <dd class="text-3xl font-black text-primary m-0">${councillorName}</dd>
-                </div>
-                <dd class="m-0" aria-hidden="true">
-                    <i class="material-symbols-outlined text-orange-600/20 text-6xl translate-y-4 group-hover:text-orange-600 transition-colors">
-                        ${getRandomIcon()}
-                    </i>
-                </dd>
-            </dl>
+                <header>
+                    <p class="label-md block text-orange-500 font-black tracking-[0.2em] mb-4">${(MunicipalityName || 'Yoh FUck').toUpperCase()}</p>
+                    <h3 class="text-4xl font-black mb-8">WARD ${wardId}</h3>
+                </header>
 
-            <footer aria-hidden="true" class="absolute bottom-0 left-0 h-1 w-0 bg-primary-container transition-all duration-500 group-hover:w-full"></footer>
-        `;
+                <dl class="flex items-end justify-between m-0">
+                    <div class="flex flex-col">
+                        <dt class="text-[10px] uppercase tracking-widest text-on-surface-variant mb-1">Councillor</dt>
+                        <dd class="text-3xl font-black text-primary m-0">${councillorName}</dd>
+                    </div>
+                    <dd class="m-0" aria-hidden="true">
+                        <i class="material-symbols-outlined text-orange-600/20 text-6xl translate-y-4 group-hover:text-orange-600 transition-colors">
+                            ${getRandomIcon()}
+                        </i>
+                    </dd>
+                </dl>
 
-        
+                <footer aria-hidden="true" class="absolute bottom-0 left-0 h-1 w-0 bg-primary-container transition-all duration-500 group-hover:w-full"></footer>
+            `;
 
-            // Insert BEFORE the "Add New Ward" button
-        card.addEventListener('click', (event) => {
-            const clickedMenu = event.target.closest('nav[aria-label="Ward management options"]');
             
-            if (clickedMenu) {
-                return; 
+
+                // Insert BEFORE the "Add New Ward" button
+            card.addEventListener('click', (event) => {
+                const clickedMenu = event.target.closest('nav[aria-label="Ward management options"]');
+                
+                if (clickedMenu) {
+                    return; 
+                }
+
+                window.location.href = `/NittyGritty/WardPage.html?wardId=${wardId}&muniId=${municipalityId}`;
+                });
+                wardsGrid.insertBefore(card, addButton);
+                
+            } catch(innerErr){
+                console.error('Error rendering a ward card:', innerErr);
             }
-
-            window.location.href = `/NittyGritty/WardPage.html?wardId=${wardId}&muniId=${municipalityId}`;
-            });
-            wardsGrid.insertBefore(card, addButton);
-            
-        } catch(innerErr){
-            console.error('Error rendering a ward card:', innerErr);
         }
-    }
+        });
     } catch (error) {
         console.error('Error populating wards:', error);
     }
@@ -315,7 +319,7 @@ function showModal(title, message, type = 'alert') {
     });
 }
 
-async function unsubscribeWard(wardId, municipalityId) { // 🚨 Accept both IDs
+async function unsubscribeWard(wardId, municipalityId) { // Accept both IDs
     const confirmDelete = await showModal(
         'Remove Ward', 
         `Are you sure you want to stop tracking Ward ${wardId}?`, 
@@ -332,7 +336,7 @@ async function unsubscribeWard(wardId, municipalityId) { // 🚨 Accept both IDs
                 body: JSON.stringify({
                     ResidentID: residentId,
                     WardID: wardId,
-                    MunicipalityID: municipalityId // 🚨 Send both to the backend
+                    MunicipalityID: municipalityId // Send both to the backend
                 })
             });
 
@@ -379,41 +383,42 @@ document.addEventListener('DOMContentLoaded', () => {
     if (closeAddWardBtn) closeAddWardBtn.addEventListener('click', closeAddModal);
 
     // 4. Handle the Form Submission
-  // 4. Handle the Form Submission
   if (addWardForm) {
-    addWardForm.addEventListener('submit', async (e) => {
-        e.preventDefault(); 
-        
-        const formData = new FormData(addWardForm);
-        const selectedWardId = formData.get('ward');
-        //capture the MunicipalityID from the dropdown!
-        const selectedMuniId = formData.get('municipality'); 
-        const residentId = localStorage.getItem('residentId') || '1';
+        addWardForm.addEventListener('submit', async (e) => {
+            e.preventDefault(); 
+            
+            const formData = new FormData(addWardForm);
+            const selectedWardId = formData.get('ward');
+            //capture the MunicipalityID from the dropdown!
+            const selectedMuniId = formData.get('municipality'); 
+            const residentId = localStorage.getItem('residentId') || '1';
+            
+            try {
+                await withHammerLoader(async () => {
+                const response = await fetch('/api/residents/subscribe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        ResidentID: residentId,
+                        WardID: selectedWardId,
+                        MunicipalityID: selectedMuniId // 🚨 Send the ID to the backend
+                    })
+                });
 
-        try {
-            const response = await fetch('/api/residents/subscribe', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    ResidentID: residentId,
-                    WardID: selectedWardId,
-                    MunicipalityID: selectedMuniId // 🚨 Send the ID to the backend
-                })
-            });
+                    const data = await response.json();
 
-                const data = await response.json();
-
-                // 2. Handle the server's response
-                if (response.ok) {
-                    // Success (201 Created)! 
-                    closeAddModal(); // Hide the modal
-                    await renderSubscribedWards(residentId); // Refresh the cards to show the new ward
-                    
-                    
-                } else {
-                    // This catches your 400 (duplicate subscription) and 404 errors
-                    await showModal('Notice', data.message || data.error, 'alert');
-                }
+                    // 2. Handle the server's response
+                    if (response.ok) {
+                        // Success (201 Created)! 
+                        closeAddModal(); // Hide the modal
+                        await renderSubscribedWards(residentId); // Refresh the cards to show the new ward
+                        
+                        
+                    } else {
+                        // This catches your 400 (duplicate subscription) and 404 errors
+                        await showModal('Notice', data.message || data.error, 'alert');
+                    }
+                });
 
             } catch (error) {
                 // This catches network drops or server crashes
@@ -640,34 +645,37 @@ async function openReportModal(index) {
 
     // get the report Details and the images at the same time
     try {
-        const [reportRes, imageRes] = await Promise.all([
-            fetch(`/api/reports/${actualReportId}`).catch(() => null),
-            fetch(`/api/reports/report/${actualReportId}`).catch(() => null)
-        ]);
 
-        // display report details
-        if (reportRes && reportRes.ok) {
-            const reportData = await reportRes.json();
-            detailsContainer.innerHTML = reportData.Brief || reportData.Description || notif.Message || 'No description provided by the user.';
-        } else {
-            detailsContainer.innerHTML = notif.Message || 'Could not load additional details.';
-        }
+        await withHammerLoader(async () => {
+            const [reportRes, imageRes] = await Promise.all([
+                fetch(`/api/reports/${actualReportId}`).catch(() => null),
+                fetch(`/api/reports/report/${actualReportId}`).catch(() => null)
+            ]);
 
-        // show images 
-        if (imageRes && imageRes.ok) {
-            const images = await imageRes.json();
-            if (images && images.length > 0) {
-                imagesContainer.innerHTML = images.map(img => `
-                    <a href="data:${img.Type};base64,${img.base64}" target="_blank" rel="noopener" title="Click to view full size">
-                        <img src="data:${img.Type};base64,${img.base64}" alt="Report image" class="w-24 h-24 object-cover rounded-lg border border-white/10 hover:border-orange-500 transition-colors cursor-pointer shadow-md" />
-                    </a>
-                `).join('');
+            // display report details
+            if (reportRes && reportRes.ok) {
+                const reportData = await reportRes.json();
+                detailsContainer.innerHTML = reportData.Brief || reportData.Description || notif.Message || 'No description provided by the user.';
+            } else {
+                detailsContainer.innerHTML = notif.Message || 'Could not load additional details.';
+            }
+
+            // show images 
+            if (imageRes && imageRes.ok) {
+                const images = await imageRes.json();
+                if (images && images.length > 0) {
+                    imagesContainer.innerHTML = images.map(img => `
+                        <a href="data:${img.Type};base64,${img.base64}" target="_blank" rel="noopener" title="Click to view full size">
+                            <img src="data:${img.Type};base64,${img.base64}" alt="Report image" class="w-24 h-24 object-cover rounded-lg border border-white/10 hover:border-orange-500 transition-colors cursor-pointer shadow-md" />
+                        </a>
+                    `).join('');
+                } else {
+                    imagesContainer.innerHTML = `<span class="text-xs opacity-40 italic">No images attached.</span>`;
+                }
             } else {
                 imagesContainer.innerHTML = `<span class="text-xs opacity-40 italic">No images attached.</span>`;
             }
-        } else {
-            imagesContainer.innerHTML = `<span class="text-xs opacity-40 italic">No images attached.</span>`;
-        }
+        });
 
     } catch (err) {
         console.error('Failed to load modal data:', err);
