@@ -1,3 +1,4 @@
+import {withHammerLoader} from './loaderUtils'
 const customAlert = new AlertModal();
 function getAdminEmail() {
     return localStorage.getItem('adminEmail');
@@ -189,12 +190,20 @@ async function assignToWorker(reportId) {
     if (!employeeId) return;
 
     try {
-        const response = await fetch(`/api/reports/${reportId}/assign`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ EmployeeID: employeeId })
-        });
+        await withHammerLoader(async () => {
+            const response = await fetch(`/api/reports/${reportId}/assign`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ EmployeeID: employeeId })
+            });
 
+            if (response.ok) {
+                await customAlert.show('Success',`Report #${reportId} successfully assigned to Worker #${employeeId}`,'alert');
+                loadUnassignedReports(); // Refresh table
+            } else {
+                await customAlert.show('Error',"Assignment failed. Check if Employee ID exists.",'alert');
+            }
+        });
         if (response.ok) {
             await customAlert.show('Success',`Report #${reportId} successfully assigned to Worker #${employeeId}`,'alert');
             loadUnassignedReports(); // Refresh table

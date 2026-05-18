@@ -4,7 +4,7 @@
 let currentReports = []; 
 let activeReportId = null; 
 let mainMap = null; 
-let issueModal = null; // 🚨 Reusable modal class
+let issueModal = null; //  Reusable modal class
 
 // ==========================================
 // 2. PAGE INITIALISATION
@@ -203,7 +203,7 @@ function renderTable(reports) {
             <td class="px-8 py-6 text-right font-mono text-on-surface-variant text-sm">${formattedDate}</td>
         `;
         
-        // 🚨 Clicking the table row opens the modal
+        // Clicking the table row opens the modal
         tr.onclick = () => openIssueModal(report.ReportID);
         tbody.appendChild(tr);
     });
@@ -228,7 +228,7 @@ async function openIssueModal(reportId) {
         municipality: "Local Municipality" // Falls back gracefully since we don't fetch full muni strings here
     };
 
-    // 🚨 Open the newly instantiated CivicModal (fetches images autonomously)
+    // Open the newly instantiated CivicModal (fetches images autonomously)
     await issueModal.open(modalData);
 }
 

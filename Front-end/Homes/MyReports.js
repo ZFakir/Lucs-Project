@@ -1,6 +1,7 @@
 
 const customAlert = new AlertModal();
 
+import {withHammerLoader} from './loaderUtils';
 // --- START GLOBAL STATE ---
 let currentReports = []; 
 let activeReportId = null;
@@ -176,45 +177,48 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Handle Submit Button Click
     if (submitBtn) {
-        submitBtn.addEventListener('click', async () => {
-            if (currentRating === 0) {
-                await customAlert.show('Error',"Please select a rating before submitting.",'alert');
-                return;
-            }
-            
-            // Change button state to show it's working
-            submitBtn.disabled = true;
-            submitBtn.innerText = "Submitting...";
-
-            try {
-                const response = await fetch(`/api/reports/${activeReportId}/rating`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ rating: currentRating })
-                });
-
-                const result = await response.json();
-
-                if (response.ok) {
-                    const submittedFeedback = JSON.parse(localStorage.getItem('submittedFeedback') || '[]');
-                    if (!submittedFeedback.includes(String(activeReportId))) {
-                        submittedFeedback.push(String(activeReportId));
-                        localStorage.setItem('submittedFeedback', JSON.stringify(submittedFeedback));
-                    }
-                    await customAlert.show('Success',"Thank you for your feedback!",'alert');
-                    modal.close();
-                    // Optional: You could reload the page or update the UI to hide the feedback button
-                    location.reload(); 
-                } else {
-                    throw new Error(result.error || "Failed to submit rating");
+        await withHammerLoader(async () => {
+            submitBtn.addEventListener('click', async () => {
+                if (currentRating === 0) {
+                    alert("Please select a rating before submitting.");
+                    return;
                 }
-            } catch (err) {
-                console.error("Submit Error:", err);
-                await customAlert.show('Error',"Error submitting feedback. Please try again.",'alert');
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.innerText = "Submit Feedback";
-            }
+                
+                // Change button state to show it's working
+                submitBtn.disabled = true;
+                submitBtn.innerText = "Submitting...";
+
+                try {
+                    const response = await fetch(`/api/reports/${activeReportId}/rating`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ rating: currentRating })
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        const submittedFeedback = JSON.parse(localStorage.getItem('submittedFeedback') || '[]');
+                        if (!submittedFeedback.includes(String(activeReportId))) {
+                            submittedFeedback.push(String(activeReportId));
+                            localStorage.setItem('submittedFeedback', JSON.stringify(submittedFeedback));
+                        }
+                        alert("Thank you for your feedback!");
+                        modal.close();
+                        // Optional: You could reload the page or update the UI to hide the feedback button
+                        location.reload(); 
+                    } else {
+                        throw new Error(result.error || "Failed to submit rating");
+                    }
+                    
+                } catch (err) {
+                    console.error("Submit Error:", err);
+                    alert("Error submitting feedback. Please try again.");
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = "Submit Feedback";
+                }
+            });
         });
     }
 

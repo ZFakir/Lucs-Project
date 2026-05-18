@@ -179,41 +179,51 @@ router.post('/', async (req, res) => {
         } else {
             console.log('[Email] Skipped — notifications paused by user');
         }
-        // email residents subscribed to this ward
-        const subscriptions = await Subscription.findAll({ 
-            where: { WardID: newReport.WardID } 
-        });
-
-        for (const sub of subscriptions) {
+        if (report) {
+            const notifyResidentIds = new Set();
             
-            await notify(sub.ResidentID, 'WARD_REPORT',
+            // Add creator
+            if (report.ResidentID) notifyResidentIds.add(String(report.ResidentID));
+
+            // Add subscribers
+            if (report.WardID) {
+                const subscriptions = await Subscription.findAll({ 
+                    where: { WardID: report.WardID } 
+                });
+                subscriptions.forEach(sub => notifyResidentIds.add(String(sub.ResidentID)));
+            }
+
+            for (const residentId of notifyResidentIds) {
+                // In-app notification
+                await notify(residentID, 'WARD_REPORT',
                 `New Report in Your Area: ${newReport.Type}`,
                 `A new report has been logged in Ward ${newReport.WardID}. Report #${newReport.ReportID} is pending assignment.`,
                 newReport.ReportID
             );
 
-            // Fetch the specific resident for THIS subscription to get their email
-            const residentToNotify = await Resident.findByPk(sub.ResidentID);
+                // Email notification
+                const residentToNotify = await Resident.findByPk(residentId);
 
             // Only email if not paused, the resident exists, and they have an email address
-            if (!paused && residentToNotify && residentToNotify.Email) {
-                await sendEmail(
-                    residentToNotify.Email, 
-                    `🔔 New Report: ${newReport.Type}`,
-                    `
-                    <div style="font-family:sans-serif;max-width:600px;margin:auto;background:#1a1a1a;color:#e2e2e2;padding:32px;border-radius:12px;">
-                        <h2 style="color:#ff8c00;margin:0 0 8px;">New Fault Reported</h2>
-                        <p style="color:#a3a3a3;font-size:12px;text-transform:uppercase;letter-spacing:0.1em;">Groundwork Alert</p>
-                        <hr style="border:none;border-top:1px solid #333;margin:20px 0;">
-                        <p><strong>Type:</strong> ${newReport.Type}</p>
-                        <p><strong>Ward:</strong> ${newReport.WardID || 'N/A'}</p>
-                        <p><strong>Report ID:</strong> #${newReport.ReportID}</p>
-                        <p><strong>Status:</strong> Pending Assignment</p>
-                        <hr style="border:none;border-top:1px solid #333;margin:20px 0;">
-                        <p style="color:#737373;font-size:11px;">Log in to your dashboard to track the status of this report.</p>
-                    </div>
-                    `
-                );
+                if (!paused && residentToNotify && residentToNotify.Email) {
+                    await sendEmail(
+                        residentToNotify.Email, 
+                        `🔔 New Report: ${newReport.Type}`,
+                        `
+                        <div style="font-family:sans-serif;max-width:600px;margin:auto;background:#1a1a1a;color:#e2e2e2;padding:32px;border-radius:12px;">
+                            <h2 style="color:#ff8c00;margin:0 0 8px;">New Fault Reported</h2>
+                            <p style="color:#a3a3a3;font-size:12px;text-transform:uppercase;letter-spacing:0.1em;">Groundwork Alert</p>
+                            <hr style="border:none;border-top:1px solid #333;margin:20px 0;">
+                            <p><strong>Type:</strong> ${newReport.Type}</p>
+                            <p><strong>Ward:</strong> ${newReport.WardID || 'N/A'}</p>
+                            <p><strong>Report ID:</strong> #${newReport.ReportID}</p>
+                            <p><strong>Status:</strong> Pending Assignment</p>
+                            <hr style="border:none;border-top:1px solid #333;margin:20px 0;">
+                            <p style="color:#737373;font-size:11px;">Log in to your dashboard to track the status of this report.</p>
+                        </div>
+                        `
+                    );
+                }
             }
         }
 
@@ -302,21 +312,31 @@ router.put('/:id/status', async (req, res) => {
             }
         }
 
-        // ─── NEW: Notify subscribed residents about the report update ───
-        if (report && report.WardID) {
-            const subscriptions = await Subscription.findAll({ 
-                where: { WardID: report.WardID } 
-            });
+        // Notify subscribed residents and report creators about the report update
+            if (report) {
+            //Gather unique Resident IDs using a Set to prevent duplicates
+            const notifyResidentIds = new Set();
+            
+            // Add the creator of the report
+            if (report.ResidentID) notifyResidentIds.add(String(report.ResidentID));
 
-            for (const sub of subscriptions) {
-                // 1. Create in-app notification
-                await notify(sub.ResidentID, 'WARD_REPORT_UPDATE',
+            // Add residents subscribed to the ward
+            if (report.WardID) {
+                const subscriptions = await Subscription.findAll({ 
+                    where: { WardID: report.WardID } 
+                });
+                subscriptions.forEach(sub => notifyResidentIds.add(String(sub.ResidentID)));
+            }
+
+            // Loop through the unique residents and notify them
+            for (const residentId of notifyResidentIds) {
+                // In-app notification
+                await notify(residentId, 'WARD_REPORT_UPDATE',
                     `Report Update: ${report.Type}`,
-                    `The status for Report #${reportId} in Ward ${report.WardID} has been updated to: ${progressValue}.`,
+                    `The status for Report #${reportId} in Ward ${report.WardID || 'N/A'} has been updated to: ${progressValue}.`,
                     reportId
                 );
 
-                // Inside the resident loop, right before sending the email:
                 const isCompleted = progressValue === 'Fixed' || progressValue === 'Resolved' || progressValue == 100;
 
                 let emailSubject = `🔄 Update on Report #${reportId}: ${report.Type}`;
@@ -328,8 +348,8 @@ router.put('/:id/status', async (req, res) => {
                     headerColor = "#4ade80"; // Green for completed
                     headerText = "Report Resolved";
 }
-                // 2. Send email
-                const residentToNotify = await Resident.findByPk(sub.ResidentID);
+                // Send email
+                const residentToNotify = await Resident.findByPk(residentId);
 
                 if (!paused && residentToNotify && residentToNotify.Email) {
                     await sendEmail(
@@ -461,22 +481,30 @@ router.post('/:id/assign', async (req, res) => {
             console.log('[Email] Skipped worker email — notifications paused by user');
         }
 
-        // ─── NEW: Notify subscribed residents about the assignment ───
-        if (report && report.WardID) {
-            const subscriptions = await Subscription.findAll({ 
-                where: { WardID: report.WardID } 
-            });
+if (report) {
+            const notifyResidentIds = new Set();
+            
+            // Add creator
+            if (report.ResidentID) notifyResidentIds.add(String(report.ResidentID));
 
-            for (const sub of subscriptions) {
-                // A. Create in-app notification for the resident's panel
-                await notify(sub.ResidentID, 'WARD_REPORT_ASSIGNED',
+            // Add subscribers
+            if (report.WardID) {
+                const subscriptions = await Subscription.findAll({ 
+                    where: { WardID: report.WardID } 
+                });
+                subscriptions.forEach(sub => notifyResidentIds.add(String(sub.ResidentID)));
+            }
+
+            for (const residentId of notifyResidentIds) {
+                // In-app notification
+                await notify(residentId, 'WARD_REPORT_ASSIGNED',
                     `Task Assigned: ${taskType}`,
-                    `Report #${ReportID} in Ward ${report.WardID} has been assigned to a field operative. Work will begin soon.`,
+                    `Report #${ReportID} in Ward ${report.WardID || 'N/A'} has been assigned to a field operative. Work will begin soon.`,
                     ReportID
                 );
 
-                // B. Send email to the resident
-                const residentToNotify = await Resident.findByPk(sub.ResidentID);
+                // Email notification
+                const residentToNotify = await Resident.findByPk(residentId);
 
                 if (!paused && residentToNotify && residentToNotify.Email) {
                     await sendEmail(

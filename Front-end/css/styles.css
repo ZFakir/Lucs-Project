@@ -1,0 +1,98 @@
+/* The semi-transparent grey overlay that prevents interaction */
+#municipal-loader-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(76, 74, 71, 0.6); /* Slightly grey and translucent */
+  backdrop-filter: blur(2px); /* Softens the page beneath slightly */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+#municipal-loader-overlay.active {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* The container for our animation */
+.construction-zone {
+  position: relative;
+  width: 100px;
+  height: 100px;
+}
+
+/* The Hammer Handle */
+.hammer {
+  position: absolute;
+  bottom: 10px; /* Lowered so it strikes the bottom */
+  left: 55px;
+  width: 12px;
+  height: 60px;
+  background-color: #e67e22;
+  border-radius: 4px;
+  transform-origin: bottom center;
+  animation: swingHammer 1s infinite;
+}
+
+/* The Hammer Head */
+.hammer::before {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: -20px;
+  width: 50px;
+  height: 25px;
+  background-color: #000000;
+  border-radius: 4px;
+}
+
+/* The Dust Cloud */
+.dust-cloud {
+  position: absolute;
+  bottom: -5px;
+  left: 15px;
+  width: 50px;
+  height: 15px;
+  background-color: #696b6d;
+  border-radius: 50%;
+  opacity: 0;
+  /* Syncs perfectly with the 1s hammer animation */
+  animation: puffDust 1s infinite ease-out; 
+}
+
+/* Animations */
+@keyframes swingHammer {
+  0%   { transform: rotate(20deg); }
+  20%  { transform: rotate(-60deg); } /* Wind up */
+  35%  { transform: rotate(10deg); }  /* The strike */
+  50%  { transform: rotate(20deg); }  /* Rest */
+  100% { transform: rotate(20deg); }
+}
+
+@keyframes puffDust {
+  0%, 34% { 
+    /* Hidden while hammer winds up */
+    opacity: 0; 
+    transform: scale(0.5) translateY(0); 
+  }
+  35% { 
+    /* Appears instantly on strike */
+    opacity: 0.8; 
+    transform: scale(1) translateY(0); 
+  }
+  60% { 
+    /* Dissipates and floats up slightly */
+    opacity: 0; 
+    transform: scale(1.5) translateY(-10px); 
+  }
+  100% { 
+    opacity: 0; 
+  }
+}
