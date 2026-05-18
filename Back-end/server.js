@@ -182,7 +182,7 @@ app.use(express.static(frontendPath));
 // Default route to serve the Guest Dashboard
 app.get('/', (req, res) => {
     // Navigates into the 'Homes' folder and serves 'GuestDashboard.html'
-    res.sendFile(path.join(frontendPath, 'Homes', 'GuestDashboard.html'));
+    res.redirect('/Homes/GuestDashboard.html');
 });
 
 // --- 5. DATABASE & START ---
