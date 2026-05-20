@@ -15,6 +15,7 @@ GroundWork is a comprehensive, end-to-end civic engagement and municipal managem
 * **Issue Feedback & "Bumping":** Residents can rate the quality of resolved issues via a 5-star modal and "bump" high-priority active issues to increase their frequency score and visibility.
 
 ### 2. Municipal Worker Portal (Field Operations)
+Note: Workers need to be validated by the admin before they are allowed access to the portal.
 * **Task Dashboard:** A dedicated interface for municipal field workers to view issues specifically assigned to them.
 * **Status Tracking:** Workers can update the progress of issues from "Assigned" to "In Progress" and finally "Resolved."
 * **Field Evidence:** Workers can upload post-repair images and add resolution notes directly from the field to close out tickets.
@@ -72,8 +73,35 @@ git clone [https://github.com/ZFakir/Lucs-Project.git]
 ```
 npm install
 ```
-### 3. 
-TODO
+### 3. Environment Variables Setup
+Create a .env file in the root directory. You will need to configure your database and Google OAuth credentials.
+```
+# Server Configuration
+PORT=8080
+
+# Database Configuration 
+DB_HOST=localhost
+DB_USER=Fakir
+DB_PASSWORD=BigPassword
+DB_NAME=GroundWorksDB
+DB_DIALECT=mysql
+```
+
+### 4. Database Initialisation
+Initialise the database and run the migrations/seeders to populate the Municipalities, Wards, and Admin accounts.
+```
+npx sequelize-cli db:create
+npx sequelize-cli db:migrate
+npx sequelize-cli db:seed:all
+```
+
+### 5. Run the Application
+Start the local development server.
+```
+node server.js (from Back-end) - recommended
+/or/
+npm run dev
+```
 
 ## Testing
 The project utilises a robust Jest testing suite to ensure frontend reliability across all modular components. The backend also has its own test suites, ensuring routes and models work as expected.
@@ -84,25 +112,39 @@ cd Front-end /or/ cd Back-end
 npm test
 ```
 
-## Project File Structure TODO
+## Project File Structure
+Helper and miscellaneous files have been ommitted for a more simplified view.
+Some files (like tests) have been grouped together for the same reason.
+```
 groundwork/
-├── Analytics/              # Data vis, heatmaps, and GeoJSON boundaries (sa_wards.json)
-├── Homes/                  # Role-specific dashboards
-│   ├── AdminHome.js        # Command & Control routing
-│   ├── Resident.js         # Citizen tracking & notifications
-│   └── WorkerHome.js       # Field task management
-├── Login/                  # Google OAuth, JWT handling, and Role-Based Routing
-├── ModalUtilities/         # Shared UI: CivicModal, AlertModal, LocationPicker
-├── NittyGritty/            # Core issue reporting logic and Ward-specific views
-├── Tests/                  # Jest test suites for all frontend modules
-├── server.js               # Express application entry point
-└── package.json            # Project dependencies
+├── Back-end/                   # Node.js & Express API server
+│   ├── config/                 # Database connection settings
+│   ├── geolocation/            # Server-side mapping components
+│   ├── models/                 # Sequelize ORM models (Resident, Report, Ward, etc.)
+│   ├── routes/                 # Express API endpoints
+│   ├── Tests/                  # Backend unit and integration tests
+│   ├── seedGeography.js        # Database seeder for municipal boundary data
+│   └── server.js               # Main backend entry point
+│
+├── Front-end/                  # Client-side web application
+│   ├── Analytics/              # Data visualisation, heatmaps, and stats
+│   │   └── data/               # GeoJSON files for map boundaries
+│   ├── Homes/                  # Role-specific dashboards (Admin, Resident, Worker, Guest)
+│   ├── Login/                  # Authentication and Google OAuth interfaces
+│   ├── ModalUtilities/         # Reusable UI components (CivicModal, LocationPicker)
+│   ├── NittyGritty/            # Core issue reporting logic and Ward views
+│   └── Tests/                  # Frontend Jest test suites
+│
+├── package.json                # Root project configuration
+└── README.md                   # Project documentation
+```
 
 ## 🦆 Easter Eggs
 Quack.
 
 ## Acknowledgements
 * Topographic and Ward boundary data provided by South African municipal datasets.
+* Municipal Demarcation Board (MDB)
 * UI Avatars provided by ui-avatars.com.
 * UI Icons provided by Google Material Symbols.
 * Luc and Friends
