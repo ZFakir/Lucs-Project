@@ -54,6 +54,12 @@ Note: Workers need to be validated by the admin before they are allowed access t
 
 ---
 
+## Documentation
+All the necessary documentation pertaining to this application and project need to be accessed with a valid WITS email account, any other email will permit you to see the document.
+Documentation includes minutes of scrum meetings, daily stand-ups, overall project plan, and testing (plans and results).
+
+---
+
 ## 🚀 Local Setup & Installation
 
 Follow these instructions to get a copy of the project up and running on your local machine for development and testing.
